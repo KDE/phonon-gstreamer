@@ -43,6 +43,33 @@ namespace Phonon
 {
 namespace Gstreamer
 {
+    
+VideoCaptureDevice::VideoCaptureDevice(DeviceManager *manager, const QByteArray &gstId)
+        : gstId(gstId)
+{
+    id = manager->allocateDeviceId();
+    icon = "camera-video";
+
+    //get name from device
+    if (gstId == "default") {
+        description = "Default video capture device";
+    } else {
+        GstElement *dev = gst_element_factory_make("v4l2src", NULL);
+
+        if (dev) {
+            gchar *deviceDescription = NULL;
+
+            if (GST_IS_PROPERTY_PROBE(dev) && gst_property_probe_get_property( GST_PROPERTY_PROBE(dev), "device" ) ) {
+                g_object_set (G_OBJECT(dev), "device", gstId.constData(), (const char*)NULL);
+                g_object_get (G_OBJECT(dev), "device-name", &deviceDescription, (const char*)NULL);
+                description = QByteArray(deviceDescription);
+                g_free (deviceDescription);
+                gst_element_set_state(dev, GST_STATE_NULL);
+                gst_object_unref (dev);
+            }
+        }
+    }
+}
 
 AudioDevice::AudioDevice(DeviceManager *manager, const QByteArray &gstId)
         : gstId(gstId)
@@ -112,6 +139,7 @@ DeviceManager::DeviceManager(Backend *backend)
 DeviceManager::~DeviceManager()
 {
     m_audioDeviceList.clear();
+    m_videoCaptureDeviceList.clear();
 }
 
 /***
@@ -319,6 +347,11 @@ int DeviceManager::deviceId(const QByteArray &gstId) const
             return m_audioDeviceList[i].id;
         }
     }
+    for (int i = 0 ; i < m_videoCaptureDeviceList.size() ; ++i) {
+        if (m_videoCaptureDeviceList[i].gstId == gstId) {
+            return m_videoCaptureDeviceList[i].id;
+        }
+    }
     return -1;
 }
 
@@ -349,16 +382,41 @@ AudioDevice* DeviceManager::audioDevice(int id)
     return NULL;
 }
 
+VideoCaptureDevice* DeviceManager::videoCaptureDevice(int id)
+{
+    for (int i = 0 ; i < m_videoCaptureDeviceList.size() ; ++i) {
+        if (m_videoCaptureDeviceList[i].id == id)
+            return &m_videoCaptureDeviceList[i];
+    }
+    return NULL;
+}
+
 /**
  * Updates the current list of active devices
  */
 void DeviceManager::updateDeviceList()
 {
+    QList<QByteArray> list;
+    
+    GstElement *captureDevice = gst_element_factory_make("v4l2src", NULL);
+    if (captureDevice) {
+        QList<QByteArray> list;
+        list = GstHelper::extractProperties(captureDevice, "device");
+        for (int i = 0; i < list.size() ; ++i) {
+            QByteArray gstId = list.at(i);
+            if (deviceId(gstId) == -1) {
+                m_videoCaptureDeviceList.append(VideoCaptureDevice(this, gstId));
+                emit deviceAdded(deviceId(gstId));
+                m_backend->logMessage(QString("Found new video capture device %0").arg(QString::fromUtf8(gstId)), Backend::Debug, this);
+            }
+        }
+        gst_element_set_state (captureDevice, GST_STATE_NULL);
+        gst_object_unref (captureDevice);
+        list.clear();
+    }
     //fetch list of current devices
     GstElement *audioSink= createAudioSink();
-
-    QList<QByteArray> list;
-
+    
     if (audioSink) {
         if (!PulseSupport::getInstance()->isActive()) {
             // If we're using pulse, the PulseSupport class takes care of things for us.
@@ -406,6 +464,11 @@ void DeviceManager::updateDeviceList()
 const QList<AudioDevice> DeviceManager::audioOutputDevices() const
 {
     return m_audioDeviceList;
+}
+
+const QList<VideoCaptureDevice> DeviceManager::videoCaptureDevices() const
+{
+    return m_videoCaptureDeviceList;
 }
 
 }

@@ -193,6 +193,7 @@ protected:
      */
     bool createPipefromURL(const QUrl &url);
     bool createPipefromStream(const MediaSource &);
+    bool createPipefromDevice(const MediaSource &);
 
 private Q_SLOTS:
     void noMorePadsAvailable();

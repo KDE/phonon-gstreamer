@@ -397,6 +397,28 @@ void MediaObject::cb_pad_added(GstElement *decodebin,
     //gst_object_unref (decodepad);
 }
 
+bool MediaObject::createPipefromDevice(const MediaSource &source)
+{
+	if (source.captureDeviceType() == "v4l2") {
+		if (m_datasource) {
+			gst_bin_remove(GST_BIN(m_pipeline), m_datasource);
+			m_datasource = 0;
+		}
+		m_datasource = gst_element_factory_make("v4l2src", "v4l2src");
+        qDebug() << "Couldn't create v4l2src element";
+		if (!m_datasource)
+			return false;
+		g_object_set(G_OBJECT(m_datasource), "device", source.deviceName().toUtf8().data(), (const char*)NULL);
+		qDebug() << "Created video device element";
+		gst_bin_add(GST_BIN(m_pipeline), m_datasource);
+		gst_element_link(m_datasource, m_decodebin);
+		return true;
+	} else {
+		qWarning() << "Only v4l2 devices supported.";
+	}
+	return false;
+}
+
 /**
  * Create a media source from a given URL.
  *
@@ -1031,6 +1053,12 @@ void MediaObject::setSource(const MediaSource &source)
                 setError(tr("Could not open media source."));
         }
         break;
+	
+	case MediaSource::CaptureDeviceSource:
+        if (!createPipefromDevice(source))
+            setError(tr("Could not open capture device."));
+        break;
+
 
     default:
         m_backend->logMessage("Source type not currently supported", Backend::Warning, this);

@@ -46,17 +46,28 @@ public :
     QString icon;
 };
 
+class VideoCaptureDevice {
+public:
+    VideoCaptureDevice(DeviceManager *s, const QByteArray &deviceId);
+    int id;
+    QByteArray gstId;
+    QByteArray description;
+    QString icon;
+};
+
 class DeviceManager : public QObject {
     Q_OBJECT
 public:
     DeviceManager(Backend *parent);
     virtual ~DeviceManager();
     const QList<AudioDevice> audioOutputDevices() const;
+    const QList<VideoCaptureDevice> videoCaptureDevices() const;
     GstPad *requestPad(int device) const;
     int allocateDeviceId();
     int deviceId(const QByteArray &gstId) const;
     const QByteArray gstId(int id);
-    AudioDevice *audioDevice(int id);
+    AudioDevice* audioDevice(int id);
+    VideoCaptureDevice* videoCaptureDevice(int id);
     GstElement *createGNOMEAudioSink(Category category);
     GstElement *createAudioSink(Category category = NoCategory);
     AbstractRenderer *createVideoRenderer(VideoWidget *parent);
@@ -72,6 +83,7 @@ private:
     bool canOpenDevice(GstElement *element) const;
     Backend *m_backend;
     QList <AudioDevice> m_audioDeviceList;
+    QList <VideoCaptureDevice> m_videoCaptureDeviceList;
     int m_audioDeviceCounter;
     QTimer m_devicePollTimer;
     QByteArray m_audioSink;

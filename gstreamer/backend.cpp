@@ -287,6 +287,13 @@ QList<int> Backend::objectDescriptionIndexes(ObjectDescriptionType type) const
             break;
         }
         break;
+    case Phonon::VideoCaptureDeviceType: {
+            QList<VideoCaptureDevice> deviceList = deviceManager()->videoCaptureDevices();
+            for(int dev = 0 ; dev < deviceList.size() ; ++dev)
+                list.append(deviceList[dev].id);
+            break;
+        }
+        break;
 
     case Phonon::EffectType: {
             QList<EffectInfo*> effectList = effectManager()->audioEffects();
@@ -319,6 +326,17 @@ QHash<QByteArray, QVariant> Backend::objectDescriptionProperties(ObjectDescripti
                 ret.insert("name", ad->gstId);
                 ret.insert("description", ad->description);
                 ret.insert("icon", ad->icon);
+            }
+        }
+        break;
+    case Phonon::VideoCaptureDeviceType: {
+            VideoCaptureDevice* dev;
+            if ((dev = deviceManager()->videoCaptureDevice(index))) {
+                ret.insert("name", dev->gstId);
+                ret.insert("description", dev->description);
+                ret.insert("icon", dev->icon);
+                ret.insert("hwname", dev->gstId);
+                ret.insert("type", "v4l2");
             }
         }
         break;
