@@ -412,6 +412,25 @@ void DeviceManager::updateDeviceList()
         }
         gst_element_set_state (captureDevice, GST_STATE_NULL);
         gst_object_unref (captureDevice);
+        
+        if (list.size() < m_videoCaptureDeviceList.size()) {
+            //a device was removed
+            for (int i = m_videoCaptureDeviceList.size() -1 ; i >= 0 ; --i) {
+                QByteArray currId = m_videoCaptureDeviceList[i].gstId;
+                bool found = false;
+                for (int k = list.size() -1  ; k >= 0 ; --k) {
+                    if (currId == list[k]) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    m_backend->logMessage(QString("Video capture device lost %0").arg(QString::fromUtf8(currId)), Backend::Debug, this);
+                    emit deviceRemoved(deviceId(currId));
+                    m_videoCaptureDeviceList.removeAt(i);
+                }
+            }
+        }
         list.clear();
     }
     //fetch list of current devices
