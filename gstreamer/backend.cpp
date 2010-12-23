@@ -335,8 +335,10 @@ QHash<QByteArray, QVariant> Backend::objectDescriptionProperties(ObjectDescripti
                 ret.insert("name", dev->gstId);
                 ret.insert("description", dev->description);
                 ret.insert("icon", dev->icon);
-                ret.insert("hwname", dev->gstId);
-                ret.insert("type", "v4l2");
+                DeviceAccessList devlist;
+                devlist << DeviceAccess("v4l2", dev->gstId);
+                ret.insert("deviceAccessList", QVariant::fromValue<Phonon::DeviceAccessList>(devlist));
+                ret.insert("hasvideo", true);
             }
         }
         break;

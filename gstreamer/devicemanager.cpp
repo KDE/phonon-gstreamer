@@ -48,7 +48,7 @@ VideoCaptureDevice::VideoCaptureDevice(DeviceManager *manager, const QByteArray 
         : gstId(gstId)
 {
     id = manager->allocateDeviceId();
-    icon = "camera-video";
+    icon = "camera-web";
 
     //get name from device
     if (gstId == "default") {
