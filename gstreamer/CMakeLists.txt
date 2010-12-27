@@ -28,7 +28,7 @@ if (BUILD_PHONON_GSTREAMER)
           ${X11_X11_INCLUDE_PATH})
    add_definitions(-DPHONON_BACKEND_VERSION_4_2)
    if (PHONON_FOUND_EXPERIMENTAL)
-	   add_definitions(-DPHONON_EXPERIMENTAL)
+      add_definitions(-DPHONON_EXPERIMENTAL)
    endif (PHONON_FOUND_EXPERIMENTAL)
 
    # configure plugin api
@@ -81,9 +81,10 @@ if (BUILD_PHONON_GSTREAMER)
 
    automoc4_add_library(phonon_gstreamer MODULE ${phonon_gstreamer_SRCS})
    set_target_properties(phonon_gstreamer PROPERTIES PREFIX "")
-   target_link_libraries(phonon_gstreamer
+   target_link_libraries(phonon_gstreamer      
+      ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} ${PHONON_LIBRARY}
       ${QT_QTOPENGL_LIBRARY}
-      ${PHONON_LIBS} ${OPENGL_gl_LIBRARY}
+      ${OPENGL_gl_LIBRARY}
       ${GSTREAMER_LIBRARIES} ${GSTREAMER_BASE_LIBRARY} ${GSTREAMER_INTERFACE_LIBRARY}
       ${GSTREAMER_PLUGIN_VIDEO_LIBRARY} ${GSTREAMER_PLUGIN_AUDIO_LIBRARY} ${GSTREAMER_PLUGIN_PBUTILS_LIBRARY}
       ${GLIB2_LIBRARIES} ${GOBJECT_LIBRARIES})
