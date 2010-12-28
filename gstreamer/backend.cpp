@@ -74,7 +74,7 @@ Backend::Backend(QObject *parent, const QVariantList &)
     setProperty("identifier",     QLatin1String("phonon_gstreamer"));
     setProperty("backendName",    QLatin1String("Gstreamer"));
     setProperty("backendComment", QLatin1String("Gstreamer plugin for Phonon"));
-    setProperty("backendVersion", QLatin1String("0.2"));
+    setProperty("backendVersion", QLatin1String(PHONON_GST_VERSION));
     setProperty("backendWebsite", QLatin1String("http://qt.nokia.com/"));
 #endif //QT_NO_PROPERTIES
 
