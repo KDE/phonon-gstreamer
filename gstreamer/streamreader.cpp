@@ -16,8 +16,6 @@ along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "streamreader.h"
-#include <QtCore/QMutex>
-#include <phonon/streaminterface.h>
 
 QT_BEGIN_NAMESPACE
 #ifndef QT_NO_PHONON_ABSTRACTMEDIASTREAM
@@ -25,6 +23,36 @@ namespace Phonon
 {
 namespace Gstreamer
 {
+
+StreamReader::StreamReader(const Phonon::MediaSource &source)
+    :  m_pos(0)
+    , m_size(0)
+    , m_seekable(false)
+{
+    connectToSource(source);
+}
+
+int StreamReader::currentBufferSize() const
+{
+    return m_buffer.size();
+}
+
+void StreamReader::writeData(const QByteArray &data) {
+    m_pos += data.size();
+    m_buffer += data;
+}
+
+void StreamReader::setCurrentPos(qint64 pos)
+{
+    m_pos = pos;
+    seekStream(pos);
+    m_buffer.clear();
+}
+
+quint64 StreamReader::currentPos() const
+{
+    return m_pos;
+}
 
 bool StreamReader::read(quint64 pos, int length, char * buffer)
 {
@@ -43,8 +71,28 @@ bool StreamReader::read(quint64 pos, int length, char * buffer)
 
     memcpy(buffer, m_buffer.data(), length);
     //truncate the buffer
-    m_buffer = m_buffer.mid(pos);    
+    m_buffer = m_buffer.mid(pos);
     return true;
+}
+
+void StreamReader::endOfData()
+{
+}
+
+void StreamReader::setStreamSize(qint64 newSize) {
+    m_size = newSize;
+}
+
+qint64 StreamReader::streamSize() const {
+    return m_size;
+}
+
+void StreamReader::setStreamSeekable(bool seekable) {
+    m_seekable = seekable;
+}
+
+bool StreamReader::streamSeekable() const {
+    return m_seekable;
 }
 
 }

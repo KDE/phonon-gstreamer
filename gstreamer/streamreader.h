@@ -35,56 +35,21 @@ namespace Gstreamer
 class StreamReader : public Phonon::StreamInterface
 {
 public:
+    StreamReader(const Phonon::MediaSource &source);
 
-    StreamReader(const Phonon::MediaSource &source)
-        :  m_pos(0)
-        , m_size(0)
-        , m_seekable(false)
-    {
-        connectToSource(source);
-    }
-
-    int currentBufferSize() const
-    {
-        return m_buffer.size();
-    }
-
-    void writeData(const QByteArray &data) {
-        m_pos += data.size();
-        m_buffer += data;
-    }
-
-    void setCurrentPos(qint64 pos)
-    {
-        m_pos = pos;
-        seekStream(pos);
-        m_buffer.clear();
-    }
-
-    quint64 currentPos() const
-    {
-        return m_pos;
-    }
-
+    /*
+     * Overloads for StreamInterface
+     */
+    int currentBufferSize() const;
+    void writeData(const QByteArray &data);
+    void setCurrentPos(qint64 pos);
+    quint64 currentPos() const;
     bool read(quint64 offset, int length, char * buffer);
-
-    void endOfData() {}
-
-    void setStreamSize(qint64 newSize) {
-        m_size = newSize;
-    }
-
-    qint64 streamSize() const {
-        return m_size;
-    }
-
-    void setStreamSeekable(bool s) {
-        m_seekable = s;
-    }
-
-    bool streamSeekable() const {
-        return m_seekable;
-    }
+    void endOfData();
+    void setStreamSize(qint64 newSize);
+    qint64 streamSize() const;
+    void setStreamSeekable(bool seekable);
+    bool streamSeekable() const ;
 
 private:
     QByteArray m_buffer;
