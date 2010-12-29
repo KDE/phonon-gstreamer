@@ -98,4 +98,6 @@ if (BUILD_PHONON_GSTREAMER)
 
    install(TARGETS phonon_gstreamer DESTINATION ${PLUGIN_INSTALL_DIR}/plugins/phonon_backend)
    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gstreamer.desktop DESTINATION ${SERVICES_INSTALL_DIR}/phononbackends)
+
+    add_subdirectory(icons)
 endif (BUILD_PHONON_GSTREAMER)
