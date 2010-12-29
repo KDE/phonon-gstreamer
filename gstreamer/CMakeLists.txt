@@ -37,6 +37,7 @@ if (BUILD_PHONON_GSTREAMER)
    endif(USE_INSTALL_PLUGIN)
 
    configure_file(phonon-config-gstreamer.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/phonon-config-gstreamer.h )
+   configure_file(gstreamer.desktop.cmake   ${CMAKE_CURRENT_BINARY_DIR}/gstreamer.desktop)
 
    set(phonon_gstreamer_SRCS
       abstractrenderer.cpp
@@ -96,5 +97,5 @@ if (BUILD_PHONON_GSTREAMER)
    endif(USE_INSTALL_PLUGIN)
 
    install(TARGETS phonon_gstreamer DESTINATION ${PLUGIN_INSTALL_DIR}/plugins/phonon_backend)
-   install(FILES gstreamer.desktop DESTINATION ${SERVICES_INSTALL_DIR}/phononbackends)
+   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gstreamer.desktop DESTINATION ${SERVICES_INSTALL_DIR}/phononbackends)
 endif (BUILD_PHONON_GSTREAMER)
