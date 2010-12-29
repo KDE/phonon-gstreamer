@@ -1310,6 +1310,108 @@ void MediaObject::beginPlay()
 }
 
 /**
+ * Handle the GST_MESSAGE_TAG message type
+ */
+void MediaObject::handleTagMessage(GstMessage *msg)
+{
+    GstTagList* tag_list = 0;
+    gst_message_parse_tag(msg, &tag_list);
+    if (tag_list) {
+        TagMap newTags;
+        gst_tag_list_foreach (tag_list, &foreach_tag_function, &newTags);
+        gst_tag_list_free(tag_list);
+
+        // Determine if we should no fake the album/artist tags.
+        // This is a little confusing as we want to fake it on initial
+        // connection where title, album and artist are all missing.
+        // There are however times when we get just other information,
+        // e.g. codec, and so we want to only do clever stuff if we
+        // have a commonly available tag (ORGANIZATION) or we have a
+        // change in title
+        bool fake_it =
+           (m_isStream
+            && ((!newTags.contains("TITLE")
+                 && newTags.contains("ORGANIZATION"))
+                || (newTags.contains("TITLE")
+                    && m_metaData.value("TITLE") != newTags.value("TITLE")))
+            && !newTags.contains("ALBUM")
+            && !newTags.contains("ARTIST"));
+
+        TagMap oldMap = m_metaData; // Keep a copy of the old one for reference
+
+        // Now we've checked the new data, append any new meta tags to the existing tag list
+        // We cannot use TagMap::iterator as this is a multimap and when streaming data
+        // could in theory be lost.
+        QList<QString> keys = newTags.keys();
+        for (QList<QString>::iterator i = keys.begin(); i != keys.end(); ++i) {
+            QString key = *i;
+            if (m_isStream) {
+                // If we're streaming, we need to remove data in m_metaData
+                // in order to stop it filling up indefinitely (as it's a multimap)
+                m_metaData.remove(key);
+            }
+            QList<QString> values = newTags.values(key);
+            for (QList<QString>::iterator j = values.begin(); j != values.end(); ++j) {
+                QString value = *j;
+                QString currVal = m_metaData.value(key);
+                if (!m_metaData.contains(key) || currVal != value) {
+                    m_metaData.insert(key, value);
+                }
+            }
+        }
+
+        m_backend->logMessage("Meta tags found", Backend::Info, this);
+        if (oldMap != m_metaData) {
+            // This is a bit of a hack to ensure that stream metadata is
+            // returned. We get as much as we can from the Shoutcast server's
+            // StreamTitle= header. If further info is decoded from the stream
+            // itself later, then it will overwrite this info.
+            if (m_isStream && fake_it) {
+                m_metaData.remove("ALBUM");
+                m_metaData.remove("ARTIST");
+
+                // Detect whether we want to "fill in the blanks"
+                QString str;
+                if (m_metaData.contains("TITLE"))
+                {
+                    str = m_metaData.value("TITLE");
+                    int splitpoint;
+                    // Check to see if our title matches "%s - %s"
+                    // Where neither %s are empty...
+                    if ((splitpoint = str.indexOf(" - ")) > 0
+                        && str.size() > (splitpoint+3)) {
+                        m_metaData.insert("ARTIST", str.left(splitpoint));
+                        m_metaData.replace("TITLE", str.mid(splitpoint+3));
+                    }
+                } else {
+                    str = m_metaData.value("GENRE");
+                    if (!str.isEmpty())
+                        m_metaData.insert("TITLE", str);
+                    else
+                        m_metaData.insert("TITLE", "Streaming Data");
+                }
+                if (!m_metaData.contains("ARTIST")) {
+                    str = m_metaData.value("LOCATION");
+                    if (!str.isEmpty())
+                        m_metaData.insert("ARTIST", str);
+                    else
+                        m_metaData.insert("ARTIST", "Streaming Data");
+                }
+                str = m_metaData.value("ORGANIZATION");
+                if (!str.isEmpty())
+                    m_metaData.insert("ALBUM", str);
+                else
+                    m_metaData.insert("ALBUM", "Streaming Data");
+            }
+            // As we manipulate the title, we need to recompare
+            // oldMap and m_metaData here...
+            if (oldMap != m_metaData && !m_loading)
+                emit metaDataChanged(m_metaData);
+        }
+    }
+}
+
+/**
  * Handle GStreamer bus messages
  */
 void MediaObject::handleBusMessage(const Message &message)
@@ -1336,103 +1438,8 @@ void MediaObject::handleBusMessage(const Message &message)
         handleEndOfStream();
         break;
 
-    case GST_MESSAGE_TAG: {
-            GstTagList* tag_list = 0;
-            gst_message_parse_tag(gstMessage, &tag_list);
-            if (tag_list) {
-                TagMap newTags;
-                gst_tag_list_foreach (tag_list, &foreach_tag_function, &newTags);
-                gst_tag_list_free(tag_list);
-
-                // Determine if we should no fake the album/artist tags.
-                // This is a little confusing as we want to fake it on initial
-                // connection where title, album and artist are all missing.
-                // There are however times when we get just other information,
-                // e.g. codec, and so we want to only do clever stuff if we
-                // have a commonly available tag (ORGANIZATION) or we have a
-                // change in title
-                bool fake_it =
-                   (m_isStream
-                    && ((!newTags.contains("TITLE")
-                         && newTags.contains("ORGANIZATION"))
-                        || (newTags.contains("TITLE")
-                            && m_metaData.value("TITLE") != newTags.value("TITLE")))
-                    && !newTags.contains("ALBUM")
-                    && !newTags.contains("ARTIST"));
-
-                TagMap oldMap = m_metaData; // Keep a copy of the old one for reference
-
-                // Now we've checked the new data, append any new meta tags to the existing tag list
-                // We cannot use TagMap::iterator as this is a multimap and when streaming data
-                // could in theory be lost.
-                QList<QString> keys = newTags.keys();
-                for (QList<QString>::iterator i = keys.begin(); i != keys.end(); ++i) {
-                    QString key = *i;
-                    if (m_isStream) {
-                        // If we're streaming, we need to remove data in m_metaData
-                        // in order to stop it filling up indefinitely (as it's a multimap)
-                        m_metaData.remove(key);
-                    }
-                    QList<QString> values = newTags.values(key);
-                    for (QList<QString>::iterator j = values.begin(); j != values.end(); ++j) {
-                        QString value = *j;
-                        QString currVal = m_metaData.value(key);
-                        if (!m_metaData.contains(key) || currVal != value) {
-                            m_metaData.insert(key, value);
-                        }
-                    }
-                }
-
-                m_backend->logMessage("Meta tags found", Backend::Info, this);
-                if (oldMap != m_metaData) {
-                    // This is a bit of a hack to ensure that stream metadata is
-                    // returned. We get as much as we can from the Shoutcast server's
-                    // StreamTitle= header. If further info is decoded from the stream
-                    // itself later, then it will overwrite this info.
-                    if (m_isStream && fake_it) {
-                        m_metaData.remove("ALBUM");
-                        m_metaData.remove("ARTIST");
-
-                        // Detect whether we want to "fill in the blanks"
-                        QString str;
-                        if (m_metaData.contains("TITLE"))
-                        {
-                            str = m_metaData.value("TITLE");
-                            int splitpoint;
-                            // Check to see if our title matches "%s - %s"
-                            // Where neither %s are empty...
-                            if ((splitpoint = str.indexOf(" - ")) > 0
-                                && str.size() > (splitpoint+3)) {
-                                m_metaData.insert("ARTIST", str.left(splitpoint));
-                                m_metaData.replace("TITLE", str.mid(splitpoint+3));
-                            }
-                        } else {
-                            str = m_metaData.value("GENRE");
-                            if (!str.isEmpty())
-                                m_metaData.insert("TITLE", str);
-                            else
-                                m_metaData.insert("TITLE", "Streaming Data");
-                        }
-                        if (!m_metaData.contains("ARTIST")) {
-                            str = m_metaData.value("LOCATION");
-                            if (!str.isEmpty())
-                                m_metaData.insert("ARTIST", str);
-                            else
-                                m_metaData.insert("ARTIST", "Streaming Data");
-                        }
-                        str = m_metaData.value("ORGANIZATION");
-                        if (!str.isEmpty())
-                            m_metaData.insert("ALBUM", str);
-                        else
-                            m_metaData.insert("ALBUM", "Streaming Data");
-                    }
-                    // As we manipulate the title, we need to recompare
-                    // oldMap and m_metaData here...
-                    if (oldMap != m_metaData && !m_loading)
-                        emit metaDataChanged(m_metaData);
-                }
-                        }
-        }
+    case GST_MESSAGE_TAG:
+        handleTagMessage(gstMessage);
         break;
 
     case GST_MESSAGE_STATE_CHANGED : {
