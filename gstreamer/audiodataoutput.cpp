@@ -30,8 +30,8 @@
 #include <QtCore/QMap>
 #include <phonon/audiooutput.h>
 
+#include <gst/gstghostpad.h>
 #include <gst/gstutils.h>
-#include <gst/gst.h>
 
 QT_BEGIN_HEADER
 QT_BEGIN_NAMESPACE
