@@ -7,7 +7,7 @@ X-KDE-PhononBackendInfo-InterfaceVersion=1
 X-KDE-PhononBackendInfo-Version=@PHONON_GST_VERSION@
 X-KDE-PhononBackendInfo-Website=http://gstreamer.freedesktop.org/
 Icon=phonon-gstreamer
-InitialPreference=10
+InitialPreference=15
 
 Name=GStreamer
 Name[bg]=GStreamer
