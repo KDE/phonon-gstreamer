@@ -31,6 +31,7 @@
 #include <phonon/audiooutput.h>
 
 #include <gst/gstutils.h>
+#include <gst/gst.h>
 
 QT_BEGIN_HEADER
 QT_BEGIN_NAMESPACE
@@ -46,8 +47,29 @@ AudioDataOutput::AudioDataOutput(Backend *backend, QObject *parent)
     static int count = 0;
     m_name = "AudioDataOutput" + QString::number(count++);
 
-    m_queue = gst_element_factory_make ("identity", NULL);
-    gst_object_ref(m_queue);
+    m_queue = gst_bin_new(NULL);
+    gst_object_ref(GST_OBJECT(m_queue));
+    gst_object_sink(GST_OBJECT(m_queue));
+    GstElement* tee = gst_element_factory_make("tee", NULL);
+    GstElement* sink = gst_element_factory_make("fakesink", NULL);
+    GstElement* queue = gst_element_factory_make("queue", NULL);
+
+    g_signal_connect(sink, "handoff", G_CALLBACK(processBuffer), this);
+    g_object_set(G_OBJECT(sink), "signal-handoffs", true, (const char*)NULL);
+
+    gst_bin_add_many(GST_BIN(m_queue), tee, sink, queue, NULL);
+    gst_element_link(tee, queue);
+    gst_element_link(queue, sink);
+
+    GstPad *inputpad = gst_element_get_static_pad(tee, "sink");
+    gst_element_add_pad(m_queue, gst_ghost_pad_new("sink", inputpad));
+    gst_object_unref(inputpad);
+
+    GstPad *outputpad = gst_element_get_request_pad(tee, "src%d");
+    gst_element_add_pad(m_queue, gst_ghost_pad_new("src", outputpad));
+    gst_object_unref(outputpad);
+    g_object_set(G_OBJECT(sink), "sync", true, (const char*)NULL);
+
     m_isValid = true;
 }
 
@@ -84,7 +106,7 @@ inline void AudioDataOutput::convertAndEmit(const QVector<qint16> &leftBuffer, c
     emit dataReady(map);
 }
 
-void AudioDataOutput::processBuffer(GstPad*, GstBuffer* buffer, gpointer gThat)
+void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad*, gpointer gThat)
 {
     // TODO emit endOfMedia
     AudioDataOutput *that = reinterpret_cast<AudioDataOutput*>(gThat);
@@ -127,19 +149,6 @@ void AudioDataOutput::processBuffer(GstPad*, GstBuffer* buffer, gpointer gThat)
             that->convertAndEmit(left, right);
         }
     }
-}
-
-void AudioDataOutput::mediaNodeEvent(const MediaNodeEvent *event)
-{
-    if (event->type() == MediaNodeEvent::MediaObjectConnected && root()) {
-        g_object_set(G_OBJECT(audioElement()), "sync", true, (const char*)NULL);
-        GstPad *audiopad = gst_element_get_pad (audioElement(), "src");
-        gst_pad_add_buffer_probe (audiopad, G_CALLBACK(processBuffer), this);
-        gst_object_unref (audiopad);
-        return;
-    }
-
-    MediaNode::mediaNodeEvent(event);
 }
 
 }} //namespace Phonon::Gstreamer

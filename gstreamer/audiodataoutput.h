@@ -56,15 +56,12 @@ public Q_SLOTS:
 
 public:
     /// callback function for handling new audio data
-    static void processBuffer(GstPad*, GstBuffer*, gpointer);
+    static void processBuffer(GstElement*, GstBuffer*, GstPad*, gpointer);
 
     Phonon::AudioDataOutput* frontendObject() const { return m_frontend; }
     void setFrontendObject(Phonon::AudioDataOutput *frontend) { m_frontend = frontend; }
 
     GstElement *audioElement() { return m_queue; }
-
-    void mediaNodeEvent(const MediaNodeEvent *event);
-
 
 signals:
     void dataReady(const QMap<Phonon::AudioDataOutput::Channel, QVector<qint16> > &data);
