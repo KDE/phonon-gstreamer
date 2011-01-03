@@ -204,7 +204,7 @@ void MediaObject::cb_newpad (GstElement *decodebin,
     media->newPadAvailable(pad);
 }
 
-void MediaObject::noMorePadsAvailable ()
+void MediaObject::installMissingCodecs()
 {
     if (m_missingCodecs.size() > 0) {
         bool canPlay = (m_hasAudio || m_videoStreamFound);
@@ -244,14 +244,6 @@ void MediaObject::noMorePadsAvailable ()
         m_missingCodecs.clear();
 #endif
     }
-}
-
-void MediaObject::cb_no_more_pads (GstElement * decodebin, gpointer data)
-{
-    Q_UNUSED(decodebin);
-    MediaObject *media = static_cast<MediaObject*>(data);
-    Q_ASSERT(media);
-    QMetaObject::invokeMethod(media, "noMorePadsAvailable", Qt::QueuedConnection);
 }
 
 typedef void (*Ptr_gst_pb_utils_init)();
@@ -299,6 +291,7 @@ void MediaObject::cb_unknown_type (GstElement *decodebin, GstPad *pad, GstCaps *
 #else
     media->addMissingCodecName( value );
 #endif
+
 }
 
 static void notifyVideoCaps(GObject *obj, GParamSpec *, gpointer data)
@@ -537,7 +530,6 @@ void MediaObject::createPipeline()
     m_decodebin = gst_element_factory_make ("decodebin2", NULL);
     g_signal_connect (m_decodebin, "new-decoded-pad", G_CALLBACK (&cb_newpad), this);
     g_signal_connect (m_decodebin, "unknown-type", G_CALLBACK (&cb_unknown_type), this);
-    g_signal_connect (m_decodebin, "no-more-pads", G_CALLBACK (&cb_no_more_pads), this);
 
     gst_bin_add(GST_BIN(m_pipeline), m_decodebin);
 
@@ -1482,8 +1474,6 @@ void MediaObject::handleBusMessage(const Message &message)
                 m_backend->logMessage("gstreamer: pipeline state set to paused", Backend::Info, this);
                 m_tickTimer->start();
                 if (state() == Phonon::LoadingState) {
-                    // No_more_pads is not emitted from the decodebin in older versions (0.10.4)
-                    noMorePadsAvailable();
                     loadingComplete();
                 } else if (m_resumeState && m_oldState == Phonon::PausedState) {
                     changeState(Phonon::PausedState);
@@ -1549,6 +1539,9 @@ void MediaObject::handleBusMessage(const Message &message)
                }
            } else if (err->domain == GST_STREAM_ERROR) {
                 switch (err->code) {
+                case GST_STREAM_ERROR_CODEC_NOT_FOUND:
+                    installMissingCodecs();
+                    break;
                 case GST_STREAM_ERROR_WRONG_TYPE:
                 case GST_STREAM_ERROR_TYPE_NOT_FOUND:
                     setError(tr("Could not decode media source."), Phonon::FatalError);

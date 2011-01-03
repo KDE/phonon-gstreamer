@@ -146,7 +146,6 @@ public:
     static void cb_newpad (GstElement *decodebin, GstPad *pad, gboolean last, gpointer data);
     static void cb_pad_added (GstElement *decodebin, GstPad *pad, gpointer data);
     static void cb_unknown_type (GstElement *decodebin, GstPad *pad, GstCaps *caps, gpointer data);
-    static void cb_no_more_pads (GstElement * decodebin, gpointer data);
     void saveState();
     void resumeState();
 
@@ -198,7 +197,7 @@ protected:
     bool createV4lPipe(const DeviceAccess &access, const MediaSource &);
 
 private Q_SLOTS:
-    void noMorePadsAvailable();
+    void installMissingCodecs();
     void getStreamInfo();
     void emitTick();
     void beginPlay();
