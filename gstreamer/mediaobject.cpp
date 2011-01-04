@@ -257,11 +257,10 @@ void MediaObject::installMissingCodecs()
         GstInstallPluginsReturn status;
 
         status = gst_install_plugins_async(details, ctx, pluginInstallationDone, this);
-        gst_install_plugins_context_free (ctx);
+        gst_install_plugins_context_free(ctx);
 
-        if ( status != GST_INSTALL_PLUGINS_STARTED_OK )
-        {
-            if( status == GST_INSTALL_PLUGINS_HELPER_MISSING )
+        if (status != GST_INSTALL_PLUGINS_STARTED_OK) {
+            if (status == GST_INSTALL_PLUGINS_HELPER_MISSING)
                 setError(QString(tr("Missing codec helper script assistant.")), Phonon::FatalError);
             else
                 setError(QString(tr("Plugin codec installation failed for codec: %1"))
