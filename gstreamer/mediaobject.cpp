@@ -180,7 +180,7 @@ void MediaObject::pluginInstallationDone(GstInstallPluginsReturn result, gpointe
 {
     MediaObject *mediaObject = static_cast<MediaObject*>(userData);
     Q_ASSERT(mediaObject);
-    mediaObject->pluginInstallationResult(result);
+    QMetaObject::invokeMethod(mediaObject, "pluginInstallationResult", Qt::QueuedConnection, Q_ARG(GstInstallPluginsReturn, result));
 }
 
 void MediaObject::saveState()
