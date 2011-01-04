@@ -28,6 +28,8 @@
 #include <QtCore/QUrl>
 #include <QtCore/QVariant>
 
+#include <gst/pbutils/install-plugins.h>
+
 QT_BEGIN_NAMESPACE
 
 class QTimer;
@@ -142,6 +144,7 @@ public:
     void handleEndOfStream();
     void addMissingCodecName(const QString &codec) { m_missingCodecs.append(codec); }
     void invalidateGraph();
+    void pluginInstallationResult(GstInstallPluginsReturn res);
 
     static void cb_newpad (GstElement *decodebin, GstPad *pad, gboolean last, gpointer data);
     static void cb_pad_added (GstElement *decodebin, GstPad *pad, gpointer data);

@@ -17,7 +17,6 @@
 #include <cmath>
 #include <gst/interfaces/navigation.h>
 #include <gst/interfaces/propertyprobe.h>
-#include <gst/pbutils/install-plugins.h>
 #include "common.h"
 #include "mediaobject.h"
 #include "videowidget.h"
@@ -143,11 +142,47 @@ QString stateString(const Phonon::State &state)
 }
 
 void
+MediaObject::pluginInstallationResult(GstInstallPluginsReturn res)
+{
+    bool canPlay = (m_hasAudio || m_videoStreamFound);
+    Phonon::ErrorType error = canPlay ? Phonon::NormalError : Phonon::FatalError;
+    switch(res) {
+    case GST_INSTALL_PLUGINS_INVALID:
+        setError(QString(tr("Phonon attempted to install an invalid codec name.")));
+        break;
+    case GST_INSTALL_PLUGINS_CRASHED:
+        setError(QString(tr("The codec installer crashed.")), error);
+        break;
+    case GST_INSTALL_PLUGINS_NOT_FOUND:
+        setError(QString(tr("The required codec could not be found for installation.")), error);
+        break;
+    case GST_INSTALL_PLUGINS_ERROR:
+        setError(QString(tr("An unspecified error occurred during codec installation.")), error);
+        break;
+    case GST_INSTALL_PLUGINS_PARTIAL_SUCCESS:
+        setError(QString(tr("Not all codecs could be installed.")), error);
+        break;
+    case GST_INSTALL_PLUGINS_USER_ABORT:
+        setError(QString(tr("User aborted codec installation")), error);
+        break;
+    //These four should never ever be passed in.
+    //If they have, gstreamer has probably imploded in on itself.
+    case GST_INSTALL_PLUGINS_STARTED_OK:
+    case GST_INSTALL_PLUGINS_INTERNAL_FAILURE:
+    case GST_INSTALL_PLUGINS_HELPER_MISSING:
+    case GST_INSTALL_PLUGINS_INSTALL_IN_PROGRESS:
+    //But this one is OK.
+    case GST_INSTALL_PLUGINS_SUCCESS:
+        break;
+    }
+}
+
+void
 pluginInstallationDone( GstInstallPluginsReturn res, gpointer userData )
 {
-    // Nothing inside yet
-    Q_UNUSED(res);
-    Q_UNUSED(userData);
+    MediaObject *media = static_cast<MediaObject*>(userData);
+    Q_ASSERT(media);
+    media->pluginInstallationResult(res);
 }
 
 void MediaObject::saveState()
@@ -221,7 +256,7 @@ void MediaObject::installMissingCodecs()
         details[1] = NULL;
         GstInstallPluginsReturn status;
 
-        status = gst_install_plugins_async(details, ctx, pluginInstallationDone, NULL);
+        status = gst_install_plugins_async(details, ctx, pluginInstallationDone, this);
         gst_install_plugins_context_free (ctx);
 
         if ( status != GST_INSTALL_PLUGINS_STARTED_OK )
