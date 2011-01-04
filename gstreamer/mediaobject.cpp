@@ -1573,6 +1573,14 @@ void MediaObject::handleBusMessage(const Message &message)
                } else {
                     setError(QString(err->message), Phonon::FatalError);
                }
+           } else if (err->domain == GST_CORE_ERROR) {
+                switch(err->code) {
+                    case GST_CORE_ERROR_MISSING_PLUGIN:
+                        installMissingCodecs();
+                        break;
+                    default:
+                        break;
+                }
            } else if (err->domain == GST_STREAM_ERROR) {
                 switch (err->code) {
                 case GST_STREAM_ERROR_CODEC_NOT_FOUND:
