@@ -70,7 +70,7 @@ public:
 
     void addBusWatcher(MediaObject* node);
     void removeBusWatcher(MediaObject* node);
-    void logMessage(const QString &message, int priority = 2, QObject *obj=0) const;
+    void logMessage(const QString &message, int priority = 2, QObject *obj = 0) const;
     bool checkDependencies() const;
 
 Q_SIGNALS:
@@ -87,7 +87,7 @@ private:
     DebugLevel m_debugLevel;
     bool m_isValid;
 
-    // To ensure that only such messages get forwarded that target an still existing MediaObject.
+    // To ensure that only such messages get forwarded that target a still existing MediaObject.
     QList<MediaObject *> m_watchList;
 };
 }
