@@ -88,7 +88,7 @@ private:
     bool m_isValid;
 
     // To ensure that only such messages get forwarded that target a still existing MediaObject.
-    QList<MediaObject *> m_watchList;
+    QSet<MediaObject *> m_watchList;
 };
 }
 } // namespace Phonon::Gstreamer

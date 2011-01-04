@@ -456,7 +456,7 @@ void Backend::addBusWatcher(MediaObject* node)
     GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(node->pipeline()));
     gst_bus_add_watch(bus, busCall, node);
     gst_object_unref(bus);
-    m_watchList.append(node);
+    m_watchList.insert(node);
 }
 
 /***
@@ -466,7 +466,7 @@ void Backend::removeBusWatcher(MediaObject* node)
 {
     Q_ASSERT(node);
     g_source_remove_by_user_data(node);
-    m_watchList.removeAll(node);
+    m_watchList.remove(node);
 }
 
 /***
