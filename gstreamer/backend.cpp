@@ -35,6 +35,8 @@
 #include <QtCore/QVariant>
 #include <QtCore/QtPlugin>
 
+#include <cstring>
+
 QT_BEGIN_NAMESPACE
 
 Q_EXPORT_PLUGIN2(phonon_gstreamer, Phonon::Gstreamer::Backend)
@@ -64,8 +66,28 @@ Backend::Backend(QObject *parent, const QVariantList &)
         first = false;
         g_set_application_name(qApp->applicationName().toUtf8());
     }
+
+    int argc = 2;
+    char** argv;
+
+    QString spewLevelString = qgetenv("PHONON_GST_GST_DEBUG");
+    int spewLevel = spewLevelString.toInt();
+    if (spewLevel > 5)
+        spewLevel = 5;
+    if (spewLevel < 0)
+        spewLevel = 0;
+    argv = new char*[2];
+    argv[0] = '\0';
+    const int len = strlen("--gst-debug-level=0");
+    argv[1] = (char*)qMalloc(len+1*sizeof(char));
+    sprintf(argv[1], "--gst-debug-level=%d", spewLevel);
+
     GError *err = 0;
-    bool wasInit = gst_init_check(0, 0, &err);  //init gstreamer: must be called before any gst-related functions
+    bool wasInit = gst_init_check(&argc, &argv, &err);  //init gstreamer: must be called before any gst-related functions
+
+    free(argv[1]);
+    delete[] argv;
+
     if (err)
         g_error_free(err);
 
