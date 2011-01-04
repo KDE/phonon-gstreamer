@@ -86,6 +86,9 @@ private:
     EffectManager *m_effectManager;
     DebugLevel m_debugLevel;
     bool m_isValid;
+
+    // To ensure that only such messages get forwarded that target an still existing MediaObject.
+    QList<MediaObject *> m_watchList;
 };
 }
 } // namespace Phonon::Gstreamer
