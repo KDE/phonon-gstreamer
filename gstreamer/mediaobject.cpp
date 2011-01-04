@@ -849,6 +849,7 @@ void MediaObject::changeState(State newstate)
 
 void MediaObject::setError(const QString &errorString, Phonon::ErrorType error)
 {
+    m_backend->logMessage(QString("Phonon error: %1 (code %2)").arg(errorString).arg(error), Backend::Warning);
     m_errorString = errorString;
     m_error = error;
     m_tickTimer->stop();
