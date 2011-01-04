@@ -1,6 +1,8 @@
 project(PhononGStreamer)
 cmake_minimum_required(VERSION 2.6.2 FATAL_ERROR)
 
+option(USE_INSTALL_PLUGIN "Use GStreamer codec installation API" TRUE)
+
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(Phonon REQUIRED)
 add_definitions(${QT_DEFINITIONS})
