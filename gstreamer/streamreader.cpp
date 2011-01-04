@@ -56,11 +56,11 @@ quint64 StreamReader::currentPos() const
 
 bool StreamReader::read(quint64 pos, int length, char * buffer)
 {
-     if (currentPos() - currentBufferSize() != pos) {
-         if (!streamSeekable())
-             return false;
-         setCurrentPos(pos);
-     }
+    if (currentPos() - currentBufferSize() != pos) {
+        if (!streamSeekable())
+            return false;
+        setCurrentPos(pos);
+    }
 
     while (currentBufferSize() < length) {
         int oldSize = currentBufferSize();
