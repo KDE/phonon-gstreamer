@@ -108,7 +108,7 @@ protected:
     GstElement *m_videoTee;
     GstElement *m_fakeAudioSink;
     GstElement *m_fakeVideoSink;
-   Backend *m_backend;
+    Backend *m_backend;
     QString m_name;
 
 private:
