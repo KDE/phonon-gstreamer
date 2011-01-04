@@ -813,7 +813,6 @@ void MediaObject::changeState(State newstate)
     m_state = newstate; // m_state must be set before emitting, since
                         // Error state requires that state() will return the new value
     m_pendingState = newstate;
-    emit stateChanged(newstate, oldState);
 
     switch (newstate) {
     case Phonon::PausedState:
@@ -845,6 +844,8 @@ void MediaObject::changeState(State newstate)
         m_backend->logMessage("phonon state changed: Loading", Backend::Info, this);
         break;
     }
+
+    emit stateChanged(newstate, oldState);
 }
 
 void MediaObject::setError(const QString &errorString, Phonon::ErrorType error)
@@ -1090,8 +1091,8 @@ void MediaObject::setSource(const MediaSource &source)
                 setError(tr("Could not open media source."));
         }
         break;
-	
-	case MediaSource::CaptureDevice:
+
+        case MediaSource::CaptureDevice:
         if (!createPipefromDevice(source))
             setError(tr("Could not open capture device."));
         break;
