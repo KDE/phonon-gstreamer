@@ -144,7 +144,6 @@ public:
     void handleEndOfStream();
     void addMissingCodecName(const QString &codec) { m_missingCodecs.append(codec); }
     void invalidateGraph();
-    void pluginInstallationResult(GstInstallPluginsReturn res);
 
     static void cb_newpad (GstElement *decodebin, GstPad *pad, gboolean last, gpointer data);
     static void cb_pad_added (GstElement *decodebin, GstPad *pad, gpointer data);
@@ -234,6 +233,10 @@ private:
     int _iface_currentTitle() const;
     void _iface_setCurrentTitle(int title);
     void setTrack(int title);
+
+    // Plugin API callback
+    static void pluginInstallationDone(GstInstallPluginsReturn result, gpointer userData);
+    void pluginInstallationResult(GstInstallPluginsReturn result);
 
     bool m_resumeState;
     State m_oldState;

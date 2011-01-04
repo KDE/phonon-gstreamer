@@ -141,12 +141,11 @@ QString stateString(const Phonon::State &state)
     return QString();
 }
 
-void
-MediaObject::pluginInstallationResult(GstInstallPluginsReturn res)
+void MediaObject::pluginInstallationResult(GstInstallPluginsReturn result)
 {
     bool canPlay = (m_hasAudio || m_videoStreamFound);
     Phonon::ErrorType error = canPlay ? Phonon::NormalError : Phonon::FatalError;
-    switch(res) {
+    switch(result) {
     case GST_INSTALL_PLUGINS_INVALID:
         setError(QString(tr("Phonon attempted to install an invalid codec name.")));
         break;
@@ -177,12 +176,11 @@ MediaObject::pluginInstallationResult(GstInstallPluginsReturn res)
     }
 }
 
-void
-pluginInstallationDone( GstInstallPluginsReturn res, gpointer userData )
+void MediaObject::pluginInstallationDone(GstInstallPluginsReturn result, gpointer userData)
 {
-    MediaObject *media = static_cast<MediaObject*>(userData);
-    Q_ASSERT(media);
-    media->pluginInstallationResult(res);
+    MediaObject *mediaObject = static_cast<MediaObject*>(userData);
+    Q_ASSERT(mediaObject);
+    mediaObject->pluginInstallationResult(result);
 }
 
 void MediaObject::saveState()
@@ -1444,7 +1442,6 @@ void MediaObject::handleTagMessage(GstMessage *msg)
  */
 void MediaObject::handleBusMessage(const Message &message)
 {
-
     if (!isValid())
         return;
 
