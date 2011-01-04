@@ -1547,7 +1547,7 @@ void MediaObject::handleBusMessage(const Message &message)
             QString logMessage;
             gst_message_parse_error (gstMessage, &err, &debug);
             gchar *errorMessage = gst_error_get_message (err->domain, err->code);
-            logMessage.sprintf("Error: %s Message:%s (%s) Code:%d", debug, err->message, errorMessage, err->code);
+            logMessage.sprintf("Error: %s Message: %s (%s) Code:%d", debug, err->message, errorMessage, err->code);
             m_backend->logMessage(logMessage, Backend::Warning);
             g_free(errorMessage);
             g_free (debug);
@@ -1578,9 +1578,26 @@ void MediaObject::handleBusMessage(const Message &message)
                 case GST_STREAM_ERROR_CODEC_NOT_FOUND:
                     installMissingCodecs();
                     break;
-                case GST_STREAM_ERROR_WRONG_TYPE:
                 case GST_STREAM_ERROR_TYPE_NOT_FOUND:
-                    setError(tr("Could not decode media source."), Phonon::FatalError);
+                    setError(tr("Could not find media type."), Phonon::FatalError);
+                    break;
+                case GST_STREAM_ERROR_WRONG_TYPE:
+                    setError(tr("Wrong media type encountered in GStreamer pipeline."), Phonon::FatalError);
+                    break;
+                case GST_STREAM_ERROR_DECODE:
+                    setError(tr("Could not decode media."), Phonon::FatalError);
+                    break;
+                case GST_STREAM_ERROR_ENCODE:
+                    setError(tr("Could not encode media."), Phonon::FatalError);
+                    break;
+                case GST_STREAM_ERROR_MUX:
+                    setError(tr("Could not demux media."), Phonon::FatalError);
+                    break;
+                case GST_STREAM_ERROR_DECRYPT:
+                    setError(tr("Could not decrypt media."), Phonon::FatalError);
+                    break;
+                case GST_STREAM_ERROR_DECRYPT_NOKEY:
+                    setError(tr("No suitable decryption key found."), Phonon::FatalError);
                     break;
                 default:
                     setError(tr("Could not open media source."), Phonon::FatalError);
