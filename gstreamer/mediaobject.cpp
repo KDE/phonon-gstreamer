@@ -84,6 +84,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_availableTitles(0)
         , m_currentTitle(1)
         , m_pendingTitle(1)
+        , m_installingPlugin(true)
 {
     qRegisterMetaType<GstCaps*>("GstCaps*");
     qRegisterMetaType<State>("State");
@@ -102,7 +103,6 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
     }
     connect(this, SIGNAL(stateChanged(Phonon::State, Phonon::State)),
             this, SLOT(notifyStateChange(Phonon::State, Phonon::State)));
-
 }
 
 MediaObject::~MediaObject()
@@ -141,12 +141,13 @@ QString stateString(const Phonon::State &state)
     return QString();
 }
 
-void
-MediaObject::pluginInstallationResult(GstInstallPluginsReturn res)
+void MediaObject::pluginInstallationResult(GstInstallPluginsReturn result)
 {
+    bool wasInstalling = m_installingPlugin;
+    m_installingPlugin = false;
     bool canPlay = (m_hasAudio || m_videoStreamFound);
     Phonon::ErrorType error = canPlay ? Phonon::NormalError : Phonon::FatalError;
-    switch(res) {
+    switch(result) {
     case GST_INSTALL_PLUGINS_INVALID:
         setError(QString(tr("Phonon attempted to install an invalid codec name.")));
         break;
@@ -173,16 +174,24 @@ MediaObject::pluginInstallationResult(GstInstallPluginsReturn res)
     case GST_INSTALL_PLUGINS_INSTALL_IN_PROGRESS:
     //But this one is OK.
     case GST_INSTALL_PLUGINS_SUCCESS:
+        m_backend->logMessage("Updating registry");
+        if (gst_update_registry()) {
+            m_backend->logMessage("Registry updated failed");
+        }
+        if (wasInstalling) {
+            setSource(source());
+            play();
+        }
         break;
     }
 }
 
-void
-pluginInstallationDone( GstInstallPluginsReturn res, gpointer userData )
+void MediaObject::pluginInstallationDone(GstInstallPluginsReturn result, gpointer userData)
 {
-    MediaObject *media = static_cast<MediaObject*>(userData);
-    Q_ASSERT(media);
-    media->pluginInstallationResult(res);
+    MediaObject *mediaObject = static_cast<MediaObject*>(userData);
+    Q_ASSERT(mediaObject);
+    qRegisterMetaType<GstInstallPluginsReturn>("GstInstallPluginsReturn");
+    QMetaObject::invokeMethod(mediaObject, "pluginInstallationResult", Qt::QueuedConnection, Q_ARG(GstInstallPluginsReturn, result));
 }
 
 void MediaObject::saveState()
@@ -265,6 +274,9 @@ void MediaObject::installMissingCodecs()
             else
                 setError(QString(tr("Plugin codec installation failed for codec: %1"))
                         .arg(m_missingCodecs[0].split('|')[3]), error);
+        } else {
+            m_installingPlugin = true;
+            setState(Phonon::LoadingState);
         }
         m_missingCodecs.clear();
 #else
@@ -477,9 +489,19 @@ bool MediaObject::createPipefromURL(const QUrl &url)
 
     // Create a new datasource based on the input URL
     // add the 'file' scheme if it's missing; the double '/' is needed!
-    QByteArray encoded_cstr_url = (url.scheme() == QLatin1String("") ?
-                    "file://" + url.toEncoded() :
-                    url.toEncoded());
+    QByteArray encoded_cstr_url;
+    if (url.scheme() == QLatin1String("")) {
+        encoded_cstr_url = QFile::encodeName("file://" + url.toString());
+    } else if (url.scheme() == QLatin1String("file")) {
+#ifdef __GNUC__
+#warning TODO 4.5
+#endif
+        // TODO 4.5: investigate whether this is necessary. Harald was a bit worrid
+        // that QFile::encodeName on an actual streaming URI could cause problems.
+        encoded_cstr_url = QFile::encodeName(url.toString());
+    } else {
+        encoded_cstr_url = url.toEncoded();
+    }
     m_datasource = gst_element_make_from_uri(GST_URI_SRC, encoded_cstr_url.constData(), (const char*)NULL);
     if (!m_datasource)
         return false;
@@ -993,6 +1015,8 @@ void MediaObject::setSource(const MediaSource &source)
     if (!isValid())
         return;
 
+    m_installingPlugin = false;
+
     // We have to reset the state completely here, otherwise
     // remnants of the old pipeline can result in strangenes
     // such as failing duration queries etc
@@ -1444,7 +1468,6 @@ void MediaObject::handleTagMessage(GstMessage *msg)
  */
 void MediaObject::handleBusMessage(const Message &message)
 {
-
     if (!isValid())
         return;
 
@@ -1587,7 +1610,8 @@ void MediaObject::handleBusMessage(const Message &message)
                     installMissingCodecs();
                     break;
                 case GST_STREAM_ERROR_TYPE_NOT_FOUND:
-                    setError(tr("Could not find media type."), Phonon::FatalError);
+                    if (!m_installingPlugin)
+                        setError(tr("Could not find media type."), Phonon::FatalError);
                     break;
                 case GST_STREAM_ERROR_WRONG_TYPE:
                     setError(tr("Wrong media type encountered in GStreamer pipeline."), Phonon::FatalError);
@@ -1608,7 +1632,8 @@ void MediaObject::handleBusMessage(const Message &message)
                     setError(tr("No suitable decryption key found."), Phonon::FatalError);
                     break;
                 default:
-                    setError(tr("Could not open media source."), Phonon::FatalError);
+                    if (!m_installingPlugin)
+                        setError(tr("Could not open media source."), Phonon::FatalError);
                     break;
                 }
            } else {

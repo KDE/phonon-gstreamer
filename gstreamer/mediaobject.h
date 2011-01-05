@@ -62,7 +62,6 @@ class MediaObject : public QObject, public MediaObjectInterface
     )
 
 public:
-
     MediaObject(Backend *backend, QObject *parent);
     ~MediaObject();
     Phonon::State state() const;
@@ -144,7 +143,6 @@ public:
     void handleEndOfStream();
     void addMissingCodecName(const QString &codec) { m_missingCodecs.append(codec); }
     void invalidateGraph();
-    void pluginInstallationResult(GstInstallPluginsReturn res);
 
     static void cb_newpad (GstElement *decodebin, GstPad *pad, gboolean last, gpointer data);
     static void cb_pad_added (GstElement *decodebin, GstPad *pad, gpointer data);
@@ -199,14 +197,6 @@ protected:
     bool createPipefromDevice(const MediaSource &);
     bool createV4lPipe(const DeviceAccess &access, const MediaSource &);
 
-private Q_SLOTS:
-    void installMissingCodecs();
-    void getStreamInfo();
-    void emitTick();
-    void beginPlay();
-    void setVideoCaps(GstCaps *caps);
-    void notifyStateChange(Phonon::State newstate, Phonon::State oldstate);
-protected:
     GstElement *audioElement()
     {
         Q_ASSERT(m_audioPipe);
@@ -219,8 +209,16 @@ protected:
         return m_videoPipe;
     }
 
-private:
+private Q_SLOTS:
+    void installMissingCodecs();
+    void getStreamInfo();
+    void emitTick();
+    void beginPlay();
+    void setVideoCaps(GstCaps *caps);
+    void notifyStateChange(Phonon::State newstate, Phonon::State oldstate);
+    void pluginInstallationResult(GstInstallPluginsReturn result);
 
+private:
     // GStreamer specific :
     void createPipeline();
     bool addToPipeline(GstElement *elem);
@@ -235,6 +233,9 @@ private:
     void _iface_setCurrentTitle(int title);
     void setTrack(int title);
 
+    // Plugin API callback
+    static void pluginInstallationDone(GstInstallPluginsReturn result, gpointer userData);
+
     bool m_resumeState;
     State m_oldState;
     quint64 m_oldPos;
@@ -248,7 +249,7 @@ private:
     MediaSource m_nextSource;
     qint32 m_prefinishMark;
     qint32 m_transitionTime;
-        bool m_isStream;
+    bool m_isStream;
 
     qint64 m_posAtSeek;
 
@@ -285,6 +286,7 @@ private:
     int m_availableTitles;
     int m_currentTitle;
     int m_pendingTitle;
+    bool m_installingPlugin;
 };
 }
 } //namespace Phonon::Gstreamer
