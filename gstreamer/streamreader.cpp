@@ -24,10 +24,11 @@ namespace Phonon
 namespace Gstreamer
 {
 
-StreamReader::StreamReader(const Phonon::MediaSource &source)
+StreamReader::StreamReader(const Phonon::MediaSource &source, MediaObject *parent)
     :  m_pos(0)
     , m_size(0)
     , m_seekable(false)
+    , m_mediaObject(parent)
 {
     connectToSource(source);
 }
@@ -38,12 +39,21 @@ int StreamReader::currentBufferSize() const
 }
 
 void StreamReader::writeData(const QByteArray &data) {
-    m_pos += data.size();
+    QMutexLocker locker(&m_mutex);
+
     m_buffer += data;
+
+    m_waitingForData.wakeAll();
+
+    if (m_mediaObject->state() != Phonon::BufferingState &&
+        m_mediaObject->state() != Phonon::LoadingState)
+        enoughData();
 }
 
 void StreamReader::setCurrentPos(qint64 pos)
 {
+    QMutexLocker locker(&m_mutex);
+
     m_pos = pos;
     seekStream(pos);
     m_buffer.clear();
@@ -56,7 +66,9 @@ quint64 StreamReader::currentPos() const
 
 bool StreamReader::read(quint64 pos, int length, char * buffer)
 {
-    if (currentPos() - currentBufferSize() != pos) {
+    QMutexLocker locker(&m_mutex);
+
+    if (currentPos() != pos) {
         if (!streamSeekable())
             return false;
         setCurrentPos(pos);
@@ -65,11 +77,16 @@ bool StreamReader::read(quint64 pos, int length, char * buffer)
     while (currentBufferSize() < length) {
         int oldSize = currentBufferSize();
         needData();
-        if (oldSize == currentBufferSize())
+
+        m_waitingForData.wait(&m_mutex);
+
+        if (oldSize == currentBufferSize()) {
             return false; // We didn't get any data
+        }
     }
 
     memcpy(buffer, m_buffer.data(), length);
+    m_pos += length;
     //truncate the buffer
     m_buffer = m_buffer.mid(pos);
     return true;
@@ -77,6 +94,7 @@ bool StreamReader::read(quint64 pos, int length, char * buffer)
 
 void StreamReader::endOfData()
 {
+    //m_waitingForData.wakeAll();
 }
 
 void StreamReader::setStreamSize(qint64 newSize) {
