@@ -489,9 +489,19 @@ bool MediaObject::createPipefromURL(const QUrl &url)
 
     // Create a new datasource based on the input URL
     // add the 'file' scheme if it's missing; the double '/' is needed!
-    QByteArray encoded_cstr_url = (url.scheme() == QLatin1String("") ?
-                    "file://" + url.toEncoded() :
-                    url.toEncoded());
+    QByteArray encoded_cstr_url;
+    if (url.scheme() == QLatin1String("")) {
+        encoded_cstr_url = QFile::encodeName("file://" + url.toString());
+    } else if (url.scheme() == QLatin1String("file")) {
+#ifdef __GNUC__
+#warning TODO 4.5
+#endif
+        // TODO 4.5: investigate whether this is necessary. Harald was a bit worrid
+        // that QFile::encodeName on an actual streaming URI could cause problems.
+        encoded_cstr_url = QFile::encodeName(url.toString());
+    } else {
+        encoded_cstr_url = url.toEncoded();
+    }
     m_datasource = gst_element_make_from_uri(GST_URI_SRC, encoded_cstr_url.constData(), (const char*)NULL);
     if (!m_datasource)
         return false;
