@@ -15,9 +15,11 @@ You should have received a copy of the GNU Lesser General Public License
 along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "phononsrc.h"
+
 #include <gst/gst.h>
 #include <gst/base/gstbasesrc.h>
-#include "phononsrc.h"
+
 #include "streamreader.h"
 
 QT_BEGIN_NAMESPACE
@@ -211,12 +213,14 @@ static GstFlowReturn phonon_src_create_read (PhononSrc * src, guint64 offset, gu
     GST_BUFFER_OFFSET (buf) = offset;
     GST_BUFFER_OFFSET_END (buf) = offset + length;
 
-    bool success = src->device->read(offset, length, (char*)GST_BUFFER_DATA (buf));
-    //GST_LOG_OBJECT (src, "Reading %d bytes", length);
+    GstFlowReturn ret = src->device->read(offset, length, (char*)GST_BUFFER_DATA (buf));
+//    GST_LOG_OBJECT (src, "Reading %d bytes", length);
 
-    if (success) {
+    if (ret == GST_FLOW_OK) {
         *buffer = buf;
-        return GST_FLOW_OK;
+        return ret;
+    } else if (ret == GST_FLOW_UNEXPECTED) {
+        return ret;
     }
 
     gst_mini_object_unref(GST_MINI_OBJECT(buf));

@@ -17,6 +17,9 @@ along with this library.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "streamreader.h"
 
+#include <QtCore/QDebug>
+#define d qDebug() << Q_FUNC_INFO << ": "
+
 QT_BEGIN_NAMESPACE
 #ifndef QT_NO_PHONON_ABSTRACTMEDIASTREAM
 namespace Phonon
@@ -25,8 +28,9 @@ namespace Gstreamer
 {
 
 StreamReader::StreamReader(const Phonon::MediaSource &source, MediaObject *parent)
-    :  m_pos(0)
+    : m_pos(0)
     , m_size(0)
+    , m_eos(false)
     , m_seekable(false)
     , m_mediaObject(parent)
 {
@@ -35,19 +39,26 @@ StreamReader::StreamReader(const Phonon::MediaSource &source, MediaObject *paren
 
 int StreamReader::currentBufferSize() const
 {
+    d << "current buffer size is now: " << m_buffer.size();
     return m_buffer.size();
 }
 
 void StreamReader::writeData(const QByteArray &data) {
+    qDebug() << Q_FUNC_INFO;
+
     QMutexLocker locker(&m_mutex);
 
-    m_buffer += data;
+    qDebug() << Q_FUNC_INFO;
+
+    m_buffer.append(data);
 
     m_waitingForData.wakeAll();
 
     if (m_mediaObject->state() != Phonon::BufferingState &&
-        m_mediaObject->state() != Phonon::LoadingState)
+        m_mediaObject->state() != Phonon::LoadingState) {
+        d << "we haz had enuogh, kthxbai!";
         enoughData();
+    }
 }
 
 void StreamReader::setCurrentPos(qint64 pos)
@@ -64,40 +75,51 @@ quint64 StreamReader::currentPos() const
     return m_pos;
 }
 
-bool StreamReader::read(quint64 pos, int length, char * buffer)
+GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
 {
     QMutexLocker locker(&m_mutex);
 
     if (currentPos() != pos) {
-        if (!streamSeekable())
-            return false;
+        if (!streamSeekable()) {
+            return GST_FLOW_ERROR;
+        }
         setCurrentPos(pos);
     }
 
     while (currentBufferSize() < length) {
+        d << "whiling";
         int oldSize = currentBufferSize();
         needData();
 
         m_waitingForData.wait(&m_mutex);
 
         if (oldSize == currentBufferSize()) {
-            return false; // We didn't get any data
+            // We didn't get any data.
+            if (m_eos) {
+                return GST_FLOW_UNEXPECTED;
+            } else {
+                return GST_FLOW_ERROR;
+            }
         }
     }
 
+    d << "filling up that stinky old buffer";
     qMemCopy(buffer, m_buffer.data(), length);
     m_pos += length;
     //truncate the buffer
     m_buffer = m_buffer.mid(length);
-    return true;
+    return GST_FLOW_OK;
 }
 
 void StreamReader::endOfData()
 {
+    d << "out of the data!!!";
+    m_eos = true;
     m_waitingForData.wakeAll();
 }
 
 void StreamReader::setStreamSize(qint64 newSize) {
+    d << "setting der streamsize to - " << newSize;
     m_size = newSize;
 }
 

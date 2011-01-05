@@ -22,8 +22,8 @@ along with this library.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "mediaobject.h"
 
-#include <QMutex>
-#include <QWaitCondition>
+#include <QtCore/QMutex>
+#include <QtCore/QWaitCondition>
 
 QT_BEGIN_NAMESPACE
 
@@ -37,7 +37,7 @@ class MediaSource;
 namespace Gstreamer
 {
 
-class StreamReader : public Phonon::StreamInterface
+class StreamReader : public QObject, Phonon::StreamInterface
 {
 public:
     StreamReader(const Phonon::MediaSource &source, MediaObject *parent);
@@ -49,7 +49,7 @@ public:
     void writeData(const QByteArray &data);
     void setCurrentPos(qint64 pos);
     quint64 currentPos() const;
-    bool read(quint64 offset, int length, char * buffer);
+    GstFlowReturn read(quint64 offset, int length, char * buffer);
     void endOfData();
     void setStreamSize(qint64 newSize);
     qint64 streamSize() const;
@@ -57,13 +57,14 @@ public:
     bool streamSeekable() const ;
 
 private:
-    QByteArray m_buffer;
     quint64 m_pos;
     quint64 m_size;
+    bool m_eos;
     bool m_seekable;
+    MediaObject *m_mediaObject;
+    QByteArray m_buffer;
     QMutex m_mutex;
     QWaitCondition m_waitingForData;
-    MediaObject *m_mediaObject;
 };
 
 }
