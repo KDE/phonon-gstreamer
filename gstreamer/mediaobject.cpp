@@ -551,7 +551,7 @@ bool MediaObject::createPipefromStream(const MediaSource &source)
     if (!m_datasource)
         return false;
 
-    StreamReader *streamReader = new StreamReader(source);
+    StreamReader *streamReader = new StreamReader(source, this);
     g_object_set (G_OBJECT (m_datasource), "iodevice", streamReader, (const char*)NULL);
 
     // Link data source into pipeline

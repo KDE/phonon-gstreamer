@@ -20,6 +20,11 @@ along with this library.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <phonon/streaminterface.h>
 
+#include "mediaobject.h"
+
+#include <QMutex>
+#include <QWaitCondition>
+
 QT_BEGIN_NAMESPACE
 
 #ifndef QT_NO_PHONON_ABSTRACTMEDIASTREAM
@@ -35,7 +40,7 @@ namespace Gstreamer
 class StreamReader : public Phonon::StreamInterface
 {
 public:
-    StreamReader(const Phonon::MediaSource &source);
+    StreamReader(const Phonon::MediaSource &source, MediaObject *parent);
 
     /*
      * Overloads for StreamInterface
@@ -56,6 +61,9 @@ private:
     quint64 m_pos;
     quint64 m_size;
     bool m_seekable;
+    QMutex m_mutex;
+    QWaitCondition m_waitingForData;
+    MediaObject *m_mediaObject;
 };
 
 }
