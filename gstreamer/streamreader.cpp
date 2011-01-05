@@ -85,16 +85,16 @@ bool StreamReader::read(quint64 pos, int length, char * buffer)
         }
     }
 
-    memcpy(buffer, m_buffer.data(), length);
+    qMemCopy(buffer, m_buffer.data(), length);
     m_pos += length;
     //truncate the buffer
-    m_buffer = m_buffer.mid(pos);
+    m_buffer = m_buffer.mid(length);
     return true;
 }
 
 void StreamReader::endOfData()
 {
-    //m_waitingForData.wakeAll();
+    m_waitingForData.wakeAll();
 }
 
 void StreamReader::setStreamSize(qint64 newSize) {
