@@ -84,6 +84,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_availableTitles(0)
         , m_currentTitle(1)
         , m_pendingTitle(1)
+        , m_installingPlugin(true)
 {
     qRegisterMetaType<GstCaps*>("GstCaps*");
     qRegisterMetaType<State>("State");
@@ -102,7 +103,6 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
     }
     connect(this, SIGNAL(stateChanged(Phonon::State, Phonon::State)),
             this, SLOT(notifyStateChange(Phonon::State, Phonon::State)));
-
 }
 
 MediaObject::~MediaObject()
@@ -143,6 +143,8 @@ QString stateString(const Phonon::State &state)
 
 void MediaObject::pluginInstallationResult(GstInstallPluginsReturn result)
 {
+    bool wasInstalling = m_installingPlugin;
+    m_installingPlugin = false;
     bool canPlay = (m_hasAudio || m_videoStreamFound);
     Phonon::ErrorType error = canPlay ? Phonon::NormalError : Phonon::FatalError;
     switch(result) {
@@ -172,6 +174,14 @@ void MediaObject::pluginInstallationResult(GstInstallPluginsReturn result)
     case GST_INSTALL_PLUGINS_INSTALL_IN_PROGRESS:
     //But this one is OK.
     case GST_INSTALL_PLUGINS_SUCCESS:
+        m_backend->logMessage("Updating registry");
+        if (gst_update_registry()) {
+            m_backend->logMessage("Registry updated failed");
+        }
+        if (wasInstalling) {
+            setSource(source());
+            play();
+        }
         break;
     }
 }
@@ -180,6 +190,7 @@ void MediaObject::pluginInstallationDone(GstInstallPluginsReturn result, gpointe
 {
     MediaObject *mediaObject = static_cast<MediaObject*>(userData);
     Q_ASSERT(mediaObject);
+    qRegisterMetaType<GstInstallPluginsReturn>("GstInstallPluginsReturn");
     QMetaObject::invokeMethod(mediaObject, "pluginInstallationResult", Qt::QueuedConnection, Q_ARG(GstInstallPluginsReturn, result));
 }
 
@@ -263,6 +274,9 @@ void MediaObject::installMissingCodecs()
             else
                 setError(QString(tr("Plugin codec installation failed for codec: %1"))
                         .arg(m_missingCodecs[0].split('|')[3]), error);
+        } else {
+            m_installingPlugin = true;
+            setState(Phonon::LoadingState);
         }
         m_missingCodecs.clear();
 #else
@@ -991,6 +1005,8 @@ void MediaObject::setSource(const MediaSource &source)
     if (!isValid())
         return;
 
+    m_installingPlugin = false;
+
     // We have to reset the state completely here, otherwise
     // remnants of the old pipeline can result in strangenes
     // such as failing duration queries etc
@@ -1584,7 +1600,8 @@ void MediaObject::handleBusMessage(const Message &message)
                     installMissingCodecs();
                     break;
                 case GST_STREAM_ERROR_TYPE_NOT_FOUND:
-                    setError(tr("Could not find media type."), Phonon::FatalError);
+                    if (!m_installingPlugin)
+                        setError(tr("Could not find media type."), Phonon::FatalError);
                     break;
                 case GST_STREAM_ERROR_WRONG_TYPE:
                     setError(tr("Wrong media type encountered in GStreamer pipeline."), Phonon::FatalError);
@@ -1605,7 +1622,8 @@ void MediaObject::handleBusMessage(const Message &message)
                     setError(tr("No suitable decryption key found."), Phonon::FatalError);
                     break;
                 default:
-                    setError(tr("Could not open media source."), Phonon::FatalError);
+                    if (!m_installingPlugin)
+                        setError(tr("Could not open media source."), Phonon::FatalError);
                     break;
                 }
            } else {

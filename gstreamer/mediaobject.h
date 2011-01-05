@@ -62,7 +62,6 @@ class MediaObject : public QObject, public MediaObjectInterface
     )
 
 public:
-
     MediaObject(Backend *backend, QObject *parent);
     ~MediaObject();
     Phonon::State state() const;
@@ -198,14 +197,6 @@ protected:
     bool createPipefromDevice(const MediaSource &);
     bool createV4lPipe(const DeviceAccess &access, const MediaSource &);
 
-private Q_SLOTS:
-    void installMissingCodecs();
-    void getStreamInfo();
-    void emitTick();
-    void beginPlay();
-    void setVideoCaps(GstCaps *caps);
-    void notifyStateChange(Phonon::State newstate, Phonon::State oldstate);
-protected:
     GstElement *audioElement()
     {
         Q_ASSERT(m_audioPipe);
@@ -218,8 +209,16 @@ protected:
         return m_videoPipe;
     }
 
-private:
+private Q_SLOTS:
+    void installMissingCodecs();
+    void getStreamInfo();
+    void emitTick();
+    void beginPlay();
+    void setVideoCaps(GstCaps *caps);
+    void notifyStateChange(Phonon::State newstate, Phonon::State oldstate);
+    void pluginInstallationResult(GstInstallPluginsReturn result);
 
+private:
     // GStreamer specific :
     void createPipeline();
     bool addToPipeline(GstElement *elem);
@@ -236,7 +235,6 @@ private:
 
     // Plugin API callback
     static void pluginInstallationDone(GstInstallPluginsReturn result, gpointer userData);
-    void pluginInstallationResult(GstInstallPluginsReturn result);
 
     bool m_resumeState;
     State m_oldState;
@@ -251,7 +249,7 @@ private:
     MediaSource m_nextSource;
     qint32 m_prefinishMark;
     qint32 m_transitionTime;
-        bool m_isStream;
+    bool m_isStream;
 
     qint64 m_posAtSeek;
 
@@ -288,6 +286,7 @@ private:
     int m_availableTitles;
     int m_currentTitle;
     int m_pendingTitle;
+    bool m_installingPlugin;
 };
 }
 } //namespace Phonon::Gstreamer
