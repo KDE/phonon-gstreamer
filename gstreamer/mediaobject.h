@@ -30,6 +30,8 @@
 
 #include <gst/pbutils/install-plugins.h>
 
+#include "phonon-config-gstreamer.h"
+
 QT_BEGIN_NAMESPACE
 
 class QTimer;
