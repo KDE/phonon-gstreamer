@@ -17,9 +17,6 @@ along with this library.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "streamreader.h"
 
-#include <QtCore/QDebug>
-#define d qDebug() << Q_FUNC_INFO << ": "
-
 QT_BEGIN_NAMESPACE
 #ifndef QT_NO_PHONON_ABSTRACTMEDIASTREAM
 namespace Phonon
@@ -39,16 +36,11 @@ StreamReader::StreamReader(const Phonon::MediaSource &source, MediaObject *paren
 
 int StreamReader::currentBufferSize() const
 {
-    d << "current buffer size is now: " << m_buffer.size();
     return m_buffer.size();
 }
 
 void StreamReader::writeData(const QByteArray &data) {
-    qDebug() << Q_FUNC_INFO;
-
     QMutexLocker locker(&m_mutex);
-
-    qDebug() << Q_FUNC_INFO;
 
     m_buffer.append(data);
 
@@ -56,7 +48,6 @@ void StreamReader::writeData(const QByteArray &data) {
 
     if (m_mediaObject->state() != Phonon::BufferingState &&
         m_mediaObject->state() != Phonon::LoadingState) {
-        d << "we haz had enuogh, kthxbai!";
         enoughData();
     }
 }
@@ -87,7 +78,6 @@ GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
     }
 
     while (currentBufferSize() < length) {
-        d << "whiling";
         int oldSize = currentBufferSize();
         needData();
 
@@ -103,7 +93,6 @@ GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
         }
     }
 
-    d << "filling up that stinky old buffer";
     qMemCopy(buffer, m_buffer.data(), length);
     m_pos += length;
     //truncate the buffer
@@ -113,13 +102,11 @@ GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
 
 void StreamReader::endOfData()
 {
-    d << "out of the data!!!";
     m_eos = true;
     m_waitingForData.wakeAll();
 }
 
 void StreamReader::setStreamSize(qint64 newSize) {
-    d << "setting der streamsize to - " << newSize;
     m_size = newSize;
 }
 
