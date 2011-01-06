@@ -216,7 +216,9 @@ private Q_SLOTS:
     void beginPlay();
     void setVideoCaps(GstCaps *caps);
     void notifyStateChange(Phonon::State newstate, Phonon::State oldstate);
+#ifdef PLUGIN_INSTALL_API
     void pluginInstallationResult(GstInstallPluginsReturn result);
+#endif // PLUGIN_INSTALL_API
 
 private:
     // GStreamer specific :

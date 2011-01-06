@@ -141,59 +141,6 @@ QString stateString(const Phonon::State &state)
     return QString();
 }
 
-void MediaObject::pluginInstallationResult(GstInstallPluginsReturn result)
-{
-    bool wasInstalling = m_installingPlugin;
-    m_installingPlugin = false;
-    bool canPlay = (m_hasAudio || m_videoStreamFound);
-    Phonon::ErrorType error = canPlay ? Phonon::NormalError : Phonon::FatalError;
-    switch(result) {
-    case GST_INSTALL_PLUGINS_INVALID:
-        setError(QString(tr("Phonon attempted to install an invalid codec name.")));
-        break;
-    case GST_INSTALL_PLUGINS_CRASHED:
-        setError(QString(tr("The codec installer crashed.")), error);
-        break;
-    case GST_INSTALL_PLUGINS_NOT_FOUND:
-        setError(QString(tr("The required codec could not be found for installation.")), error);
-        break;
-    case GST_INSTALL_PLUGINS_ERROR:
-        setError(QString(tr("An unspecified error occurred during codec installation.")), error);
-        break;
-    case GST_INSTALL_PLUGINS_PARTIAL_SUCCESS:
-        setError(QString(tr("Not all codecs could be installed.")), error);
-        break;
-    case GST_INSTALL_PLUGINS_USER_ABORT:
-        setError(QString(tr("User aborted codec installation")), error);
-        break;
-    //These four should never ever be passed in.
-    //If they have, gstreamer has probably imploded in on itself.
-    case GST_INSTALL_PLUGINS_STARTED_OK:
-    case GST_INSTALL_PLUGINS_INTERNAL_FAILURE:
-    case GST_INSTALL_PLUGINS_HELPER_MISSING:
-    case GST_INSTALL_PLUGINS_INSTALL_IN_PROGRESS:
-    //But this one is OK.
-    case GST_INSTALL_PLUGINS_SUCCESS:
-        m_backend->logMessage("Updating registry");
-        if (gst_update_registry()) {
-            m_backend->logMessage("Registry updated failed");
-        }
-        if (wasInstalling) {
-            setSource(source());
-            play();
-        }
-        break;
-    }
-}
-
-void MediaObject::pluginInstallationDone(GstInstallPluginsReturn result, gpointer userData)
-{
-    MediaObject *mediaObject = static_cast<MediaObject*>(userData);
-    Q_ASSERT(mediaObject);
-    qRegisterMetaType<GstInstallPluginsReturn>("GstInstallPluginsReturn");
-    QMetaObject::invokeMethod(mediaObject, "pluginInstallationResult", Qt::QueuedConnection, Q_ARG(GstInstallPluginsReturn, result));
-}
-
 void MediaObject::saveState()
 {
     //Only first resumeState is respected
@@ -247,6 +194,61 @@ void MediaObject::cb_newpad (GstElement *decodebin,
     Q_ASSERT(media);
     media->newPadAvailable(pad);
 }
+
+#ifdef PLUGIN_INSTALL_API
+void MediaObject::pluginInstallationResult(GstInstallPluginsReturn result)
+{
+    bool wasInstalling = m_installingPlugin;
+    m_installingPlugin = false;
+    bool canPlay = (m_hasAudio || m_videoStreamFound);
+    Phonon::ErrorType error = canPlay ? Phonon::NormalError : Phonon::FatalError;
+    switch(result) {
+    case GST_INSTALL_PLUGINS_INVALID:
+        setError(QString(tr("Phonon attempted to install an invalid codec name.")));
+        break;
+    case GST_INSTALL_PLUGINS_CRASHED:
+        setError(QString(tr("The codec installer crashed.")), error);
+        break;
+    case GST_INSTALL_PLUGINS_NOT_FOUND:
+        setError(QString(tr("The required codec could not be found for installation.")), error);
+        break;
+    case GST_INSTALL_PLUGINS_ERROR:
+        setError(QString(tr("An unspecified error occurred during codec installation.")), error);
+        break;
+    case GST_INSTALL_PLUGINS_PARTIAL_SUCCESS:
+        setError(QString(tr("Not all codecs could be installed.")), error);
+        break;
+    case GST_INSTALL_PLUGINS_USER_ABORT:
+        setError(QString(tr("User aborted codec installation")), error);
+        break;
+    //These four should never ever be passed in.
+    //If they have, gstreamer has probably imploded in on itself.
+    case GST_INSTALL_PLUGINS_STARTED_OK:
+    case GST_INSTALL_PLUGINS_INTERNAL_FAILURE:
+    case GST_INSTALL_PLUGINS_HELPER_MISSING:
+    case GST_INSTALL_PLUGINS_INSTALL_IN_PROGRESS:
+    //But this one is OK.
+    case GST_INSTALL_PLUGINS_SUCCESS:
+        m_backend->logMessage("Updating registry");
+        if (gst_update_registry()) {
+            m_backend->logMessage("Registry updated failed");
+        }
+        if (wasInstalling) {
+            setSource(source());
+            play();
+        }
+        break;
+    }
+}
+
+void MediaObject::pluginInstallationDone(GstInstallPluginsReturn result, gpointer userData)
+{
+    MediaObject *mediaObject = static_cast<MediaObject*>(userData);
+    Q_ASSERT(mediaObject);
+    qRegisterMetaType<GstInstallPluginsReturn>("GstInstallPluginsReturn");
+    QMetaObject::invokeMethod(mediaObject, "pluginInstallationResult", Qt::QueuedConnection, Q_ARG(GstInstallPluginsReturn, result));
+}
+#endif // PLUGIN_INSTALL_API
 
 void MediaObject::installMissingCodecs()
 {
