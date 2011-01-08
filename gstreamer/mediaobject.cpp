@@ -606,7 +606,7 @@ void MediaObject::createPipeline()
     g_object_set(G_OBJECT(m_audioPipe), "max-size-time",  MAX_QUEUE_TIME, (const char*)NULL);
 
     QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
-    if(!tegraEnv.isEmpty()) {
+    if (!tegraEnv.isEmpty()) {
         g_object_set(G_OBJECT(m_audioPipe), "max-size-time", 0, (const char*)NULL);
         g_object_set(G_OBJECT(m_audioPipe), "max-size-buffers", 0, (const char*)NULL);
         g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0, (const char*)NULL);
@@ -624,7 +624,7 @@ void MediaObject::createPipeline()
 
     m_videoPipe = gst_element_factory_make("queue", NULL);
     g_object_set(G_OBJECT(m_videoPipe), "max-size-time", MAX_QUEUE_TIME, (const char*)NULL);
-    if(!tegraEnv.isEmpty()) {
+    if (!tegraEnv.isEmpty()) {
         g_object_set(G_OBJECT(m_videoPipe), "max-size-time", 33000, (const char*)NULL);
         g_object_set(G_OBJECT(m_audioPipe), "max-size-buffers", 1, (const char*)NULL);
         g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0, (const char*)NULL);
