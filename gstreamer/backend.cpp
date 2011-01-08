@@ -77,9 +77,9 @@ Backend::Backend(QObject *parent, const QVariantList &)
     if (spewLevel < 0)
         spewLevel = 0;
     argv = new char*[2];
-	int len = QCoreApplication::applicationFilePath().length();
+    int len = QCoreApplication::applicationFilePath().length();
     argv[0] = (char*)qMalloc(len+1*sizeof(char));
-	strcpy(argv[0], QCoreApplication::applicationFilePath().toUtf8().data());
+    strcpy(argv[0], QCoreApplication::applicationFilePath().toUtf8().data());
     len = strlen("--gst-debug-level=0");
     argv[1] = (char*)qMalloc(len+1*sizeof(char));
     sprintf(argv[1], "--gst-debug-level=%d", spewLevel);
