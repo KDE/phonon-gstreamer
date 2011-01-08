@@ -606,11 +606,10 @@ void MediaObject::createPipeline()
     g_object_set(G_OBJECT(m_audioPipe), "max-size-time",  MAX_QUEUE_TIME, (const char*)NULL);
 
     QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
-    if(!tegraEnv.isEmpty())
-    {
-        g_object_set(G_OBJECT(m_audioPipe), "max-size-time", 0 , (const char*)NULL);
-        g_object_set(G_OBJECT(m_audioPipe), "max-size-buffers", 0 , (const char*)NULL);
-        g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0 , (const char*)NULL);
+    if(!tegraEnv.isEmpty()) {
+        g_object_set(G_OBJECT(m_audioPipe), "max-size-time", 0, (const char*)NULL);
+        g_object_set(G_OBJECT(m_audioPipe), "max-size-buffers", 0, (const char*)NULL);
+        g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0, (const char*)NULL);
     }
 
     gst_bin_add(GST_BIN(m_audioGraph), m_audioPipe);
@@ -625,11 +624,10 @@ void MediaObject::createPipeline()
 
     m_videoPipe = gst_element_factory_make("queue", NULL);
     g_object_set(G_OBJECT(m_videoPipe), "max-size-time", MAX_QUEUE_TIME, (const char*)NULL);
-    if(!tegraEnv.isEmpty())
-    {
+    if(!tegraEnv.isEmpty()) {
         g_object_set(G_OBJECT(m_videoPipe), "max-size-time", 33000, (const char*)NULL);
-        g_object_set(G_OBJECT(m_audioPipe), "max-size-buffers", 1 , (const char*)NULL);
-        g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0 , (const char*)NULL);
+        g_object_set(G_OBJECT(m_audioPipe), "max-size-buffers", 1, (const char*)NULL);
+        g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0, (const char*)NULL);
     }
     gst_bin_add(GST_BIN(m_videoGraph), m_videoPipe);
     GstPad *videopad = gst_element_get_pad (m_videoPipe, "sink");
@@ -1097,9 +1095,9 @@ void MediaObject::setSource(const MediaSource &source)
 
     case MediaSource::Disc:
         {
-       QString mediaUrl;
-       switch (source.discType()) {
-       case Phonon::NoDisc:
+            QString mediaUrl;
+            switch (source.discType()) {
+            case Phonon::NoDisc:
                 qWarning() << "I should never get to see a MediaSource that is a disc but doesn't specify which one";
                 return;
             case Phonon::Cd:  // CD tracks can be specified by setting the url in the following way uri=cdda:4
@@ -1291,7 +1289,6 @@ void MediaObject::emitTick()
         }
     }
 }
-
 
 /*
  * Used to iterate through the gst_tag_list and extract values
@@ -1725,7 +1722,6 @@ void MediaObject::handleEndOfStream()
     // If the stream is not seekable ignore
     // otherwise chained radio broadcasts would stop
 
-
     if (m_atEndOfStream)
         return;
 
@@ -1843,7 +1839,6 @@ void MediaObject::setTrack(int title)
 {
     if (((m_state != Phonon::PlayingState) && (m_state != Phonon::StoppedState)) || (title < 1) || (title > m_availableTitles))
         return;
-
 
     //let's seek to the beginning of the song
     GstFormat trackFormat = gst_format_get_by_nick("track");
