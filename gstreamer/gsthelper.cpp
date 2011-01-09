@@ -163,6 +163,23 @@ GstElement* GstHelper::createPluggablePlaybin()
     return playbin;
 }
 
+QString GstHelper::stateName(GstState state)
+{
+    switch(state) {
+    case GST_STATE_VOID_PENDING:
+        return "void pending";
+    case GST_STATE_NULL:
+        return "null";
+    case GST_STATE_READY:
+        return "ready";
+    case GST_STATE_PAUSED:
+        return "paused";
+    case GST_STATE_PLAYING:
+        return "playing";
+    }
+    return "";
+}
+
 
 } //namespace Gstreamer
 } //namespace Phonon

@@ -25,6 +25,7 @@
 #include "streamreader.h"
 #include "phononsrc.h"
 #include "phonon-config-gstreamer.h"
+#include "gsthelper.h"
 
 #include <QtCore/QByteRef>
 #include <QtCore/QEvent>
@@ -1494,13 +1495,15 @@ void MediaObject::handleBusMessage(const Message &message)
 
     case GST_MESSAGE_STATE_CHANGED : {
 
-            if (gstMessage->src != GST_OBJECT(m_pipeline))
-                return;
-
             GstState oldState;
             GstState newState;
             GstState pendingState;
             gst_message_parse_state_changed (gstMessage, &oldState, &newState, &pendingState);
+
+            if (gstMessage->src != GST_OBJECT(m_pipeline)) {
+                m_backend->logMessage("State changed from "+GstHelper::stateName(oldState)+" to "+GstHelper::stateName(newState), Backend::Debug, this);
+                return;
+            }
 
             if (newState == pendingState)
                 return;

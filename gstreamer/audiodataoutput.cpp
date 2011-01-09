@@ -53,13 +53,22 @@ AudioDataOutput::AudioDataOutput(Backend *backend, QObject *parent)
     GstElement* tee = gst_element_factory_make("tee", NULL);
     GstElement* sink = gst_element_factory_make("fakesink", NULL);
     GstElement* queue = gst_element_factory_make("queue", NULL);
+    GstElement* convert = gst_element_factory_make("audioconvert", NULL);
 
     g_signal_connect(sink, "handoff", G_CALLBACK(processBuffer), this);
     g_object_set(G_OBJECT(sink), "signal-handoffs", true, (const char*)NULL);
 
-    gst_bin_add_many(GST_BIN(m_queue), tee, sink, queue, NULL);
+    //G_BYTE_ORDER is the host machine's endianess
+    GstCaps *caps = gst_caps_new_simple("audio/x-raw-int",
+                                        "endianess", G_TYPE_INT, G_BYTE_ORDER,
+                                        "depth", G_TYPE_INT, 16,
+                                        "channels", G_TYPE_INT, 2,
+                                        NULL);
+
+    gst_bin_add_many(GST_BIN(m_queue), tee, sink, convert, queue, NULL);
     gst_element_link(tee, queue);
-    gst_element_link(queue, sink);
+    gst_element_link(queue, convert);
+    gst_element_link_filtered(convert, sink, caps);
 
     GstPad *inputpad = gst_element_get_static_pad(tee, "sink");
     gst_element_add_pad(m_queue, gst_ghost_pad_new("sink", inputpad));
