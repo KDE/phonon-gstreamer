@@ -784,10 +784,7 @@ void MediaObject::setState(State newstate)
         break;
 
     case Phonon::PlayingState:
-#ifdef __GNUC__
-#warning TODO 4.4 Fix resetNeed stuff WRT streamreader
-#endif
-       if (m_resetNeeded && source().type() != Phonon::MediaSource::Stream) {
+       if (m_resetNeeded) {
             // ### Note this is a workaround and it should really be gracefully
             // handled by medianode when we implement live connections.
             // This generally happens if medianodes have been connected after the MediaSource was set
