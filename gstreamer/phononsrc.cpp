@@ -1,5 +1,6 @@
 /*  This file is part of the KDE project.
 
+Copyright (C) 2010 Harald Sitter <sitter@kde.org>
 Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 
 This library is free software: you can redistribute it and/or modify
@@ -21,6 +22,9 @@ along with this library.  If not, see <http://www.gnu.org/licenses/>.
 #include <gst/base/gstbasesrc.h>
 
 #include "streamreader.h"
+
+#include <QtCore/QDebug>
+#define d qDebug() << Q_FUNC_INFO << ": "
 
 QT_BEGIN_NAMESPACE
 
@@ -44,7 +48,7 @@ enum
     ARG_PHONONSRC
 };
 
-static void phonon_src_finalize (GObject * object);
+static void phonon_src_finalize (GObject *object);
 
 static void phonon_src_set_property (GObject * object, guint prop_id,
                                         const GValue * value, GParamSpec * pspec);
@@ -54,10 +58,14 @@ static void phonon_src_get_property (GObject * object, guint prop_id,
 static gboolean phonon_src_start (GstBaseSrc * basesrc);
 static gboolean phonon_src_stop (GstBaseSrc * basesrc);
 
+static gboolean phonon_src_unlock(GstBaseSrc * basesrc);
+static gboolean phonon_src_unlock_stop(GstBaseSrc * basesrc);
+
 static gboolean phonon_src_is_seekable (GstBaseSrc * src);
 static gboolean phonon_src_get_size (GstBaseSrc * src, guint64 * size);
 static GstFlowReturn phonon_src_create (GstBaseSrc * src, guint64 offset,
                                            guint length, GstBuffer ** buffer);
+static gboolean phonon_src_query(GstBaseSrc *basesrc, GstQuery *query);
 
 static void _do_init (GType filesrc_type)
 {
@@ -103,9 +111,12 @@ static void phonon_src_class_init (PhononSrcClass * klass)
 
     gstbasesrc_class->start = GST_DEBUG_FUNCPTR (phonon_src_start);
     gstbasesrc_class->stop = GST_DEBUG_FUNCPTR (phonon_src_stop);
+    gstbasesrc_class->unlock = GST_DEBUG_FUNCPTR(phonon_src_unlock);
+    gstbasesrc_class->unlock_stop = GST_DEBUG_FUNCPTR(phonon_src_unlock_stop);
     gstbasesrc_class->is_seekable = GST_DEBUG_FUNCPTR (phonon_src_is_seekable);
     gstbasesrc_class->get_size = GST_DEBUG_FUNCPTR (phonon_src_get_size);
     gstbasesrc_class->create = GST_DEBUG_FUNCPTR (phonon_src_create);
+    gstbasesrc_class->query = GST_DEBUG_FUNCPTR(phonon_src_query);
 }
 
 static void phonon_src_init (PhononSrc * src, PhononSrcClass * g_class)
@@ -236,16 +247,18 @@ static GstFlowReturn phonon_src_create_read (PhononSrc * src, guint64 offset, gu
 
 static GstFlowReturn phonon_src_create (GstBaseSrc * basesrc, guint64 offset, guint length, GstBuffer ** buffer)
 {
-    PhononSrc *src;
+    PhononSrc *src = GST_PHONON_SRC (basesrc);
     GstFlowReturn ret;
-    src = GST_PHONON_SRC (basesrc);
     ret = phonon_src_create_read (src, offset, length, buffer);
+    if (ret == GST_FLOW_ERROR) d << "flow error"; ;
+    if (ret == GST_FLOW_UNEXPECTED) d << "flow unexpected"; ;
+    if (ret == GST_FLOW_OK) d << "flow ok"; ;
     return ret;
 }
 
 static gboolean phonon_src_is_seekable (GstBaseSrc * basesrc)
 {
-    PhononSrc *src = GST_PHONON_SRC (basesrc);
+    PhononSrc *src = GST_PHONON_SRC(basesrc);
 #ifndef QT_NO_PHONON_ABSTRACTMEDIASTREAM
     if (src->device)
         return src->device->streamSeekable();
@@ -253,11 +266,10 @@ static gboolean phonon_src_is_seekable (GstBaseSrc * basesrc)
     return false;
 }
 
-static gboolean phonon_src_get_size (GstBaseSrc * basesrc, guint64 * size)
+static gboolean phonon_src_get_size (GstBaseSrc *basesrc, guint64 *size)
 {
 #ifndef QT_NO_PHONON_ABSTRACTMEDIASTREAM
-    PhononSrc *src;
-    src = GST_PHONON_SRC (basesrc);
+    PhononSrc *src = GST_PHONON_SRC(basesrc);
     if (src->device && src->device->streamSeekable()) {
         *size = src->device->streamSize();
         return TRUE;
@@ -267,20 +279,58 @@ static gboolean phonon_src_get_size (GstBaseSrc * basesrc, guint64 * size)
     return FALSE;
 }
 
-// Necessary to go to READY state
-static gboolean phonon_src_start (GstBaseSrc * basesrc)
+static gboolean phonon_src_unlock(GstBaseSrc *basesrc)
 {
-    Q_UNUSED(basesrc);
-    // Opening the device is handled by the frontend
-    // We can only assume it is already open
+    d;
+    PhononSrc *src = GST_PHONON_SRC(basesrc);
+    src->device->unlock();
     return TRUE;
 }
 
-static gboolean phonon_src_stop (GstBaseSrc * basesrc)
+static gboolean phonon_src_unlock_stop(GstBaseSrc *basesrc)
 {
-    Q_UNUSED(basesrc);
-    // Closing the device is handled by the frontend
+    d;
+    PhononSrc *src = GST_PHONON_SRC(basesrc);
+    src->device->unlockStop();
     return TRUE;
+}
+
+// Necessary to go to READY state
+static gboolean phonon_src_start(GstBaseSrc *basesrc)
+{
+    // Opening the device is handled by the frontend
+    // We can only assume it is already open
+    PhononSrc *src = GST_PHONON_SRC(basesrc);
+    src->device->start();
+    return TRUE;
+}
+
+static gboolean phonon_src_stop(GstBaseSrc *basesrc)
+{
+    // Closing the device is handled by the frontend, we just need to ensure
+    // the reader is unlocked and stopped.
+    PhononSrc *src = GST_PHONON_SRC(basesrc);
+    src->device->stop();
+    return TRUE;
+}
+
+static gboolean phonon_src_query (GstBaseSrc *basesrc, GstQuery *query)
+{
+    gboolean ret = FALSE;
+    PhononSrc *src = GST_PHONON_SRC(basesrc);
+
+    switch (GST_QUERY_TYPE(query)) {
+    case GST_QUERY_URI:
+        if (GST_IS_URI_HANDLER(src)) {
+            const gchar *uri = gst_uri_handler_get_uri(GST_URI_HANDLER(src));
+            gst_query_set_uri(query, uri);
+            ret = TRUE;
+        }
+        break;
+    default:
+        ret = FALSE;
+        break;
+    }
 }
 
 }

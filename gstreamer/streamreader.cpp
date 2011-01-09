@@ -17,6 +17,9 @@ along with this library.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "streamreader.h"
 
+#include <QtCore/QDebug>
+#define d qDebug() << Q_FUNC_INFO << ": "
+
 QT_BEGIN_NAMESPACE
 #ifndef QT_NO_PHONON_ABSTRACTMEDIASTREAM
 namespace Phonon
@@ -36,20 +39,24 @@ StreamReader::StreamReader(const Phonon::MediaSource &source, MediaObject *paren
 
 int StreamReader::currentBufferSize() const
 {
+    d << m_buffer.size();
     return m_buffer.size();
 }
 
 void StreamReader::writeData(const QByteArray &data) {
+    d << "getting ze data and other plunder";
     QMutexLocker locker(&m_mutex);
 
     m_buffer.append(data);
 
     m_waitingForData.wakeAll();
 
-    if (m_mediaObject->state() != Phonon::BufferingState &&
-        m_mediaObject->state() != Phonon::LoadingState) {
-        enoughData();
-    }
+#warning enoughData sometimes locks any furhter needata?
+//    if (m_mediaObject->state() != Phonon::BufferingState &&
+//        m_mediaObject->state() != Phonon::LoadingState) {
+//        d << "we haz had enuogh, kthxbai!";
+//        enoughData();
+//    }
 }
 
 void StreamReader::setCurrentPos(qint64 pos)
@@ -72,12 +79,14 @@ GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
 
     if (currentPos() != pos) {
         if (!streamSeekable()) {
-            return GST_FLOW_ERROR;
+            return GST_FLOW_NOT_SUPPORTED;
         }
+#warning ret something
         setCurrentPos(pos);
     }
 
     while (currentBufferSize() < length) {
+        d << "whiling";
         int oldSize = currentBufferSize();
         needData();
 
@@ -92,7 +101,9 @@ GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
             }
         }
     }
+//    enoughData();
 
+    d << "filling up that stinky old buffer";
     qMemCopy(buffer, m_buffer.data(), length);
     m_pos += length;
     //truncate the buffer
@@ -102,11 +113,49 @@ GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
 
 void StreamReader::endOfData()
 {
+    d << "out of the data!!!";
+    QMutexLocker locker(&m_mutex);
     m_eos = true;
     m_waitingForData.wakeAll();
 }
 
+void StreamReader::start()
+{
+    d;
+    QMutexLocker locker(&m_mutex);
+    m_buffer.clear();
+    m_eos = false;
+    m_pos = 0;
+    m_seekable = false;
+    m_size = 0;
+    reset();
+}
+
+void StreamReader::stop()
+{
+#ifdef __GNUC__
+#warning implications of stop on still working read????
+#endif
+    d << "stopping!";
+    enoughData();
+//    m_waitingForData.wakeAll();
+}
+
+void StreamReader::unlock()
+{
+    QMutexLocker locker(&m_mutex);
+    d << "lock lock I shall unlock...";
+//    enoughData();
+//    m_waitingForData.wakeAll();
+}
+
+void StreamReader::unlockStop()
+{
+    QMutexLocker locker(&m_mutex);
+}
+
 void StreamReader::setStreamSize(qint64 newSize) {
+    d << "setting der streamsize to - " << newSize;
     m_size = newSize;
 }
 
@@ -115,10 +164,13 @@ qint64 StreamReader::streamSize() const {
 }
 
 void StreamReader::setStreamSeekable(bool seekable) {
+    d << seekable;
     m_seekable = seekable;
 }
 
 bool StreamReader::streamSeekable() const {
+    d << m_seekable;
+    return false;
     return m_seekable;
 }
 
