@@ -804,11 +804,17 @@ void MediaObject::setState(State newstate)
         if (m_atEndOfStream) {
             m_backend->logMessage("EOS already reached", Backend::Info, this);
         } else if (currentState == GST_STATE_PLAYING) {
+            m_backend->logMessage("Already playing", Backend::Info, this);
             changeState(Phonon::PlayingState);
-        } else if (gst_element_set_state(m_pipeline, GST_STATE_PLAYING) != GST_STATE_CHANGE_FAILURE) {
-            m_pendingState = Phonon::PlayingState;
         } else {
-            m_backend->logMessage("phonon state request failed", Backend::Info, this);
+            GstStateChangeReturn status = gst_element_set_state(m_pipeline, GST_STATE_PLAYING);
+            if (status == GST_STATE_CHANGE_ASYNC) {
+                m_backend->logMessage("Playing state is now pending");
+                m_pendingState = Phonon::PlayingState;
+            } else if (status == GST_STATE_CHANGE_FAILURE) {
+                m_backend->logMessage("phonon state request failed", Backend::Info, this);
+                changeState(Phonon::ErrorState);
+            }
         }
         break;
 
