@@ -51,14 +51,12 @@ class Backend;
         VideoDataOutput(Backend *, QObject *);
         ~VideoDataOutput();
 
-        static void processBuffer(GstPad*, GstBuffer*, gpointer);
+        static void processBuffer(GstElement*, GstBuffer*, GstPad*, gpointer);
 
         Phonon::Experimental::AbstractVideoDataOutput *frontendObject() const { return m_frontend; }
         void setFrontendObject(Phonon::Experimental::AbstractVideoDataOutput *object) { m_frontend = object; }
 
         GstElement *videoElement() { return m_queue; }
-
-        void mediaNodeEvent(const MediaNodeEvent *event);
 
     private:
         GstElement *m_queue;

@@ -39,7 +39,8 @@ namespace Gstreamer
 
 VideoDataOutput::VideoDataOutput(Backend *backend, QObject *parent)
     : QObject(parent),
-    MediaNode(backend, VideoSink | VideoSource)
+    MediaNode(backend, VideoSink | VideoSource),
+	m_frontend(0)
 {
     static int count = 0;
     m_name = "VideoDataOutput" + QString::number(count++);
@@ -48,31 +49,37 @@ VideoDataOutput::VideoDataOutput(Backend *backend, QObject *parent)
     gst_object_ref(GST_OBJECT(m_queue));
     gst_object_sink(GST_OBJECT(m_queue));
 
-    GstElement* input = gst_element_factory_make("queue", NULL);
-    GstElement* output = gst_element_factory_make("identity", NULL);
+    GstElement* tee = gst_element_factory_make("tee", NULL);
+    GstElement* sink = gst_element_factory_make("fakesink", NULL);
+    GstElement* queue = gst_element_factory_make("queue", NULL);
     GstElement* convert = gst_element_factory_make("ffmpegcolorspace", NULL);
+
+    g_signal_connect(sink, "handoff", G_CALLBACK(processBuffer), this);
+    g_object_set(G_OBJECT(sink), "signal-handoffs", true, (const char*)NULL);
 
         // Save ourselves a metric crapton of work by simply requesting
         // a format native to Qt.
     GstCaps *caps = gst_caps_new_simple("video/x-raw-rgb",
                                         "bpp", G_TYPE_INT, 24,
                                         "depth", G_TYPE_INT, 24,
+                                        "endianess", G_TYPE_INT, G_BYTE_ORDER,
                                         NULL);
 
-
-    gst_bin_add_many(GST_BIN(m_queue), input, convert, output, NULL);
-    gst_element_link_filtered(convert, output, caps);
+    gst_bin_add_many(GST_BIN(m_queue), tee, sink, convert, queue, NULL);
+    gst_element_link(tee, queue);
+    gst_element_link(queue, convert);
+    gst_element_link_filtered(convert, sink, caps);
     gst_caps_unref(caps);
-    gst_element_link(input, convert);
 
-    GstPad *outputpad = gst_element_get_pad(output, "src");
-    gst_pad_add_buffer_probe(outputpad, G_CALLBACK(processBuffer), this);
-    gst_element_add_pad(m_queue, gst_ghost_pad_new("src", outputpad));
-    gst_object_unref(outputpad);
-
-    GstPad *inputpad = gst_element_get_pad(input, "sink");
+    GstPad *inputpad = gst_element_get_static_pad(tee, "sink");
     gst_element_add_pad(m_queue, gst_ghost_pad_new("sink", inputpad));
     gst_object_unref(inputpad);
+
+    GstPad *outputpad = gst_element_get_request_pad(tee, "src%d");
+    gst_element_add_pad(m_queue, gst_ghost_pad_new("src", outputpad));
+    gst_object_unref(outputpad);
+    g_object_set(G_OBJECT(sink), "sync", true, (const char*)NULL);
+
     m_isValid = true;
 }
 
@@ -82,7 +89,7 @@ VideoDataOutput::~VideoDataOutput()
     gst_object_unref(m_queue);
 }
 
-void VideoDataOutput::processBuffer(GstPad*, GstBuffer* buffer, gpointer gThat)
+void VideoDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad*, gpointer gThat)
 {
     VideoDataOutput *that = reinterpret_cast<VideoDataOutput*>(gThat);
 
@@ -104,18 +111,8 @@ void VideoDataOutput::processBuffer(GstPad*, GstBuffer* buffer, gpointer gThat)
         0,
         0
     };
-    if (that->m_frontend) {
+    if (that->m_frontend)
         that->m_frontend->frameReady(f);
-    }
-}
-
-void VideoDataOutput::mediaNodeEvent(const MediaNodeEvent *event)
-{
-    if (event->type() == MediaNodeEvent::MediaObjectConnected && root()) {
-        g_object_set(G_OBJECT(videoElement()), "sync", true, (const char*)NULL);
-        return;
-    }
-    MediaNode::mediaNodeEvent(event);
 }
 
 }} // namespace Phonon::Gstreamer
