@@ -39,7 +39,7 @@ namespace Gstreamer
 
 VideoDataOutput::VideoDataOutput(Backend *backend, QObject *parent)
     : QObject(parent),
-    MediaNode(backend, VideoSink | VideoSource),
+    MediaNode(backend, VideoSink),
 	m_frontend(0)
 {
     static int count = 0;
@@ -49,7 +49,6 @@ VideoDataOutput::VideoDataOutput(Backend *backend, QObject *parent)
     gst_object_ref(GST_OBJECT(m_queue));
     gst_object_sink(GST_OBJECT(m_queue));
 
-    GstElement* tee = gst_element_factory_make("tee", NULL);
     GstElement* sink = gst_element_factory_make("fakesink", NULL);
     GstElement* queue = gst_element_factory_make("queue", NULL);
     GstElement* convert = gst_element_factory_make("ffmpegcolorspace", NULL);
@@ -65,19 +64,15 @@ VideoDataOutput::VideoDataOutput(Backend *backend, QObject *parent)
                                         "endianess", G_TYPE_INT, G_BYTE_ORDER,
                                         NULL);
 
-    gst_bin_add_many(GST_BIN(m_queue), tee, sink, convert, queue, NULL);
-    gst_element_link(tee, queue);
+    gst_bin_add_many(GST_BIN(m_queue), sink, convert, queue, NULL);
     gst_element_link(queue, convert);
     gst_element_link_filtered(convert, sink, caps);
     gst_caps_unref(caps);
 
-    GstPad *inputpad = gst_element_get_static_pad(tee, "sink");
+    GstPad *inputpad = gst_element_get_static_pad(queue, "sink");
     gst_element_add_pad(m_queue, gst_ghost_pad_new("sink", inputpad));
     gst_object_unref(inputpad);
 
-    GstPad *outputpad = gst_element_get_request_pad(tee, "src%d");
-    gst_element_add_pad(m_queue, gst_ghost_pad_new("src", outputpad));
-    gst_object_unref(outputpad);
     g_object_set(G_OBJECT(sink), "sync", true, (const char*)NULL);
 
     m_isValid = true;
