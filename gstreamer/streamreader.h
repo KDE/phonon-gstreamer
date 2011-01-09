@@ -47,12 +47,20 @@ public:
      */
     int currentBufferSize() const;
     void writeData(const QByteArray &data);
+    GstFlowReturn read(quint64 offset, int length, char * buffer);
+
+    void endOfData();
+    void start();
+    void stop();
+    void unlock();
+    void unlockStop();
+
     void setCurrentPos(qint64 pos);
     quint64 currentPos() const;
-    GstFlowReturn read(quint64 offset, int length, char * buffer);
-    void endOfData();
+
     void setStreamSize(qint64 newSize);
     qint64 streamSize() const;
+
     void setStreamSeekable(bool seekable);
     bool streamSeekable() const ;
 
@@ -60,6 +68,7 @@ private:
     quint64 m_pos;
     quint64 m_size;
     bool m_eos;
+    bool m_locked;
     bool m_seekable;
     MediaObject *m_mediaObject;
     QByteArray m_buffer;
