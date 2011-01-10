@@ -142,6 +142,7 @@ public:
     void connectAudio(GstPad *audioPad);
     void handleBusMessage(const Message &msg);
     void handleTagMessage(GstMessage *msg);
+    void handleStateMessage(GstMessage *msg);
     void handleEndOfStream();
     void addMissingCodecName(const QString &codec) { m_missingCodecs.append(codec); }
     void invalidateGraph();

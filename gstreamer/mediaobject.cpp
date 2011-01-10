@@ -1368,6 +1368,81 @@ void MediaObject::beginPlay()
 }
 
 /**
+ * Handle the GST_MESSAGE_STATE_CHANGED message
+ */
+void MediaObject::handleStateMessage(GstMessage *gstMessage)
+{
+    GstState oldState;
+    GstState newState;
+    GstState pendingState;
+    gst_message_parse_state_changed (gstMessage, &oldState, &newState, &pendingState);
+
+    if (gstMessage->src != GST_OBJECT(m_pipeline)) {
+        m_backend->logMessage("State changed from "+GstHelper::stateName(oldState)+" to "+GstHelper::stateName(newState), Backend::Debug, this);
+        return;
+    }
+
+    if (newState == pendingState)
+        return;
+
+    m_posAtSeek = -1;
+
+    switch (newState) {
+
+    case GST_STATE_PLAYING :
+        m_atStartOfStream = false;
+        m_backend->logMessage("gstreamer: pipeline state set to playing", Backend::Info, this);
+        m_tickTimer->start();
+        changeState(Phonon::PlayingState);
+        if ((m_source.type() == MediaSource::Disc) && (m_currentTitle != m_pendingTitle)) {
+            setTrack(m_pendingTitle);
+        }
+        if (m_resumeState && m_oldState == Phonon::PlayingState) {
+            seek(m_oldPos);
+            m_resumeState = false;
+        }
+        break;
+
+    case GST_STATE_NULL:
+        m_backend->logMessage("gstreamer: pipeline state set to null", Backend::Info, this);
+        m_tickTimer->stop();
+        break;
+
+    case GST_STATE_PAUSED :
+        m_backend->logMessage("gstreamer: pipeline state set to paused", Backend::Info, this);
+        m_tickTimer->start();
+        if (state() == Phonon::LoadingState) {
+            loadingComplete();
+        } else if (m_resumeState && m_oldState == Phonon::PausedState) {
+            changeState(Phonon::PausedState);
+            m_resumeState = false;
+            break;
+        } else {
+            // A lot of autotests can break if we allow all paused changes through.
+            if (m_pendingState == Phonon::PausedState) {
+                changeState(Phonon::PausedState);
+            }
+        }
+        break;
+
+    case GST_STATE_READY :
+        if (!m_loading && m_pendingState == Phonon::StoppedState)
+            changeState(Phonon::StoppedState);
+        m_backend->logMessage("gstreamer: pipeline state set to ready", Backend::Debug, this);
+        m_tickTimer->stop();
+        if ((m_source.type() == MediaSource::Disc) && (m_currentTitle != m_pendingTitle)) {
+            setTrack(m_pendingTitle);
+        }
+        break;
+
+    case GST_STATE_VOID_PENDING :
+        m_backend->logMessage("gstreamer: pipeline state set to pending (void)", Backend::Debug, this);
+        m_tickTimer->stop();
+        break;
+    }
+}
+
+/**
  * Handle the GST_MESSAGE_TAG message type
  */
 void MediaObject::handleTagMessage(GstMessage *msg)
@@ -1499,78 +1574,9 @@ void MediaObject::handleBusMessage(const Message &message)
         handleTagMessage(gstMessage);
         break;
 
-    case GST_MESSAGE_STATE_CHANGED : {
-
-            GstState oldState;
-            GstState newState;
-            GstState pendingState;
-            gst_message_parse_state_changed (gstMessage, &oldState, &newState, &pendingState);
-
-            if (gstMessage->src != GST_OBJECT(m_pipeline)) {
-                m_backend->logMessage("State changed from "+GstHelper::stateName(oldState)+" to "+GstHelper::stateName(newState), Backend::Debug, this);
-                return;
-            }
-
-            if (newState == pendingState)
-                return;
-
-            m_posAtSeek = -1;
-
-            switch (newState) {
-
-            case GST_STATE_PLAYING :
-                m_atStartOfStream = false;
-                m_backend->logMessage("gstreamer: pipeline state set to playing", Backend::Info, this);
-                m_tickTimer->start();
-                changeState(Phonon::PlayingState);
-                if ((m_source.type() == MediaSource::Disc) && (m_currentTitle != m_pendingTitle)) {
-                    setTrack(m_pendingTitle);
-                }
-                if (m_resumeState && m_oldState == Phonon::PlayingState) {
-                    seek(m_oldPos);
-                    m_resumeState = false;
-                }
-                break;
-
-            case GST_STATE_NULL:
-                m_backend->logMessage("gstreamer: pipeline state set to null", Backend::Info, this);
-                m_tickTimer->stop();
-                break;
-
-            case GST_STATE_PAUSED :
-                m_backend->logMessage("gstreamer: pipeline state set to paused", Backend::Info, this);
-                m_tickTimer->start();
-                if (state() == Phonon::LoadingState) {
-                    loadingComplete();
-                } else if (m_resumeState && m_oldState == Phonon::PausedState) {
-                    changeState(Phonon::PausedState);
-                    m_resumeState = false;
-                    break;
-                } else {
-                    // A lot of autotests can break if we allow all paused changes through.
-                    if (m_pendingState == Phonon::PausedState) {
-                        changeState(Phonon::PausedState);
-                    }
-                }
-                break;
-
-            case GST_STATE_READY :
-                if (!m_loading && m_pendingState == Phonon::StoppedState)
-                    changeState(Phonon::StoppedState);
-                m_backend->logMessage("gstreamer: pipeline state set to ready", Backend::Debug, this);
-                m_tickTimer->stop();
-                if ((m_source.type() == MediaSource::Disc) && (m_currentTitle != m_pendingTitle)) {
-                    setTrack(m_pendingTitle);
-                }
-                break;
-
-            case GST_STATE_VOID_PENDING :
-                m_backend->logMessage("gstreamer: pipeline state set to pending (void)", Backend::Debug, this);
-                m_tickTimer->stop();
-                break;
-            }
-            break;
-        }
+    case GST_MESSAGE_STATE_CHANGED :
+        handleStateMessage(gstMessage);
+        break;
 
     case GST_MESSAGE_ERROR: {
             gchar *debug;
