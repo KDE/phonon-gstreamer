@@ -1659,6 +1659,32 @@ void MediaObject::handleTagMessage(GstMessage *msg)
 }
 
 /**
+ * Handle element messages
+ */
+void MediaObject::handleElementMessage(GstMessage *gstMessage)
+{
+    const GstStructure *gstStruct = gst_message_get_structure(gstMessage); //do not free this
+    if (g_strrstr (gst_structure_get_name (gstStruct), "prepare-xwindow-id")) {
+        MediaNodeEvent videoHandleEvent(MediaNodeEvent::VideoHandleRequest);
+        notify(&videoHandleEvent);
+    }
+}
+
+void MediaObject::handleEOSMessage(GstMessage *gstMessage)
+{
+    Q_UNUSED(gstMessage);
+    m_backend->logMessage("EOS received", Backend::Info, this);
+    handleEndOfStream();
+}
+
+void MediaObject::handleDurationMessage(GstMessage *gstMessage)
+{
+    Q_UNUSED(gstMessage);
+    m_backend->logMessage("GST_MESSAGE_DURATION", Backend::Debug, this);
+    updateTotalTime();
+}
+
+/**
  * Handle GStreamer bus messages
  */
 void MediaObject::handleBusMessage(const Message &message)
@@ -1680,8 +1706,7 @@ void MediaObject::handleBusMessage(const Message &message)
     switch (GST_MESSAGE_TYPE (gstMessage)) {
 
     case GST_MESSAGE_EOS:
-        m_backend->logMessage("EOS received", Backend::Info, this);
-        handleEndOfStream();
+        handleEOSMessage(gstMessage);
         break;
 
     case GST_MESSAGE_TAG:
@@ -1700,21 +1725,13 @@ void MediaObject::handleBusMessage(const Message &message)
         handleWarningMessage(gstMessage);
         break;
 
-    case GST_MESSAGE_ELEMENT: {
-            GstMessage *gstMessage = message.rawMessage();
-            const GstStructure *gstStruct = gst_message_get_structure(gstMessage); //do not free this
-            if (g_strrstr (gst_structure_get_name (gstStruct), "prepare-xwindow-id")) {
-                MediaNodeEvent videoHandleEvent(MediaNodeEvent::VideoHandleRequest);
-                notify(&videoHandleEvent);
-            }
-            break;
-        }
+    case GST_MESSAGE_ELEMENT:
+        handleElementMessage(gstMessage);
+        break;
 
-    case GST_MESSAGE_DURATION: {
-            m_backend->logMessage("GST_MESSAGE_DURATION", Backend::Debug, this);
-            updateTotalTime();
-            break;
-        }
+    case GST_MESSAGE_DURATION:
+        handleDurationMessage(gstMessage);
+        break;
 
     case GST_MESSAGE_BUFFERING:
         handleBufferingMessage(gstMessage);

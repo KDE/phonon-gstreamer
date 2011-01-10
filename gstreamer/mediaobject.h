@@ -146,6 +146,9 @@ public:
     void handleErrorMessage(GstMessage *msg);
     void handleWarningMessage(GstMessage *msg);
     void handleBufferingMessage(GstMessage *msg);
+    void handleElementMessage(GstMessage *msg);
+    void handleDurationMessage(GstMessage *msg);
+    void handleEOSMessage(GstMessage *msg);
     void handleEndOfStream();
     void addMissingCodecName(const QString &codec) { m_missingCodecs.append(codec); }
     void invalidateGraph();
