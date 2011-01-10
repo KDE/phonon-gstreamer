@@ -1462,6 +1462,26 @@ void MediaObject::handleWarningMessage(GstMessage *gstMessage)
 }
 
 /**
+ * Handles GST_MESSAGE_BUFFERING messages
+ */
+void MediaObject::handleBufferingMessage(GstMessage *gstMessage)
+{
+    gint percent = 0;
+    gst_structure_get_int (gstMessage->structure, "buffer-percent", &percent); //gst_message_parse_buffering was introduced in 0.10.11
+
+    if (m_bufferPercent != percent) {
+        emit bufferStatus(percent);
+        m_backend->logMessage(QString("Stream buffering %0").arg(percent), Backend::Debug, this);
+        m_bufferPercent = percent;
+    }
+
+    if (m_state != Phonon::BufferingState)
+        emit stateChanged(m_state, Phonon::BufferingState);
+    else if (percent == 100)
+        emit stateChanged(Phonon::BufferingState, m_state);
+}
+
+/**
  * Handle the GST_MESSAGE_STATE_CHANGED message
  */
 void MediaObject::handleStateMessage(GstMessage *gstMessage)
@@ -1696,22 +1716,9 @@ void MediaObject::handleBusMessage(const Message &message)
             break;
         }
 
-    case GST_MESSAGE_BUFFERING: {
-            gint percent = 0;
-            gst_structure_get_int (gstMessage->structure, "buffer-percent", &percent); //gst_message_parse_buffering was introduced in 0.10.11
-
-            if (m_bufferPercent != percent) {
-                emit bufferStatus(percent);
-                m_backend->logMessage(QString("Stream buffering %0").arg(percent), Backend::Debug, this);
-                m_bufferPercent = percent;
-            }
-
-            if (m_state != Phonon::BufferingState)
-                emit stateChanged(m_state, Phonon::BufferingState);
-            else if (percent == 100)
-                emit stateChanged(Phonon::BufferingState, m_state);
-            break;
-        }
+    case GST_MESSAGE_BUFFERING:
+        handleBufferingMessage(gstMessage);
+        break;
         //case GST_MESSAGE_INFO:
         //case GST_MESSAGE_STREAM_STATUS:
         //case GST_MESSAGE_CLOCK_PROVIDE:
