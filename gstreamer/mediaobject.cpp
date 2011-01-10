@@ -1449,6 +1449,18 @@ void MediaObject::handleErrorMessage(GstMessage *gstMessage)
     g_error_free (err);
 }
 
+void MediaObject::handleWarningMessage(GstMessage *gstMessage)
+{
+    gchar *debug;
+    GError *err;
+    gst_message_parse_warning(gstMessage, &err, &debug);
+    QString msgString;
+    msgString.sprintf("Warning: %s\nMessage:%s", debug, err->message);
+    m_backend->logMessage(msgString, Backend::Warning);
+    g_free (debug);
+    g_error_free (err);
+}
+
 /**
  * Handle the GST_MESSAGE_STATE_CHANGED message
  */
@@ -1664,17 +1676,9 @@ void MediaObject::handleBusMessage(const Message &message)
         handleErrorMessage(gstMessage);
         break;
 
-    case GST_MESSAGE_WARNING: {
-            gchar *debug;
-            GError *err;
-            gst_message_parse_warning(gstMessage, &err, &debug);
-            QString msgString;
-            msgString.sprintf("Warning: %s\nMessage:%s", debug, err->message);
-            m_backend->logMessage(msgString, Backend::Warning);
-            g_free (debug);
-            g_error_free (err);
-            break;
-        }
+    case GST_MESSAGE_WARNING:
+        handleWarningMessage(gstMessage);
+        break;
 
     case GST_MESSAGE_ELEMENT: {
             GstMessage *gstMessage = message.rawMessage();
