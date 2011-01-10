@@ -1368,6 +1368,88 @@ void MediaObject::beginPlay()
 }
 
 /**
+ * Handle the GST_MESSAGE_ERROR message
+ */
+void MediaObject::handleErrorMessage(GstMessage *gstMessage)
+{
+    gchar *debug;
+    GError *err;
+    QString logMessage;
+    gst_message_parse_error (gstMessage, &err, &debug);
+    gchar *errorMessage = gst_error_get_message (err->domain, err->code);
+    logMessage.sprintf("Error: %s Message: %s (%s) Code:%d", debug, err->message, errorMessage, err->code);
+    m_backend->logMessage(logMessage, Backend::Warning);
+    g_free(errorMessage);
+    g_free (debug);
+
+    if (err->domain == GST_RESOURCE_ERROR) {
+        if (err->code == GST_RESOURCE_ERROR_NOT_FOUND) {
+            setError(tr("Could not locate media source."), Phonon::FatalError);
+        } else if (err->code == GST_RESOURCE_ERROR_OPEN_READ) {
+            setError(tr("Could not open media source."), Phonon::FatalError);
+        } else if (err->code == GST_RESOURCE_ERROR_BUSY) {
+           // We need to check if this comes from an audio device by looking at sink caps
+           GstPad* sinkPad = gst_element_get_static_pad(GST_ELEMENT(gstMessage->src), "sink");
+           if (sinkPad) {
+                GstCaps *caps = gst_pad_get_caps (sinkPad);
+                GstStructure *str = gst_caps_get_structure (caps, 0);
+                if (g_strrstr (gst_structure_get_name (str), "audio"))
+                    setError(tr("Could not open audio device. The device is already in use."), Phonon::NormalError);
+                else
+                    setError(err->message, Phonon::FatalError);
+                gst_caps_unref (caps);
+                gst_object_unref (sinkPad);
+           }
+       } else {
+            setError(QString(err->message), Phonon::FatalError);
+       }
+   } else if (err->domain == GST_CORE_ERROR) {
+        switch(err->code) {
+            case GST_CORE_ERROR_MISSING_PLUGIN:
+                installMissingCodecs();
+                break;
+            default:
+                break;
+        }
+   } else if (err->domain == GST_STREAM_ERROR) {
+        switch (err->code) {
+        case GST_STREAM_ERROR_CODEC_NOT_FOUND:
+            installMissingCodecs();
+            break;
+        case GST_STREAM_ERROR_TYPE_NOT_FOUND:
+            if (!m_installingPlugin)
+                setError(tr("Could not find media type."), Phonon::FatalError);
+            break;
+        case GST_STREAM_ERROR_WRONG_TYPE:
+            setError(tr("Wrong media type encountered in GStreamer pipeline."), Phonon::FatalError);
+            break;
+        case GST_STREAM_ERROR_DECODE:
+            setError(tr("Could not decode media."), Phonon::FatalError);
+            break;
+        case GST_STREAM_ERROR_ENCODE:
+            setError(tr("Could not encode media."), Phonon::FatalError);
+            break;
+        case GST_STREAM_ERROR_MUX:
+            setError(tr("Could not demux media."), Phonon::FatalError);
+            break;
+        case GST_STREAM_ERROR_DECRYPT:
+            setError(tr("Could not decrypt media."), Phonon::FatalError);
+            break;
+        case GST_STREAM_ERROR_DECRYPT_NOKEY:
+            setError(tr("No suitable decryption key found."), Phonon::FatalError);
+            break;
+        default:
+            if (!m_installingPlugin)
+                setError(tr("Could not open media source."), Phonon::FatalError);
+            break;
+        }
+   } else {
+        setError(QString(err->message), Phonon::FatalError);
+    }
+    g_error_free (err);
+}
+
+/**
  * Handle the GST_MESSAGE_STATE_CHANGED message
  */
 void MediaObject::handleStateMessage(GstMessage *gstMessage)
@@ -1578,84 +1660,9 @@ void MediaObject::handleBusMessage(const Message &message)
         handleStateMessage(gstMessage);
         break;
 
-    case GST_MESSAGE_ERROR: {
-            gchar *debug;
-            GError *err;
-            QString logMessage;
-            gst_message_parse_error (gstMessage, &err, &debug);
-            gchar *errorMessage = gst_error_get_message (err->domain, err->code);
-            logMessage.sprintf("Error: %s Message: %s (%s) Code:%d", debug, err->message, errorMessage, err->code);
-            m_backend->logMessage(logMessage, Backend::Warning);
-            g_free(errorMessage);
-            g_free (debug);
-
-            if (err->domain == GST_RESOURCE_ERROR) {
-                if (err->code == GST_RESOURCE_ERROR_NOT_FOUND) {
-                    setError(tr("Could not locate media source."), Phonon::FatalError);
-                } else if (err->code == GST_RESOURCE_ERROR_OPEN_READ) {
-                    setError(tr("Could not open media source."), Phonon::FatalError);
-                } else if (err->code == GST_RESOURCE_ERROR_BUSY) {
-                   // We need to check if this comes from an audio device by looking at sink caps
-                   GstPad* sinkPad = gst_element_get_static_pad(GST_ELEMENT(gstMessage->src), "sink");
-                   if (sinkPad) {
-                        GstCaps *caps = gst_pad_get_caps (sinkPad);
-                        GstStructure *str = gst_caps_get_structure (caps, 0);
-                        if (g_strrstr (gst_structure_get_name (str), "audio"))
-                            setError(tr("Could not open audio device. The device is already in use."), Phonon::NormalError);
-                        else
-                            setError(err->message, Phonon::FatalError);
-                        gst_caps_unref (caps);
-                        gst_object_unref (sinkPad);
-                   }
-               } else {
-                    setError(QString(err->message), Phonon::FatalError);
-               }
-           } else if (err->domain == GST_CORE_ERROR) {
-                switch(err->code) {
-                    case GST_CORE_ERROR_MISSING_PLUGIN:
-                        installMissingCodecs();
-                        break;
-                    default:
-                        break;
-                }
-           } else if (err->domain == GST_STREAM_ERROR) {
-                switch (err->code) {
-                case GST_STREAM_ERROR_CODEC_NOT_FOUND:
-                    installMissingCodecs();
-                    break;
-                case GST_STREAM_ERROR_TYPE_NOT_FOUND:
-                    if (!m_installingPlugin)
-                        setError(tr("Could not find media type."), Phonon::FatalError);
-                    break;
-                case GST_STREAM_ERROR_WRONG_TYPE:
-                    setError(tr("Wrong media type encountered in GStreamer pipeline."), Phonon::FatalError);
-                    break;
-                case GST_STREAM_ERROR_DECODE:
-                    setError(tr("Could not decode media."), Phonon::FatalError);
-                    break;
-                case GST_STREAM_ERROR_ENCODE:
-                    setError(tr("Could not encode media."), Phonon::FatalError);
-                    break;
-                case GST_STREAM_ERROR_MUX:
-                    setError(tr("Could not demux media."), Phonon::FatalError);
-                    break;
-                case GST_STREAM_ERROR_DECRYPT:
-                    setError(tr("Could not decrypt media."), Phonon::FatalError);
-                    break;
-                case GST_STREAM_ERROR_DECRYPT_NOKEY:
-                    setError(tr("No suitable decryption key found."), Phonon::FatalError);
-                    break;
-                default:
-                    if (!m_installingPlugin)
-                        setError(tr("Could not open media source."), Phonon::FatalError);
-                    break;
-                }
-           } else {
-                setError(QString(err->message), Phonon::FatalError);
-            }
-            g_error_free (err);
-            break;
-        }
+    case GST_MESSAGE_ERROR:
+        handleErrorMessage(gstMessage);
+        break;
 
     case GST_MESSAGE_WARNING: {
             gchar *debug;
