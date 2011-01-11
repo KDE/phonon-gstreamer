@@ -67,11 +67,12 @@ Backend::Backend(QObject *parent, const QVariantList &)
         g_set_application_name(qApp->applicationName().toUtf8());
     }
 
+    QByteArray appFilePath = qApp->applicationFilePath().toUtf8();
     QByteArray gstDebugLevel("--gst-debug-level=");
     gstDebugLevel.append(qgetenv("PHONON_GST_GST_DEBUG"));
 
     const char *args[] = {
-        qApp->applicationFilePath().toUtf8().constData(),
+        appFilePath.constData(),
         gstDebugLevel.constData(),
         "--gst-debug-no-color"
     };
