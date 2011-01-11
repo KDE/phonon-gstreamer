@@ -801,11 +801,17 @@ void MediaObject::setState(State newstate)
         if (m_atEndOfStream) {
             m_backend->logMessage("EOS already reached", Backend::Info, this);
         } else if (currentState == GST_STATE_PLAYING) {
+            m_backend->logMessage("Already playing", Backend::Info, this);
             changeState(Phonon::PlayingState);
-        } else if (gst_element_set_state(m_pipeline, GST_STATE_PLAYING) != GST_STATE_CHANGE_FAILURE) {
-            m_pendingState = Phonon::PlayingState;
         } else {
-            m_backend->logMessage("phonon state request failed", Backend::Info, this);
+            GstStateChangeReturn status = gst_element_set_state(m_pipeline, GST_STATE_PLAYING);
+            if (status == GST_STATE_CHANGE_ASYNC) {
+                m_backend->logMessage("Playing state is now pending");
+                m_pendingState = Phonon::PlayingState;
+            } else if (status == GST_STATE_CHANGE_FAILURE) {
+                m_backend->logMessage("phonon state request failed", Backend::Info, this);
+                changeState(Phonon::ErrorState);
+            }
         }
         break;
 
@@ -1362,6 +1368,195 @@ void MediaObject::beginPlay()
 }
 
 /**
+ * Handle the GST_MESSAGE_ERROR message
+ */
+void MediaObject::handleErrorMessage(GstMessage *gstMessage)
+{
+    gchar *debug;
+    GError *err;
+    QString logMessage;
+    gst_message_parse_error (gstMessage, &err, &debug);
+    gchar *errorMessage = gst_error_get_message (err->domain, err->code);
+    logMessage.sprintf("Error: %s Message: %s (%s) Code:%d", debug, err->message, errorMessage, err->code);
+    m_backend->logMessage(logMessage, Backend::Warning);
+    g_free(errorMessage);
+    g_free (debug);
+
+    if (err->domain == GST_RESOURCE_ERROR) {
+        if (err->code == GST_RESOURCE_ERROR_NOT_FOUND) {
+            setError(tr("Could not locate media source."), Phonon::FatalError);
+        } else if (err->code == GST_RESOURCE_ERROR_OPEN_READ) {
+            setError(tr("Could not open media source."), Phonon::FatalError);
+        } else if (err->code == GST_RESOURCE_ERROR_BUSY) {
+           // We need to check if this comes from an audio device by looking at sink caps
+           GstPad* sinkPad = gst_element_get_static_pad(GST_ELEMENT(gstMessage->src), "sink");
+           if (sinkPad) {
+                GstCaps *caps = gst_pad_get_caps (sinkPad);
+                GstStructure *str = gst_caps_get_structure (caps, 0);
+                if (g_strrstr (gst_structure_get_name (str), "audio"))
+                    setError(tr("Could not open audio device. The device is already in use."), Phonon::NormalError);
+                else
+                    setError(err->message, Phonon::FatalError);
+                gst_caps_unref (caps);
+                gst_object_unref (sinkPad);
+           }
+       } else {
+            setError(QString(err->message), Phonon::FatalError);
+       }
+   } else if (err->domain == GST_CORE_ERROR) {
+        switch(err->code) {
+            case GST_CORE_ERROR_MISSING_PLUGIN:
+                installMissingCodecs();
+                break;
+            default:
+                break;
+        }
+   } else if (err->domain == GST_STREAM_ERROR) {
+        switch (err->code) {
+        case GST_STREAM_ERROR_CODEC_NOT_FOUND:
+            installMissingCodecs();
+            break;
+        case GST_STREAM_ERROR_TYPE_NOT_FOUND:
+            if (!m_installingPlugin)
+                setError(tr("Could not find media type."), Phonon::FatalError);
+            break;
+        case GST_STREAM_ERROR_WRONG_TYPE:
+            setError(tr("Wrong media type encountered in GStreamer pipeline."), Phonon::FatalError);
+            break;
+        case GST_STREAM_ERROR_DECODE:
+            setError(tr("Could not decode media."), Phonon::FatalError);
+            break;
+        case GST_STREAM_ERROR_ENCODE:
+            setError(tr("Could not encode media."), Phonon::FatalError);
+            break;
+        case GST_STREAM_ERROR_MUX:
+            setError(tr("Could not demux media."), Phonon::FatalError);
+            break;
+        case GST_STREAM_ERROR_DECRYPT:
+            setError(tr("Could not decrypt media."), Phonon::FatalError);
+            break;
+        case GST_STREAM_ERROR_DECRYPT_NOKEY:
+            setError(tr("No suitable decryption key found."), Phonon::FatalError);
+            break;
+        default:
+            if (!m_installingPlugin)
+                setError(tr("Could not open media source."), Phonon::FatalError);
+            break;
+        }
+   } else {
+        setError(QString(err->message), Phonon::FatalError);
+    }
+    g_error_free (err);
+}
+
+void MediaObject::handleWarningMessage(GstMessage *gstMessage)
+{
+    gchar *debug;
+    GError *err;
+    gst_message_parse_warning(gstMessage, &err, &debug);
+    QString msgString;
+    msgString.sprintf("Warning: %s\nMessage:%s", debug, err->message);
+    m_backend->logMessage(msgString, Backend::Warning);
+    g_free (debug);
+    g_error_free (err);
+}
+
+/**
+ * Handles GST_MESSAGE_BUFFERING messages
+ */
+void MediaObject::handleBufferingMessage(GstMessage *gstMessage)
+{
+    gint percent = 0;
+    gst_structure_get_int (gstMessage->structure, "buffer-percent", &percent); //gst_message_parse_buffering was introduced in 0.10.11
+
+    if (m_bufferPercent != percent) {
+        emit bufferStatus(percent);
+        m_backend->logMessage(QString("Stream buffering %0").arg(percent), Backend::Debug, this);
+        m_bufferPercent = percent;
+    }
+
+    if (m_state != Phonon::BufferingState)
+        emit stateChanged(m_state, Phonon::BufferingState);
+    else if (percent == 100)
+        emit stateChanged(Phonon::BufferingState, m_state);
+}
+
+/**
+ * Handle the GST_MESSAGE_STATE_CHANGED message
+ */
+void MediaObject::handleStateMessage(GstMessage *gstMessage)
+{
+    GstState oldState;
+    GstState newState;
+    GstState pendingState;
+    gst_message_parse_state_changed (gstMessage, &oldState, &newState, &pendingState);
+
+    if (gstMessage->src != GST_OBJECT(m_pipeline)) {
+        m_backend->logMessage("State changed from "+GstHelper::stateName(oldState)+" to "+GstHelper::stateName(newState), Backend::Debug, this);
+        return;
+    }
+
+    if (newState == pendingState)
+        return;
+
+    m_posAtSeek = -1;
+
+    switch (newState) {
+
+    case GST_STATE_PLAYING :
+        m_atStartOfStream = false;
+        m_backend->logMessage("gstreamer: pipeline state set to playing", Backend::Info, this);
+        m_tickTimer->start();
+        changeState(Phonon::PlayingState);
+        if ((m_source.type() == MediaSource::Disc) && (m_currentTitle != m_pendingTitle)) {
+            setTrack(m_pendingTitle);
+        }
+        if (m_resumeState && m_oldState == Phonon::PlayingState) {
+            seek(m_oldPos);
+            m_resumeState = false;
+        }
+        break;
+
+    case GST_STATE_NULL:
+        m_backend->logMessage("gstreamer: pipeline state set to null", Backend::Info, this);
+        m_tickTimer->stop();
+        break;
+
+    case GST_STATE_PAUSED :
+        m_backend->logMessage("gstreamer: pipeline state set to paused", Backend::Info, this);
+        m_tickTimer->start();
+        if (state() == Phonon::LoadingState) {
+            loadingComplete();
+        } else if (m_resumeState && m_oldState == Phonon::PausedState) {
+            changeState(Phonon::PausedState);
+            m_resumeState = false;
+            break;
+        } else {
+            // A lot of autotests can break if we allow all paused changes through.
+            if (m_pendingState == Phonon::PausedState) {
+                changeState(Phonon::PausedState);
+            }
+        }
+        break;
+
+    case GST_STATE_READY :
+        if (!m_loading && m_pendingState == Phonon::StoppedState)
+            changeState(Phonon::StoppedState);
+        m_backend->logMessage("gstreamer: pipeline state set to ready", Backend::Debug, this);
+        m_tickTimer->stop();
+        if ((m_source.type() == MediaSource::Disc) && (m_currentTitle != m_pendingTitle)) {
+            setTrack(m_pendingTitle);
+        }
+        break;
+
+    case GST_STATE_VOID_PENDING :
+        m_backend->logMessage("gstreamer: pipeline state set to pending (void)", Backend::Debug, this);
+        m_tickTimer->stop();
+        break;
+    }
+}
+
+/**
  * Handle the GST_MESSAGE_TAG message type
  */
 void MediaObject::handleTagMessage(GstMessage *msg)
@@ -1464,6 +1659,32 @@ void MediaObject::handleTagMessage(GstMessage *msg)
 }
 
 /**
+ * Handle element messages
+ */
+void MediaObject::handleElementMessage(GstMessage *gstMessage)
+{
+    const GstStructure *gstStruct = gst_message_get_structure(gstMessage); //do not free this
+    if (g_strrstr (gst_structure_get_name (gstStruct), "prepare-xwindow-id")) {
+        MediaNodeEvent videoHandleEvent(MediaNodeEvent::VideoHandleRequest);
+        notify(&videoHandleEvent);
+    }
+}
+
+void MediaObject::handleEOSMessage(GstMessage *gstMessage)
+{
+    Q_UNUSED(gstMessage);
+    m_backend->logMessage("EOS received", Backend::Info, this);
+    handleEndOfStream();
+}
+
+void MediaObject::handleDurationMessage(GstMessage *gstMessage)
+{
+    Q_UNUSED(gstMessage);
+    m_backend->logMessage("GST_MESSAGE_DURATION", Backend::Debug, this);
+    updateTotalTime();
+}
+
+/**
  * Handle GStreamer bus messages
  */
 void MediaObject::handleBusMessage(const Message &message)
@@ -1485,210 +1706,36 @@ void MediaObject::handleBusMessage(const Message &message)
     switch (GST_MESSAGE_TYPE (gstMessage)) {
 
     case GST_MESSAGE_EOS:
-        m_backend->logMessage("EOS received", Backend::Info, this);
-        handleEndOfStream();
+        handleEOSMessage(gstMessage);
         break;
 
     case GST_MESSAGE_TAG:
         handleTagMessage(gstMessage);
         break;
 
-    case GST_MESSAGE_STATE_CHANGED : {
+    case GST_MESSAGE_STATE_CHANGED :
+        handleStateMessage(gstMessage);
+        break;
 
-            GstState oldState;
-            GstState newState;
-            GstState pendingState;
-            gst_message_parse_state_changed (gstMessage, &oldState, &newState, &pendingState);
+    case GST_MESSAGE_ERROR:
+        handleErrorMessage(gstMessage);
+        break;
 
-            if (gstMessage->src != GST_OBJECT(m_pipeline)) {
-                m_backend->logMessage("State changed from "+GstHelper::stateName(oldState)+" to "+GstHelper::stateName(newState), Backend::Debug, this);
-                return;
-            }
+    case GST_MESSAGE_WARNING:
+        handleWarningMessage(gstMessage);
+        break;
 
-            if (newState == pendingState)
-                return;
+    case GST_MESSAGE_ELEMENT:
+        handleElementMessage(gstMessage);
+        break;
 
-            m_posAtSeek = -1;
+    case GST_MESSAGE_DURATION:
+        handleDurationMessage(gstMessage);
+        break;
 
-            switch (newState) {
-
-            case GST_STATE_PLAYING :
-                m_atStartOfStream = false;
-                m_backend->logMessage("gstreamer: pipeline state set to playing", Backend::Info, this);
-                m_tickTimer->start();
-                changeState(Phonon::PlayingState);
-                if ((m_source.type() == MediaSource::Disc) && (m_currentTitle != m_pendingTitle)) {
-                    setTrack(m_pendingTitle);
-                }
-                if (m_resumeState && m_oldState == Phonon::PlayingState) {
-                    seek(m_oldPos);
-                    m_resumeState = false;
-                }
-                break;
-
-            case GST_STATE_NULL:
-                m_backend->logMessage("gstreamer: pipeline state set to null", Backend::Info, this);
-                m_tickTimer->stop();
-                break;
-
-            case GST_STATE_PAUSED :
-                m_backend->logMessage("gstreamer: pipeline state set to paused", Backend::Info, this);
-                m_tickTimer->start();
-                if (state() == Phonon::LoadingState) {
-                    loadingComplete();
-                } else if (m_resumeState && m_oldState == Phonon::PausedState) {
-                    changeState(Phonon::PausedState);
-                    m_resumeState = false;
-                    break;
-                } else {
-                    // A lot of autotests can break if we allow all paused changes through.
-                    if (m_pendingState == Phonon::PausedState) {
-                        changeState(Phonon::PausedState);
-                    }
-                }
-                break;
-
-            case GST_STATE_READY :
-                if (!m_loading && m_pendingState == Phonon::StoppedState)
-                    changeState(Phonon::StoppedState);
-                m_backend->logMessage("gstreamer: pipeline state set to ready", Backend::Debug, this);
-                m_tickTimer->stop();
-                if ((m_source.type() == MediaSource::Disc) && (m_currentTitle != m_pendingTitle)) {
-                    setTrack(m_pendingTitle);
-                }
-                break;
-
-            case GST_STATE_VOID_PENDING :
-                m_backend->logMessage("gstreamer: pipeline state set to pending (void)", Backend::Debug, this);
-                m_tickTimer->stop();
-                break;
-            }
-            break;
-        }
-
-    case GST_MESSAGE_ERROR: {
-            gchar *debug;
-            GError *err;
-            QString logMessage;
-            gst_message_parse_error (gstMessage, &err, &debug);
-            gchar *errorMessage = gst_error_get_message (err->domain, err->code);
-            logMessage.sprintf("Error: %s Message: %s (%s) Code:%d", debug, err->message, errorMessage, err->code);
-            m_backend->logMessage(logMessage, Backend::Warning);
-            g_free(errorMessage);
-            g_free (debug);
-
-            if (err->domain == GST_RESOURCE_ERROR) {
-                if (err->code == GST_RESOURCE_ERROR_NOT_FOUND) {
-                    setError(tr("Could not locate media source."), Phonon::FatalError);
-                } else if (err->code == GST_RESOURCE_ERROR_OPEN_READ) {
-                    setError(tr("Could not open media source."), Phonon::FatalError);
-                } else if (err->code == GST_RESOURCE_ERROR_BUSY) {
-                   // We need to check if this comes from an audio device by looking at sink caps
-                   GstPad* sinkPad = gst_element_get_static_pad(GST_ELEMENT(gstMessage->src), "sink");
-                   if (sinkPad) {
-                        GstCaps *caps = gst_pad_get_caps (sinkPad);
-                        GstStructure *str = gst_caps_get_structure (caps, 0);
-                        if (g_strrstr (gst_structure_get_name (str), "audio"))
-                            setError(tr("Could not open audio device. The device is already in use."), Phonon::NormalError);
-                        else
-                            setError(err->message, Phonon::FatalError);
-                        gst_caps_unref (caps);
-                        gst_object_unref (sinkPad);
-                   }
-               } else {
-                    setError(QString(err->message), Phonon::FatalError);
-               }
-           } else if (err->domain == GST_CORE_ERROR) {
-                switch(err->code) {
-                    case GST_CORE_ERROR_MISSING_PLUGIN:
-                        installMissingCodecs();
-                        break;
-                    default:
-                        break;
-                }
-           } else if (err->domain == GST_STREAM_ERROR) {
-                switch (err->code) {
-                case GST_STREAM_ERROR_CODEC_NOT_FOUND:
-                    installMissingCodecs();
-                    break;
-                case GST_STREAM_ERROR_TYPE_NOT_FOUND:
-                    if (!m_installingPlugin)
-                        setError(tr("Could not find media type."), Phonon::FatalError);
-                    break;
-                case GST_STREAM_ERROR_WRONG_TYPE:
-                    setError(tr("Wrong media type encountered in GStreamer pipeline."), Phonon::FatalError);
-                    break;
-                case GST_STREAM_ERROR_DECODE:
-                    setError(tr("Could not decode media."), Phonon::FatalError);
-                    break;
-                case GST_STREAM_ERROR_ENCODE:
-                    setError(tr("Could not encode media."), Phonon::FatalError);
-                    break;
-                case GST_STREAM_ERROR_MUX:
-                    setError(tr("Could not demux media."), Phonon::FatalError);
-                    break;
-                case GST_STREAM_ERROR_DECRYPT:
-                    setError(tr("Could not decrypt media."), Phonon::FatalError);
-                    break;
-                case GST_STREAM_ERROR_DECRYPT_NOKEY:
-                    setError(tr("No suitable decryption key found."), Phonon::FatalError);
-                    break;
-                default:
-                    if (!m_installingPlugin)
-                        setError(tr("Could not open media source."), Phonon::FatalError);
-                    break;
-                }
-           } else {
-                setError(QString(err->message), Phonon::FatalError);
-            }
-            g_error_free (err);
-            break;
-        }
-
-    case GST_MESSAGE_WARNING: {
-            gchar *debug;
-            GError *err;
-            gst_message_parse_warning(gstMessage, &err, &debug);
-            QString msgString;
-            msgString.sprintf("Warning: %s\nMessage:%s", debug, err->message);
-            m_backend->logMessage(msgString, Backend::Warning);
-            g_free (debug);
-            g_error_free (err);
-            break;
-        }
-
-    case GST_MESSAGE_ELEMENT: {
-            GstMessage *gstMessage = message.rawMessage();
-            const GstStructure *gstStruct = gst_message_get_structure(gstMessage); //do not free this
-            if (g_strrstr (gst_structure_get_name (gstStruct), "prepare-xwindow-id")) {
-                MediaNodeEvent videoHandleEvent(MediaNodeEvent::VideoHandleRequest);
-                notify(&videoHandleEvent);
-            }
-            break;
-        }
-
-    case GST_MESSAGE_DURATION: {
-            m_backend->logMessage("GST_MESSAGE_DURATION", Backend::Debug, this);
-            updateTotalTime();
-            break;
-        }
-
-    case GST_MESSAGE_BUFFERING: {
-            gint percent = 0;
-            gst_structure_get_int (gstMessage->structure, "buffer-percent", &percent); //gst_message_parse_buffering was introduced in 0.10.11
-
-            if (m_bufferPercent != percent) {
-                emit bufferStatus(percent);
-                m_backend->logMessage(QString("Stream buffering %0").arg(percent), Backend::Debug, this);
-                m_bufferPercent = percent;
-            }
-
-            if (m_state != Phonon::BufferingState)
-                emit stateChanged(m_state, Phonon::BufferingState);
-            else if (percent == 100)
-                emit stateChanged(Phonon::BufferingState, m_state);
-            break;
-        }
+    case GST_MESSAGE_BUFFERING:
+        handleBufferingMessage(gstMessage);
+        break;
         //case GST_MESSAGE_INFO:
         //case GST_MESSAGE_STREAM_STATUS:
         //case GST_MESSAGE_CLOCK_PROVIDE:
