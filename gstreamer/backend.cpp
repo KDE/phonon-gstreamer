@@ -67,28 +67,19 @@ Backend::Backend(QObject *parent, const QVariantList &)
         g_set_application_name(qApp->applicationName().toUtf8());
     }
 
-    int argc = 2;
-    char** argv;
+    QByteArray gstDebugLevel("--gst-debug-level=");
+    gstDebugLevel.append(qgetenv("PHONON_GST_GST_DEBUG"));
 
-    QString spewLevelString = qgetenv("PHONON_GST_GST_DEBUG");
-    int spewLevel = spewLevelString.toInt();
-    if (spewLevel > 5)
-        spewLevel = 5;
-    if (spewLevel < 0)
-        spewLevel = 0;
-    argv = new char*[2];
-    int len = QCoreApplication::applicationFilePath().length();
-    argv[0] = (char*)qMalloc(len+1*sizeof(char));
-    strcpy(argv[0], QCoreApplication::applicationFilePath().toUtf8().data());
-    len = strlen("--gst-debug-level=0");
-    argv[1] = (char*)qMalloc(len+1*sizeof(char));
-    sprintf(argv[1], "--gst-debug-level=%d", spewLevel);
+    const char *args[] = {
+        qApp->applicationFilePath().toUtf8().constData(),
+        gstDebugLevel.constData(),
+        "--gst-debug-no-color"
+    };
 
+    int argc = sizeof(args) / sizeof(*args);
+    char **argv = const_cast<char**>(args);
     GError *err = 0;
     bool wasInit = gst_init_check(&argc, &argv, &err);  //init gstreamer: must be called before any gst-related functions
-
-    free(argv[1]);
-    delete[] argv;
 
     if (err)
         g_error_free(err);
