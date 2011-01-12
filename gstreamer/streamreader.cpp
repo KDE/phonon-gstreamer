@@ -49,12 +49,6 @@ void StreamReader::writeData(const QByteArray &data) {
 
     m_buffer.append(data);
 
-#warning enoughData sometimes locks any furhter needata?
-//    if (m_mediaObject->state() != Phonon::BufferingState &&
-//        m_mediaObject->state() != Phonon::LoadingState) {
-//        d << "we haz had enuogh, kthxbai!";
-//        enoughData();
-//    }
     m_waitingForData.wakeAll();
 }
 
@@ -100,7 +94,12 @@ GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
             }
         }
     }
-//    enoughData();
+#warning while can terminate beforehand!
+    if (m_mediaObject->state() != Phonon::BufferingState &&
+        m_mediaObject->state() != Phonon::LoadingState) {
+        d << "we haz had enuogh, kthxbai!";
+        enoughData();
+    }
 
     d << "filling up that stinky old buffer";
     qMemCopy(buffer, m_buffer.data(), length);
