@@ -49,14 +49,13 @@ void StreamReader::writeData(const QByteArray &data) {
 
     m_buffer.append(data);
 
-    m_waitingForData.wakeAll();
-
 #warning enoughData sometimes locks any furhter needata?
 //    if (m_mediaObject->state() != Phonon::BufferingState &&
 //        m_mediaObject->state() != Phonon::LoadingState) {
 //        d << "we haz had enuogh, kthxbai!";
 //        enoughData();
 //    }
+    m_waitingForData.wakeAll();
 }
 
 void StreamReader::setCurrentPos(qint64 pos)
