@@ -138,15 +138,15 @@ void StreamReader::stop()
 #endif
     d << "stopping!";
     enoughData();
-//    m_waitingForData.wakeAll();
+    m_waitingForData.wakeAll();
 }
 
 void StreamReader::unlock()
 {
     QMutexLocker locker(&m_mutex);
     d << "lock lock I shall unlock...";
-//    enoughData();
-//    m_waitingForData.wakeAll();
+    enoughData();
+    m_waitingForData.wakeAll();
 }
 
 void StreamReader::unlockStop()
