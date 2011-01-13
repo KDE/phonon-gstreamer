@@ -62,7 +62,6 @@ static gboolean phonon_src_is_seekable (GstBaseSrc * src);
 static gboolean phonon_src_get_size (GstBaseSrc * src, guint64 * size);
 static GstFlowReturn phonon_src_create (GstBaseSrc * src, guint64 offset,
                                            guint length, GstBuffer ** buffer);
-static gboolean phonon_src_check_get_range (GstBaseSrc *basesrc);
 
 static void _do_init (GType filesrc_type)
 {
@@ -113,7 +112,6 @@ static void phonon_src_class_init (PhononSrcClass * klass)
     gstbasesrc_class->is_seekable = GST_DEBUG_FUNCPTR (phonon_src_is_seekable);
     gstbasesrc_class->get_size = GST_DEBUG_FUNCPTR (phonon_src_get_size);
     gstbasesrc_class->create = GST_DEBUG_FUNCPTR (phonon_src_create);
-    gstbasesrc_class->check_get_range = GST_DEBUG_FUNCPTR(phonon_src_check_get_range);
 }
 
 static void phonon_src_init (PhononSrc * src, PhononSrcClass * g_class)
@@ -302,12 +300,6 @@ static gboolean phonon_src_stop(GstBaseSrc *basesrc)
     PhononSrc *src = GST_PHONON_SRC(basesrc);
     src->device->stop();
     return TRUE;
-}
-
-static gboolean phonon_src_check_get_range (GstBaseSrc *basesrc)
-{
-    PhononSrc *src = GST_PHONON_SRC(basesrc);
-    return src->device->checkGetRange();
 }
 
 }

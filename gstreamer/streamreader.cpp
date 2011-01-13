@@ -140,23 +140,6 @@ void StreamReader::unlockStop()
     QMutexLocker locker(&m_mutex);
 }
 
-bool StreamReader::checkGetRange()
-{
-    QMutexLocker locker(&m_mutex);
-    if (m_size == -1) {
-        return true; // Should not be seekable and thus immediately pullable.
-    }
-    qint64 initialSize = m_size;
-    needData();
-    // We are only waiting here for fun, the buffer will most likely not be
-    // filled within 100 msec, so we will likely require at least two calls
-    m_waitingForData.wait(&m_mutex, 100);
-    if (m_size == initialSize) {
-        return false;
-    }
-    return true;
-}
-
 void StreamReader::setStreamSize(qint64 newSize) {
     m_size = newSize;
 }
@@ -166,16 +149,18 @@ qint64 StreamReader::streamSize() const {
 }
 
 void StreamReader::setStreamSeekable(bool seekable) {
-    if (seekable) {
-        // The initial stream size of a seekable stream *must* not be 0 or
-        // GStreamer will refuse to typefind.
-        m_size = 1;
-    }
+//    if (seekable) {
+//        // The initial stream size of a seekable stream *must* not be 0 or
+//        // GStreamer will refuse to typefind.
+//        m_size = 1;
+//    }
     m_seekable = seekable;
 }
 
 bool StreamReader::streamSeekable() const {
-    return m_seekable;
+    // TODO - problems with pull seeking and the way our current stack works.
+    return false;
+//    return m_seekable;
 }
 
 }
