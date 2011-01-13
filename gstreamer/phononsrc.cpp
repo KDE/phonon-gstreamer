@@ -23,9 +23,6 @@ along with this library.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "streamreader.h"
 
-#include <QtCore/QDebug>
-#define d qDebug() << Q_FUNC_INFO << ": "
-
 QT_BEGIN_NAMESPACE
 
 namespace Phonon
@@ -248,12 +245,7 @@ static GstFlowReturn phonon_src_create_read (PhononSrc * src, guint64 offset, gu
 static GstFlowReturn phonon_src_create (GstBaseSrc * basesrc, guint64 offset, guint length, GstBuffer ** buffer)
 {
     PhononSrc *src = GST_PHONON_SRC (basesrc);
-    GstFlowReturn ret;
-    ret = phonon_src_create_read (src, offset, length, buffer);
-    if (ret == GST_FLOW_ERROR) d << "flow error"; ;
-    if (ret == GST_FLOW_UNEXPECTED) d << "flow unexpected"; ;
-    if (ret == GST_FLOW_OK) d << "flow ok"; ;
-    return ret;
+    return phonon_src_create_read (src, offset, length, buffer);
 }
 
 static gboolean phonon_src_is_seekable (GstBaseSrc * basesrc)
@@ -281,7 +273,6 @@ static gboolean phonon_src_get_size (GstBaseSrc *basesrc, guint64 *size)
 
 static gboolean phonon_src_unlock(GstBaseSrc *basesrc)
 {
-    d;
     PhononSrc *src = GST_PHONON_SRC(basesrc);
     src->device->unlock();
     return TRUE;
@@ -289,7 +280,6 @@ static gboolean phonon_src_unlock(GstBaseSrc *basesrc)
 
 static gboolean phonon_src_unlock_stop(GstBaseSrc *basesrc)
 {
-    d;
     PhononSrc *src = GST_PHONON_SRC(basesrc);
     src->device->unlockStop();
     return TRUE;
