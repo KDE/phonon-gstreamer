@@ -121,9 +121,6 @@ void StreamReader::start()
 
 void StreamReader::stop()
 {
-#ifdef __GNUC__
-#warning implications of stop on still working read????
-#endif
     enoughData();
     m_waitingForData.wakeAll();
 }
