@@ -785,7 +785,17 @@ void MediaObject::setState(State newstate)
         break;
 
     case Phonon::PlayingState:
-       if (m_resetNeeded) {
+#ifdef __GNUC__
+#warning TODO 4.5
+#endif
+        // TODO 4.5: drop m_resetNeeded completely and use live connections, whatever
+        // those might be.
+        if (m_source.url().host().contains(QLatin1String("last.fm"))) {
+            // Never reset for last.fm as they only allow one connection attempt.
+            // https://bugs.kde.org/show_bug.cgi?id=252649
+            m_resetNeeded = false;
+        }
+        if (m_resetNeeded) {
             // ### Note this is a workaround and it should really be gracefully
             // handled by medianode when we implement live connections.
             // This generally happens if medianodes have been connected after the MediaSource was set
