@@ -88,7 +88,6 @@ GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
             }
         }
     }
-#warning while can terminate beforehand!
     if (m_mediaObject->state() != Phonon::BufferingState &&
         m_mediaObject->state() != Phonon::LoadingState) {
         enoughData();
