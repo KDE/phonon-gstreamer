@@ -32,7 +32,6 @@
 #include <QtCore/QFile>
 #include <QtCore/QLibrary>
 #include <QtCore/QStringList>
-#include <QtCore/QThread>
 #include <QtCore/QTimer>
 #include <QtCore/QVector>
 #include <QtGui/QApplication>
@@ -567,10 +566,6 @@ bool MediaObject::createPipefromStream(const MediaSource &source)
 
     StreamReader *streamReader = new StreamReader(source, this);
     g_object_set (G_OBJECT (m_datasource), "iodevice", streamReader, (const char*)NULL);
-
-    QThread *t = new QThread;
-    streamReader->moveToThread(t);
-    t->start();
 
     // Link data source into pipeline
     gst_bin_add(GST_BIN(m_pipeline), m_datasource);
