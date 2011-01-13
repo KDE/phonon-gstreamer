@@ -54,6 +54,7 @@ public:
     void stop();
     void unlock();
     void unlockStop();
+    bool checkGetRange();
 
     void setCurrentPos(qint64 pos);
     quint64 currentPos() const;
@@ -62,7 +63,7 @@ public:
     qint64 streamSize() const;
 
     void setStreamSeekable(bool seekable);
-    bool streamSeekable() const ;
+    bool streamSeekable() const;
 
 private:
     quint64 m_pos;
