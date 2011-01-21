@@ -31,10 +31,10 @@
 #include <QtCore/QEvent>
 #include <QtCore/QFile>
 #include <QtCore/QLibrary>
+#include <QtCore/QPointer>
 #include <QtCore/QStringList>
 #include <QtCore/QTimer>
 #include <QtCore/QVector>
-#include <QtCore/QPointer>
 #include <QtGui/QApplication>
 
 #define ABOUT_TO_FINNISH_TIME 2000
@@ -245,7 +245,7 @@ void MediaObject::pluginInstallationResult(GstInstallPluginsReturn result)
 
 void MediaObject::pluginInstallationDone(GstInstallPluginsReturn result, gpointer userData)
 {
-    QPointer<MediaObject>* that = static_cast<QPointer<MediaObject>*>(userData);
+    QPointer<MediaObject> *that = static_cast<QPointer<MediaObject>*>(userData);
     if (*that) {
         qRegisterMetaType<GstInstallPluginsReturn>("GstInstallPluginsReturn");
         QMetaObject::invokeMethod(*that, "pluginInstallationResult", Qt::QueuedConnection, Q_ARG(GstInstallPluginsReturn, result));
