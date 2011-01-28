@@ -200,6 +200,10 @@ void MediaObject::cb_newpad (GstElement *decodebin,
 #ifdef PLUGIN_INSTALL_API
 void MediaObject::pluginInstallationResult(GstInstallPluginsReturn result)
 {
+    if (!m_installingPlugin) {
+        // Changed media while the installer was working, so we just do not care what happened.
+        return;
+    }
     bool wasInstalling = m_installingPlugin;
     m_installingPlugin = false;
     bool canPlay = (m_hasAudio || m_videoStreamFound);
