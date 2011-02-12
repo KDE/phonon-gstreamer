@@ -140,6 +140,7 @@ public:
 
     void connectVideo(GstPad *videoPad);
     void connectAudio(GstPad *audioPad);
+
     void handleBusMessage(const Message &msg);
     void handleTagMessage(GstMessage *msg);
     void handleStateMessage(GstMessage *msg);
@@ -150,6 +151,16 @@ public:
     void handleDurationMessage(GstMessage *msg);
     void handleEOSMessage(GstMessage *msg);
     void handleEndOfStream();
+
+    static gboolean cb_eos(GstBus *bus, GstMessage *msg, gpointer data);
+    static gboolean cb_tag(GstBus *bus, GstMessage *msg, gpointer data);
+    static gboolean cb_state(GstBus *bus, GstMessage *msg, gpointer data);
+    static gboolean cb_element(GstBus *bus, GstMessage *msg, gpointer data);
+    static gboolean cb_duration(GstBus *bus, GstMessage *msg, gpointer data);
+    static gboolean cb_buffering(GstBus *bus, GstMessage *msg, gpointer data);
+    static gboolean cb_warning(GstBus *bus, GstMessage *msg, gpointer data);
+    static gboolean cb_error(GstBus *bus, GstMessage *msg, gpointer data);
+
     void addMissingCodecName(const QString &codec) { m_missingCodecs.append(codec); }
     void invalidateGraph();
 
