@@ -100,7 +100,16 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
     } else {
         m_root = this;
         createPipeline();
-        m_backend->addBusWatcher(this);
+        GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_pipeline));
+        gst_bus_add_signal_watch(bus);
+        g_signal_connect(bus, "message::eos", G_CALLBACK(cb_eos), this);
+        g_signal_connect(bus, "message::tag", G_CALLBACK(cb_tag), this);
+        g_signal_connect(bus, "message::state-changed", G_CALLBACK(cb_state), this);
+        g_signal_connect(bus, "message::element", G_CALLBACK(cb_element), this);
+        g_signal_connect(bus, "message::duration", G_CALLBACK(cb_duration), this);
+        g_signal_connect(bus, "message::buffering", G_CALLBACK(cb_buffering), this);
+        g_signal_connect(bus, "message::warning", G_CALLBACK(cb_warning), this);
+        g_signal_connect(bus, "message::error", G_CALLBACK(cb_error), this);
         connect(m_tickTimer, SIGNAL(timeout()), SLOT(emitTick()));
     }
     connect(this, SIGNAL(stateChanged(Phonon::State, Phonon::State)),
@@ -109,8 +118,9 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
 
 MediaObject::~MediaObject()
 {
-    m_backend->removeBusWatcher(this);
     if (m_pipeline) {
+        GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_pipeline));
+        gst_bus_remove_signal_watch(bus);
         gst_element_set_state(m_pipeline, GST_STATE_NULL);
         gst_object_unref(m_pipeline);
     }
@@ -1488,6 +1498,13 @@ void MediaObject::beginPlay()
     m_pendingState = Phonon::PlayingState;
 }
 
+gboolean MediaObject::cb_error(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    MediaObject *that = static_cast<MediaObject*>(data);
+    that->handleErrorMessage(msg);
+    return true;
+}
+
 /**
  * Handle the GST_MESSAGE_ERROR message
  */
@@ -1570,6 +1587,13 @@ void MediaObject::handleErrorMessage(GstMessage *gstMessage)
     g_error_free (err);
 }
 
+gboolean MediaObject::cb_warning(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    MediaObject *that = static_cast<MediaObject*>(data);
+    that->handleWarningMessage(msg);
+    return true;
+}
+
 void MediaObject::handleWarningMessage(GstMessage *gstMessage)
 {
     gchar *debug;
@@ -1580,6 +1604,13 @@ void MediaObject::handleWarningMessage(GstMessage *gstMessage)
     m_backend->logMessage(msgString, Backend::Warning);
     g_free (debug);
     g_error_free (err);
+}
+
+gboolean MediaObject::cb_buffering(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    MediaObject *that = static_cast<MediaObject*>(data);
+    that->handleBufferingMessage(msg);
+    return true;
 }
 
 /**
@@ -1600,6 +1631,13 @@ void MediaObject::handleBufferingMessage(GstMessage *gstMessage)
         emit stateChanged(m_state, Phonon::BufferingState);
     else if (percent == 100)
         emit stateChanged(Phonon::BufferingState, m_state);
+}
+
+gboolean MediaObject::cb_state(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    MediaObject *that = static_cast<MediaObject*>(data);
+    that->handleStateMessage(msg);
+    return true;
 }
 
 /**
@@ -1675,6 +1713,12 @@ void MediaObject::handleStateMessage(GstMessage *gstMessage)
         m_tickTimer->stop();
         break;
     }
+}
+
+gboolean MediaObject::cb_tag(GstBus *bus, GstMessage *msg, gpointer data) {
+    MediaObject *that = static_cast<MediaObject*>(data);
+    that->handleTagMessage(msg);
+    return true;
 }
 
 /**
@@ -1785,6 +1829,12 @@ void MediaObject::handleTagMessage(GstMessage *msg)
     }
 }
 
+gboolean MediaObject::cb_element(GstBus *bus, GstMessage *msg, gpointer data) {
+    MediaObject *that = static_cast<MediaObject*>(data);
+    that->handleElementMessage(msg);
+    return true;
+}
+
 /**
  * Handle element messages
  */
@@ -1797,11 +1847,25 @@ void MediaObject::handleElementMessage(GstMessage *gstMessage)
     }
 }
 
+gboolean MediaObject::cb_eos(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    MediaObject *that = static_cast<MediaObject*>(data);
+    that->handleEOSMessage(msg);
+    return true;
+}
+
 void MediaObject::handleEOSMessage(GstMessage *gstMessage)
 {
     Q_UNUSED(gstMessage);
     m_backend->logMessage("EOS received", Backend::Info, this);
     handleEndOfStream();
+}
+
+gboolean MediaObject::cb_duration(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    MediaObject *that = static_cast<MediaObject*>(data);
+    that->handleDurationMessage(msg);
+    return true;
 }
 
 void MediaObject::handleDurationMessage(GstMessage *gstMessage)
