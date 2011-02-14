@@ -204,6 +204,7 @@ protected:
     bool createPipefromURL(const QUrl &url);
     bool createPipefromStream(const MediaSource &);
     bool createPipefromDevice(const MediaSource &);
+    bool createPipefromDVD(const MediaSource &);
     bool createV4lPipe(const DeviceAccess &access, const MediaSource &);
 
     GstElement *audioElement()

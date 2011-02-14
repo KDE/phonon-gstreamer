@@ -412,6 +412,8 @@ void MediaObject::connectVideo(GstPad *pad)
                 m_hasVideo = m_videoStreamFound;
                 emit hasVideoChanged(m_hasVideo);
             }
+        } else {
+            m_backend->logMessage("Could not connect video track");
         }
         gst_object_unref (videopad);
     } else {
@@ -462,6 +464,84 @@ bool MediaObject::createV4lPipe(const DeviceAccess &access, const MediaSource &s
     m_backend->logMessage("Created video device element");
     gst_bin_add(GST_BIN(m_pipeline), m_datasource);
     gst_element_link(m_datasource, m_decodebin);
+    return true;
+}
+
+bool MediaObject::createPipefromDVD(const MediaSource &source)
+{
+    // Remove any existing data source
+    if (m_datasource) {
+        gst_bin_remove(GST_BIN(m_pipeline), m_datasource);
+        // m_pipeline has the only ref to datasource
+        m_datasource = 0;
+    }
+
+
+    // For a good overview of what a 'subpicture' is, read up on them here:
+    // http://www.mediachance.com/dvdmenu/Help/basics.htm
+    //
+    // The graph we build here takes the video, audio, and subpicture streams
+    // from the dvd device via the rsndvdbin element. The video and subpicture
+    // streams are then combined in the dvdspu element, creating one single
+    // video output stream. The audio and video streams are then funneled into
+    // the audioGraph and videoGraph bins by way of connectAudio and decodebin,
+    // respectively.
+
+    m_datasource = gst_bin_new(NULL);
+    gst_bin_add(GST_BIN(m_pipeline), m_datasource);
+
+    GstElement *dvdsrc = gst_element_factory_make("rsndvdbin", NULL);
+    gst_bin_add(GST_BIN(m_datasource), dvdsrc);
+
+    QByteArray mediaDevice = QFile::encodeName(source.deviceName());
+    if (!mediaDevice.isEmpty())
+        g_object_set (G_OBJECT (m_datasource), "device", mediaDevice.constData(), (const char*)NULL);
+
+    // Video pipeline
+    GstElement *convert = gst_element_factory_make("ffmpegcolorspace", NULL);
+    GstElement *videoQueue = gst_element_factory_make("queue", NULL);
+    GstElement *spu = gst_element_factory_make("dvdspu", NULL);
+    gst_bin_add_many(GST_BIN(m_datasource), convert, videoQueue, spu, NULL);
+    gst_element_link_many(convert, videoQueue, spu, NULL);
+
+    // Audio pipeline
+    GstElement *audioOut = gst_element_factory_make("queue", NULL);
+
+    gst_bin_add(GST_BIN(m_datasource), audioOut);
+
+    GstPad *convertSink = gst_element_get_static_pad(convert, "sink");
+    GstPad *spuSink = gst_element_get_static_pad(spu, "subpicture");
+    GstPad *audioSink = gst_element_get_static_pad(audioOut, "sink");
+    g_signal_connect(dvdsrc, "pad-added", G_CALLBACK(cb_pad_added), convertSink);
+    g_signal_connect(dvdsrc, "pad-added", G_CALLBACK(cb_pad_added), spuSink);
+    g_signal_connect(dvdsrc, "pad-added", G_CALLBACK(cb_pad_added), audioSink);
+    gst_object_unref(convertSink);
+    gst_object_unref(spuSink);
+    gst_object_unref(audioSink);
+
+
+    GstPad *audioOutPad = gst_element_get_static_pad(audioOut, "src");
+    GstPad *audioOutGhostPad = gst_ghost_pad_new("audio", audioOutPad);
+    gst_element_add_pad(m_datasource, audioOutGhostPad);
+    // We do this manually, since the decodebin can only accept one input. And
+    // besides, rsndvdbin only sends audio/x-raw-*, which is supported by the
+    // downstream elements
+    connectAudio(audioOutGhostPad);
+    gst_object_unref(audioOutPad);
+
+    GstPad *videoOutPad = gst_element_get_static_pad(spu, "src");
+    GstPad *videoOutGhostPad = gst_ghost_pad_new("src", videoOutPad);
+    gst_element_add_pad(m_datasource, videoOutGhostPad);
+    gst_object_unref(videoOutPad);
+
+    // Keeping it in the pipeline would otherwise cause it all to stall.
+    // dvdspu outputs video/x-raw-yuv since rsndvdbin outputs that, so
+    // connecting it to the decodebin is technically a waste of CPU cycles.
+    // The alternative however, is to remove decodebin from the pipeline and
+    // remember to restore it later. Without any inputs, decodebin will hang up
+    // the pipeline.
+    gst_pad_link(videoOutGhostPad, gst_element_get_static_pad(m_decodebin, "sink"));
+
     return true;
 }
 
@@ -517,14 +597,7 @@ bool MediaObject::createPipefromURL(const QUrl &url)
 
     // Set the device for MediaSource::Disc
     if (m_source.type() == MediaSource::Disc) {
-
-        if (g_object_class_find_property (G_OBJECT_GET_CLASS (m_datasource), "device")) {
-            QByteArray mediaDevice = QFile::encodeName(m_source.deviceName());
-            if (!mediaDevice.isEmpty())
-                g_object_set (G_OBJECT (m_datasource), "device", mediaDevice.constData(), (const char*)NULL);
-        }
-
-        // Also Set optical disc speed to 2X for Audio CD
+        // Set optical disc speed to 2X for Audio CD
         if (m_source.discType() == Phonon::Cd
             && (g_object_class_find_property (G_OBJECT_GET_CLASS (m_datasource), "read-speed"))) {
             g_object_set (G_OBJECT (m_datasource), "read-speed", 2, (const char*)NULL);
@@ -1115,26 +1188,28 @@ void MediaObject::setSource(const MediaSource &source)
 
     case MediaSource::Disc:
         {
-            QString mediaUrl;
-            switch (source.discType()) {
-            case Phonon::NoDisc:
-                qWarning() << "I should never get to see a MediaSource that is a disc but doesn't specify which one";
-                return;
-            case Phonon::Cd:  // CD tracks can be specified by setting the url in the following way uri=cdda:4
-                mediaUrl = QLatin1String("cdda://");
-                break;
-            case Phonon::Dvd:
-                mediaUrl = QLatin1String("dvd://");
-                break;
-            case Phonon::Vcd:
-                mediaUrl = QLatin1String("vcd://");
-                break;
-            default:
-                qWarning() <<  "media " << source.discType() << " not implemented";
-                return;
+            if (source.discType() == Phonon::Dvd) {
+                if (!createPipefromDVD(source))
+                    setError(tr("Could not open DVD."));
+            } else {
+                QString mediaUrl;
+                switch (source.discType()) {
+                case Phonon::NoDisc:
+                    qWarning() << "I should never get to see a MediaSource that is a disc but doesn't specify which one";
+                    return;
+                case Phonon::Cd:  // CD tracks can be specified by setting the url in the following way uri=cdda:4
+                    mediaUrl = QLatin1String("cdda://");
+                    break;
+                case Phonon::Vcd:
+                    mediaUrl = QLatin1String("vcd://");
+                    break;
+                default:
+                    qWarning() <<  "media " << source.discType() << " not implemented";
+                    return;
+                }
+                if (mediaUrl.isEmpty() || !createPipefromURL(QUrl(mediaUrl)))
+                    setError(tr("Could not open media source."));
             }
-            if (mediaUrl.isEmpty() || !createPipefromURL(QUrl(mediaUrl)))
-                setError(tr("Could not open media source."));
         }
         break;
 
