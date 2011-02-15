@@ -179,7 +179,7 @@ void X11Renderer::setOverlay()
         // Even if we have created a winId at this point, other X applications
         // need to be aware of it.
         QApplication::syncX();
-        gst_x_overlay_set_xwindow_id ( GST_X_OVERLAY(m_videoSink) ,  windowId );
+        gst_x_overlay_set_window_handle( GST_X_OVERLAY(m_videoSink), windowId );
     }
     windowExposed();
     m_overlaySet = true;
