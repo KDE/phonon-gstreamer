@@ -120,6 +120,7 @@ MediaObject::~MediaObject()
 {
     if (m_pipeline) {
         GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_pipeline));
+        g_signal_handlers_disconnect_matched(bus, G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, this);
         gst_bus_remove_signal_watch(bus);
         gst_element_set_state(m_pipeline, GST_STATE_NULL);
         gst_object_unref(m_pipeline);

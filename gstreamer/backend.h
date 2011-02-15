@@ -68,20 +68,13 @@ public:
 
     DebugLevel debugLevel() const;
 
-    void addBusWatcher(MediaObject* node);
-    void removeBusWatcher(MediaObject* node);
     void logMessage(const QString &message, int priority = 2, QObject *obj = 0) const;
     bool checkDependencies() const;
 
 Q_SIGNALS:
     void objectDescriptionChanged(ObjectDescriptionType);
 
-private Q_SLOTS:
-    void handleBusMessage(Message);
-
 private:
-    static gboolean busCall(GstBus *bus, GstMessage *msg, gpointer data);
-
     DeviceManager *m_deviceManager;
     EffectManager *m_effectManager;
     DebugLevel m_debugLevel;
