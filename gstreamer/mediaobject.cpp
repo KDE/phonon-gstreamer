@@ -1808,6 +1808,22 @@ void MediaObject::handleElementMessage(GstMessage *gstMessage)
     if (g_strrstr (gst_structure_get_name (gstStruct), "prepare-xwindow-id")) {
         MediaNodeEvent videoHandleEvent(MediaNodeEvent::VideoHandleRequest);
         notify(&videoHandleEvent);
+    } else {
+#if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
+        switch (gst_navigation_message_get_type(gstMessage)) {
+        case GST_NAVIGATION_MESSAGE_MOUSE_OVER: {
+            gboolean active;
+            if (!gst_navigation_message_parse_mouse_over(gstMessage, &active)) {
+                break;
+            }
+            MediaNodeEvent mouseOverEvent(MediaNodeEvent::VideoMouseOver, &active);
+            notify(&mouseOverEvent);
+            break;
+        }
+        default:
+            break;
+        }
+#endif // GST_VERSION
     }
 }
 
