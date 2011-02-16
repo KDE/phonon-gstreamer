@@ -103,7 +103,7 @@ GstElement* X11Renderer::createVideoSink()
     QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
     if(!tegraEnv.isEmpty())
     {
-        videoSink = gst_element_factory_make ("nv_gl_videosink", NULL);    
+        videoSink = gst_element_factory_make ("nv_gl_videosink", NULL);
     }
     if (!videoSink)
         videoSink = gst_element_factory_make ("ximagesink", NULL);
@@ -179,7 +179,11 @@ void X11Renderer::setOverlay()
         // Even if we have created a winId at this point, other X applications
         // need to be aware of it.
         QApplication::syncX();
-        gst_x_overlay_set_window_handle( GST_X_OVERLAY(m_videoSink), windowId );
+#if GST_VERSION >= GST_VERSION_CHECK(0,10,31,0)
+        gst_x_overlay_set_window_handle(GST_X_OVERLAY(m_videoSink), windowId);
+#else
+        gst_x_overlay_set_xwindow_id(GST_X_OVERLAY(m_videoSink), windowId);
+#endif // GST_VERSION
     }
     windowExposed();
     m_overlaySet = true;
