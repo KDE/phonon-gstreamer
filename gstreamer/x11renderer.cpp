@@ -101,12 +101,12 @@ GstElement* X11Renderer::createVideoSink()
         }
     }
     QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
-    if(!tegraEnv.isEmpty())
-    {
+    if (!tegraEnv.isEmpty()) {
         videoSink = gst_element_factory_make ("nv_gl_videosink", NULL);
     }
-    if (!videoSink)
+    if (!videoSink) {
         videoSink = gst_element_factory_make ("ximagesink", NULL);
+    }
 
     gst_object_ref (GST_OBJECT (videoSink)); //Take ownership
     gst_object_sink (GST_OBJECT (videoSink));
