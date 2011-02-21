@@ -580,14 +580,14 @@ bool MediaObject::createPipefromURL(const QUrl &url)
     // add the 'file' scheme if it's missing; the double '/' is needed!
     QByteArray encoded_cstr_url;
     if (url.scheme() == QLatin1String("")) {
-        encoded_cstr_url = QFile::encodeName("file://" + url.toString());
+        encoded_cstr_url = QFile::encodeName("file://" + url.toString()).toPercentEncoding(":/\\?=&,@");
     } else if (url.scheme() == QLatin1String("file")) {
 #ifdef __GNUC__
 #warning TODO 4.5
 #endif
         // TODO 4.5: investigate whether this is necessary. Harald was a bit worrid
         // that QFile::encodeName on an actual streaming URI could cause problems.
-        encoded_cstr_url = QFile::encodeName(url.toString());
+        encoded_cstr_url = QFile::encodeName(url.toString()).toPercentEncoding(":/\\?=&,@");
     } else {
         encoded_cstr_url = url.toEncoded();
     }
