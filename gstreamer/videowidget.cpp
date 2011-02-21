@@ -61,6 +61,7 @@ VideoWidget::VideoWidget(Backend *backend, QWidget *parent) :
     m_videoplug(0)
 {
     setupVideoBin();
+    grabKeyboard();
 }
 
 VideoWidget::~VideoWidget()
@@ -305,7 +306,7 @@ void VideoWidget::setBrightness(qreal newValue)
    QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
 
    newValue = clampedValue(newValue);
-   
+
     if (newValue == m_brightness)
         return;
 
@@ -318,7 +319,7 @@ void VideoWidget::setBrightness(qreal newValue)
     }
     else
     {
-        if (videoSink)   
+        if (videoSink)
         g_object_set(G_OBJECT(videoSink), "brightness", newValue, (const char*)NULL); //gstreamer range is [-1, 1]
 
     }
@@ -398,7 +399,7 @@ void VideoWidget::setSaturation(qreal newValue)
     else
     {
        if (videoSink)
-       g_object_set(G_OBJECT(videoSink), "saturation", newValue + 1.0, (const char*)NULL); //gstreamer range is [0, 2] 
+       g_object_set(G_OBJECT(videoSink), "saturation", newValue + 1.0, (const char*)NULL); //gstreamer range is [0, 2]
     }
 }
 
