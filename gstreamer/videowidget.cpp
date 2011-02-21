@@ -90,8 +90,7 @@ void VideoWidget::setupVideoBin()
     gst_object_ref (GST_OBJECT (m_videoBin)); //Take ownership
     gst_object_sink (GST_OBJECT (m_videoBin));
     QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
-    if(tegraEnv.isEmpty())
-    {
+    if (tegraEnv.isEmpty()) {
         //The videoplug element is the final element before the pluggable videosink
         m_videoplug = gst_element_factory_make ("identity", NULL);
 
@@ -132,9 +131,7 @@ void VideoWidget::setupVideoBin()
                 m_isValid = true; //initialization ok, accept input
             }
         }
-    }
-    else
-    {
+    } else {
         gst_bin_add_many (GST_BIN (m_videoBin), videoSink, NULL);
         GstPad *videopad = gst_element_get_pad (videoSink,"sink");
         gst_element_add_pad (m_videoBin, gst_ghost_pad_new ("sink", videopad));
@@ -143,7 +140,7 @@ void VideoWidget::setupVideoBin()
         if (parentWidget)
             parentWidget->winId();  // Due to some existing issues with alien in 4.4,
                                     //  we must currently force the creation of a parent widget.
-            m_isValid = true; //initialization ok, accept input
+        m_isValid = true; //initialization ok, accept input
     }
 }
 
@@ -306,7 +303,6 @@ qreal clampedValue(qreal val)
 void VideoWidget::setBrightness(qreal newValue)
 {
    GstElement *videoSink = m_renderer->videoSink();
-   QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
 
    newValue = clampedValue(newValue);
 
@@ -315,16 +311,13 @@ void VideoWidget::setBrightness(qreal newValue)
 
     m_brightness = newValue;
 
-    if (tegraEnv.isEmpty())
-    {
+    QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
+    if (tegraEnv.isEmpty()) {
         if (m_videoBalance)
-        g_object_set(G_OBJECT(m_videoBalance), "brightness", newValue, (const char*)NULL); //gstreamer range is [-1, 1]
-    }
-    else
-    {
+            g_object_set(G_OBJECT(m_videoBalance), "brightness", newValue, (const char*)NULL); //gstreamer range is [-1, 1]
+    } else {
         if (videoSink)
-        g_object_set(G_OBJECT(videoSink), "brightness", newValue, (const char*)NULL); //gstreamer range is [-1, 1]
-
+            g_object_set(G_OBJECT(videoSink), "brightness", newValue, (const char*)NULL); //gstreamer range is [-1, 1]
     }
 }
 
@@ -346,15 +339,12 @@ void VideoWidget::setContrast(qreal newValue)
 
     m_contrast = newValue;
 
-    if (tegraEnv.isEmpty())
-    {
+    if (tegraEnv.isEmpty()) {
         if (m_videoBalance)
-        g_object_set(G_OBJECT(m_videoBalance), "contrast", (newValue + 1.0), (const char*)NULL); //gstreamer range is [0-2]
-    }
-    else
-    {
+            g_object_set(G_OBJECT(m_videoBalance), "contrast", (newValue + 1.0), (const char*)NULL); //gstreamer range is [0-2]
+    } else {
        if (videoSink)
-       g_object_set(G_OBJECT(videoSink), "contrast", (newValue + 1.0), (const char*)NULL); //gstreamer range is [0-2]
+           g_object_set(G_OBJECT(videoSink), "contrast", (newValue + 1.0), (const char*)NULL); //gstreamer range is [0-2]
     }
 }
 
@@ -385,7 +375,6 @@ void VideoWidget::setSaturation(qreal newValue)
 {
 
     GstElement *videoSink = m_renderer->videoSink();
-    QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
 
     newValue = clampedValue(newValue);
 
@@ -394,15 +383,13 @@ void VideoWidget::setSaturation(qreal newValue)
 
     m_saturation = newValue;
 
-    if (tegraEnv.isEmpty())
-    {
-    if (m_videoBalance)
-        g_object_set(G_OBJECT(m_videoBalance), "saturation", newValue + 1.0, (const char*)NULL); //gstreamer range is [0, 2]
-    }
-    else
-    {
-       if (videoSink)
-       g_object_set(G_OBJECT(videoSink), "saturation", newValue + 1.0, (const char*)NULL); //gstreamer range is [0, 2]
+    QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
+    if (tegraEnv.isEmpty()) {
+        if (m_videoBalance)
+            g_object_set(G_OBJECT(m_videoBalance), "saturation", newValue + 1.0, (const char*)NULL); //gstreamer range is [0, 2]
+    } else {
+        if (videoSink)
+            g_object_set(G_OBJECT(videoSink), "saturation", newValue + 1.0, (const char*)NULL); //gstreamer range is [0, 2]
     }
 }
 
