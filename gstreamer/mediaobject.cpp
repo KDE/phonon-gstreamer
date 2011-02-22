@@ -281,7 +281,7 @@ void MediaObject::installMissingCodecs()
             if (status == GST_INSTALL_PLUGINS_HELPER_MISSING)
                 setError(QString(tr("Missing codec helper script assistant.")), Phonon::FatalError);
             else
-                setError(QString(tr("Plugin codec installation failed for codec: %1"))
+                setError(QString(tr("Plugin codec installation failed for plugin: %1"))
                         .arg(m_missingCodecs[0].split('|')[3]), error);
         } else {
             m_installingPlugin = true;
@@ -295,7 +295,7 @@ void MediaObject::installMissingCodecs()
             m_hasVideo = false;
             emit hasVideoChanged(false);
         }
-        setError(QString(tr("A required codec is missing. You need to install the following codec(s) to play this content: %0")).arg(codecs), error);
+        setError(QString(tr("A required GStreamer plugin is missing. You need to install the following plugin(s) to play this content: %0"), "", codecs.size()).arg(codecs), error);
         m_missingCodecs.clear();
 #endif
     }
@@ -491,16 +491,45 @@ bool MediaObject::createPipefromDVD(const MediaSource &source)
     gst_bin_add(GST_BIN(m_pipeline), m_datasource);
 
     GstElement *dvdsrc = gst_element_factory_make("rsndvdbin", NULL);
+    if (!dvdsrc) {
+#ifdef PLUGIN_INSTALL_API
+        QString pluginDesc = QString("gstreamer|0.10|%0|%1|element-rsndvdbin")
+            .arg( qApp->applicationName() )
+            .arg( tr("Resin DVD Reader") );
+#else
+        pluginDesc = tr("Resin DVD Reader");
+#endif
+        m_missingCodecs << pluginDesc;
+        installMissingCodecs();
+        return false;
+    }
+
+    // Check for the dvdspu element from gst-plugins-bad before continuing.
+    // Fedora keeps rsndvdbin and dvdspu in separate packages for some reason.
+    GstElement *spu = gst_element_factory_make("dvdspu", NULL);
+
+    if (!spu) {
+#ifdef PLUGIN_INSTALL_API
+        QString pluginDesc = QString("gstreamer|0.10|%0|%1|element-dvdspu")
+            .arg( qApp->applicationName() )
+            .arg( tr("DVD Stream Decoder") );
+#else
+        pluginDesc = tr("DVD Stream Decoder");
+#endif
+        m_missingCodecs << pluginDesc;
+        installMissingCodecs();
+        return false;
+    }
     gst_bin_add(GST_BIN(m_datasource), dvdsrc);
 
     QByteArray mediaDevice = QFile::encodeName(source.deviceName());
     if (!mediaDevice.isEmpty())
-        g_object_set (G_OBJECT (m_datasource), "device", mediaDevice.constData(), (const char*)NULL);
+        g_object_set (G_OBJECT (dvdsrc), "device", mediaDevice.constData(), (const char*)NULL);
 
     // Video pipeline
     GstElement *convert = gst_element_factory_make("ffmpegcolorspace", NULL);
     GstElement *videoQueue = gst_element_factory_make("queue", NULL);
-    GstElement *spu = gst_element_factory_make("dvdspu", NULL);
+
     gst_bin_add_many(GST_BIN(m_datasource), convert, videoQueue, spu, NULL);
     gst_element_link_many(convert, videoQueue, spu, NULL);
 
