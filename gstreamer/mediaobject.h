@@ -142,15 +142,17 @@ public:
     void connectAudio(GstPad *audioPad);
 
     void handleBusMessage(const Message &msg);
-    void handleTagMessage(GstMessage *msg);
-    void handleStateMessage(GstMessage *msg);
-    void handleErrorMessage(GstMessage *msg);
-    void handleWarningMessage(GstMessage *msg);
-    void handleBufferingMessage(GstMessage *msg);
-    void handleElementMessage(GstMessage *msg);
-    void handleDurationMessage(GstMessage *msg);
-    void handleEOSMessage(GstMessage *msg);
-    void handleEndOfStream();
+
+    // Bus sync-message signal handlers
+    Q_INVOKABLE void handleTagMessage(GstMessage *msg);
+    Q_INVOKABLE void handleStateMessage(GstMessage *msg);
+    Q_INVOKABLE void handleErrorMessage(GstMessage *msg);
+    Q_INVOKABLE void handleWarningMessage(GstMessage *msg);
+    Q_INVOKABLE void handleBufferingMessage(GstMessage *msg);
+    Q_INVOKABLE void handleElementMessage(GstMessage *msg);
+    Q_INVOKABLE void handleDurationMessage(GstMessage *msg);
+    Q_INVOKABLE void handleEOSMessage(GstMessage *msg);
+    Q_INVOKABLE void handleEndOfStream();
 
     static gboolean cb_eos(GstBus *bus, GstMessage *msg, gpointer data);
     static gboolean cb_tag(GstBus *bus, GstMessage *msg, gpointer data);
