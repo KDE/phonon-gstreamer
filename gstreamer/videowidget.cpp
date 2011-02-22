@@ -61,10 +61,7 @@ VideoWidget::VideoWidget(Backend *backend, QWidget *parent) :
     m_videoplug(0)
 {
     setupVideoBin();
-#ifdef __GNUC__
-#warning !!! FIXME !!! grab keyboard is active on videowidget
-#endif
-    grabKeyboard();
+    setFocusPolicy(Qt::ClickFocus);
 }
 
 VideoWidget::~VideoWidget()
