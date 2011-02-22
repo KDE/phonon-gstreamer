@@ -66,7 +66,6 @@ if (BUILD_PHONON_GSTREAMER)
    if(NOT WIN32)
       set(phonon_gstreamer_SRCS
           ${phonon_gstreamer_SRCS}
-          artssink.cpp
           x11renderer.cpp)
       macro_optional_find_package(Alsa)
       macro_ensure_version("0.10.22" ${GSTREAMER_VERSION} GSTREAMER_HAS_NONBLOCKING_ALSASINK)

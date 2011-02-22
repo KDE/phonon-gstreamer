@@ -23,7 +23,6 @@
 #include "glrenderer.h"
 #include "widgetrenderer.h"
 #include "x11renderer.h"
-#include "artssink.h"
 #include <phonon/pulsesupport.h>
 
 #ifdef USE_ALSASINK2
@@ -43,7 +42,7 @@ namespace Phonon
 {
 namespace Gstreamer
 {
-    
+
 VideoCaptureDevice::VideoCaptureDevice(DeviceManager *manager, const QByteArray &gstId)
         : gstId(gstId)
 {
@@ -198,7 +197,7 @@ bool DeviceManager::canOpenDevice(GstElement *element) const
 * Returns a GstElement with a valid audio sink
 * based on the current value of PHONON_GSTREAMER_DRIVER
 *
-* Allowed values are auto (default), alsa, oss, arts and ess
+* Allowed values are auto (default), alsa, oss and ess
 * does not exist
 *
 * If no real sound sink is available a fakesink will be returned
@@ -266,8 +265,6 @@ GstElement *DeviceManager::createAudioSink(Category category)
             }
         } else if (m_audioSink == "fake") {
             //do nothing as a fakesink will be created by default
-        } else if (m_audioSink == "artssink") {
-            sink = GST_ELEMENT(g_object_new(arts_sink_get_type(), NULL));
         } else if (!m_audioSink.isEmpty()) { //Use a custom sink
             sink = gst_element_factory_make (m_audioSink, NULL);
             if (canOpenDevice(sink))
@@ -397,7 +394,7 @@ VideoCaptureDevice* DeviceManager::videoCaptureDevice(int id)
 void DeviceManager::updateDeviceList()
 {
     QList<QByteArray> list;
-    
+
     GstElement *captureDevice = gst_element_factory_make("v4l2src", NULL);
     if (captureDevice) {
         QList<QByteArray> list;
@@ -412,7 +409,7 @@ void DeviceManager::updateDeviceList()
         }
         gst_element_set_state (captureDevice, GST_STATE_NULL);
         gst_object_unref (captureDevice);
-        
+
         if (list.size() < m_videoCaptureDeviceList.size()) {
             //a device was removed
             for (int i = m_videoCaptureDeviceList.size() -1 ; i >= 0 ; --i) {
@@ -435,7 +432,7 @@ void DeviceManager::updateDeviceList()
     }
     //fetch list of current devices
     GstElement *audioSink= createAudioSink();
-    
+
     if (audioSink) {
         if (!PulseSupport::getInstance()->isActive()) {
             // If we're using pulse, the PulseSupport class takes care of things for us.
