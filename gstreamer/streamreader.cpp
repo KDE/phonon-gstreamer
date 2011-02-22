@@ -82,11 +82,9 @@ GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
         m_waitingForData.wait(&m_mutex);
 
         if (oldSize == currentBufferSize()) {
-            // We didn't get any data.
+            // We didn't get any data, check if we are at the end of stream already.
             if (m_eos) {
                 return GST_FLOW_UNEXPECTED;
-            } else {
-                return GST_FLOW_ERROR;
             }
         }
     }
