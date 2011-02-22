@@ -92,6 +92,7 @@ GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
             // We didn't get any data, check if we are at the end of stream already.
             if (m_eos) {
                 return GST_FLOW_UNEXPECTED;
+            }
         }
     }
     if (m_mediaObject->state() != Phonon::BufferingState &&
