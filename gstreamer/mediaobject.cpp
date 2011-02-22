@@ -652,6 +652,7 @@ bool MediaObject::createPipefromStream(const MediaSource &source)
         gst_bin_remove(GST_BIN(m_pipeline), m_datasource);
         return false;
     }
+    m_isStream = true;
     return true;
 #else //QT_NO_PHONON_ABSTRACTMEDIASTREAM
     Q_UNUSED(source);
@@ -1696,6 +1697,12 @@ void MediaObject::handleTagMessage(GstMessage *msg)
                     m_metaData.insert(key, value);
                 }
             }
+        }
+
+        // For radio streams, if we get a metadata update where the title changes, we assume everything else is invalid.
+        // If we don't already have a title, we don't do anything since we're actually just appending new data into that.
+        if (m_isStream && oldMap.contains("TITLE") && m_metaData.value("TITLE") != oldMap.value("TITLE")) {
+            m_metaData.clear();
         }
 
         m_backend->logMessage("Meta tags found", Backend::Info, this);
