@@ -29,6 +29,7 @@ StreamReader::StreamReader(const Phonon::MediaSource &source, MediaObject *paren
     : m_pos(0)
     , m_size(0)
     , m_eos(false)
+    , m_locked(false)
     , m_seekable(false)
     , m_mediaObject(parent)
 {
@@ -81,11 +82,16 @@ GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
 
         m_waitingForData.wait(&m_mutex);
 
+        // Abort instantly if we got unlocked, whether we got sufficient data or not
+        // is absolutely unimportant at this point.
+        if (!m_locked) {
+            break;
+        }
+
         if (oldSize == currentBufferSize()) {
             // We didn't get any data, check if we are at the end of stream already.
             if (m_eos) {
                 return GST_FLOW_UNEXPECTED;
-            }
         }
     }
     if (m_mediaObject->state() != Phonon::BufferingState &&
@@ -112,6 +118,7 @@ void StreamReader::start()
     QMutexLocker locker(&m_mutex);
     m_buffer.clear();
     m_eos = false;
+    m_locked = true;
     m_pos = 0;
     m_seekable = false;
     m_size = 0;
@@ -128,18 +135,22 @@ void StreamReader::unlock()
 {
     QMutexLocker locker(&m_mutex);
     enoughData();
+    m_locked = false;
     m_waitingForData.wakeAll();
 }
 
-void StreamReader::setStreamSize(qint64 newSize) {
+void StreamReader::setStreamSize(qint64 newSize)
+{
     m_size = newSize;
 }
 
-qint64 StreamReader::streamSize() const {
+qint64 StreamReader::streamSize() const
+{
     return m_size;
 }
 
-void StreamReader::setStreamSeekable(bool seekable) {
+void StreamReader::setStreamSeekable(bool seekable)
+{
 //    if (seekable) {
 //        // The initial stream size of a seekable stream *must* not be 0 or
 //        // GStreamer will refuse to typefind.
@@ -148,7 +159,8 @@ void StreamReader::setStreamSeekable(bool seekable) {
     m_seekable = seekable;
 }
 
-bool StreamReader::streamSeekable() const {
+bool StreamReader::streamSeekable() const
+{
     // TODO - problems with pull seeking and the way our current stack works.
     return false;
 //    return m_seekable;
