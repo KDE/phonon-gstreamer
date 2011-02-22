@@ -1503,69 +1503,24 @@ void MediaObject::handleErrorMessage(GstMessage *gstMessage)
     g_free(errorMessage);
     g_free (debug);
 
-    if (err->domain == GST_RESOURCE_ERROR) {
-        if (err->code == GST_RESOURCE_ERROR_NOT_FOUND) {
-            setError(tr("Could not locate media source."), Phonon::FatalError);
-        } else if (err->code == GST_RESOURCE_ERROR_OPEN_READ) {
-            setError(tr("Could not open media source."), Phonon::FatalError);
-        } else if (err->code == GST_RESOURCE_ERROR_BUSY) {
-           // We need to check if this comes from an audio device by looking at sink caps
-           GstPad* sinkPad = gst_element_get_static_pad(GST_ELEMENT(gstMessage->src), "sink");
-           if (sinkPad) {
-                GstCaps *caps = gst_pad_get_caps (sinkPad);
-                GstStructure *str = gst_caps_get_structure (caps, 0);
-                if (g_strrstr (gst_structure_get_name (str), "audio"))
-                    setError(tr("Could not open audio device. The device is already in use."), Phonon::NormalError);
-                else
-                    setError(err->message, Phonon::FatalError);
-                gst_caps_unref (caps);
-                gst_object_unref (sinkPad);
-           }
-       } else {
-            setError(QString(err->message), Phonon::FatalError);
-       }
-   } else if (err->domain == GST_CORE_ERROR) {
-        switch(err->code) {
-            case GST_CORE_ERROR_MISSING_PLUGIN:
-                installMissingCodecs();
-                break;
-            default:
-                break;
+    if (err->domain == GST_RESOURCE_ERROR && err->code == GST_RESOURCE_ERROR_BUSY) {
+       // We need to check if this comes from an audio device by looking at sink caps
+       GstPad* sinkPad = gst_element_get_static_pad(GST_ELEMENT(gstMessage->src), "sink");
+       if (sinkPad) {
+            GstCaps *caps = gst_pad_get_caps (sinkPad);
+            GstStructure *str = gst_caps_get_structure (caps, 0);
+            if (g_strrstr (gst_structure_get_name (str), "audio"))
+                setError(tr("Could not open audio device. The device is already in use."), Phonon::NormalError);
+            else
+                setError(err->message, Phonon::FatalError);
+            gst_caps_unref (caps);
+            gst_object_unref (sinkPad);
         }
-   } else if (err->domain == GST_STREAM_ERROR) {
-        switch (err->code) {
-        case GST_STREAM_ERROR_CODEC_NOT_FOUND:
-            installMissingCodecs();
-            break;
-        case GST_STREAM_ERROR_TYPE_NOT_FOUND:
-            if (!m_installingPlugin)
-                setError(tr("Could not find media type."), Phonon::FatalError);
-            break;
-        case GST_STREAM_ERROR_WRONG_TYPE:
-            setError(tr("Wrong media type encountered in GStreamer pipeline."), Phonon::FatalError);
-            break;
-        case GST_STREAM_ERROR_DECODE:
-            setError(tr("Could not decode media."), Phonon::FatalError);
-            break;
-        case GST_STREAM_ERROR_ENCODE:
-            setError(tr("Could not encode media."), Phonon::FatalError);
-            break;
-        case GST_STREAM_ERROR_MUX:
-            setError(tr("Could not demux media."), Phonon::FatalError);
-            break;
-        case GST_STREAM_ERROR_DECRYPT:
-            setError(tr("Could not decrypt media."), Phonon::FatalError);
-            break;
-        case GST_STREAM_ERROR_DECRYPT_NOKEY:
-            setError(tr("No suitable decryption key found."), Phonon::FatalError);
-            break;
-        default:
-            if (!m_installingPlugin)
-                setError(tr("Could not open media source."), Phonon::FatalError);
-            break;
-        }
-   } else {
-        setError(QString(err->message), Phonon::FatalError);
+    } else if ((err->domain == GST_CORE_ERROR && err->code == GST_CORE_ERROR_MISSING_PLUGIN)
+            || (err->domain == GST_STREAM_ERROR && err->code == GST_STREAM_ERROR_CODEC_NOT_FOUND)) {
+        installMissingCodecs();
+    } else if (!(err->domain == GST_STREAM_ERROR && m_installingPlugin)) {
+        setError(err->message, Phonon::FatalError);
     }
     g_error_free (err);
 }
