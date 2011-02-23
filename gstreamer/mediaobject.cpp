@@ -1501,6 +1501,7 @@ void MediaObject::beginPlay()
 
 gboolean MediaObject::cb_error(GstBus *bus, GstMessage *msg, gpointer data)
 {
+    Q_UNUSED(bus)
     MediaObject *that = static_cast<MediaObject*>(data);
     gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
     QMetaObject::invokeMethod(that, "handleErrorMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
@@ -1547,6 +1548,7 @@ void MediaObject::handleErrorMessage(GstMessage *gstMessage)
 
 gboolean MediaObject::cb_warning(GstBus *bus, GstMessage *msg, gpointer data)
 {
+    Q_UNUSED(bus)
     MediaObject *that = static_cast<MediaObject*>(data);
     gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
     QMetaObject::invokeMethod(that, "handleWarningMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
@@ -1568,6 +1570,7 @@ void MediaObject::handleWarningMessage(GstMessage *gstMessage)
 
 gboolean MediaObject::cb_buffering(GstBus *bus, GstMessage *msg, gpointer data)
 {
+    Q_UNUSED(bus)
     MediaObject *that = static_cast<MediaObject*>(data);
     gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
     QMetaObject::invokeMethod(that, "handleBufferingMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
@@ -1597,6 +1600,7 @@ void MediaObject::handleBufferingMessage(GstMessage *gstMessage)
 
 gboolean MediaObject::cb_state(GstBus *bus, GstMessage *msg, gpointer data)
 {
+    Q_UNUSED(bus)
     MediaObject *that = static_cast<MediaObject*>(data);
     gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
     QMetaObject::invokeMethod(that, "handleStateMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
@@ -1680,7 +1684,9 @@ void MediaObject::handleStateMessage(GstMessage *gstMessage)
     }
 }
 
-gboolean MediaObject::cb_tag(GstBus *bus, GstMessage *msg, gpointer data) {
+gboolean MediaObject::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    Q_UNUSED(bus)
     MediaObject *that = static_cast<MediaObject*>(data);
     gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
     QMetaObject::invokeMethod(that, "handleTagMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
@@ -1796,7 +1802,9 @@ void MediaObject::handleTagMessage(GstMessage *msg)
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(msg));
 }
 
-gboolean MediaObject::cb_element(GstBus *bus, GstMessage *msg, gpointer data) {
+gboolean MediaObject::cb_element(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    Q_UNUSED(bus)
     MediaObject *that = static_cast<MediaObject*>(data);
     gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
     QMetaObject::invokeMethod(that, "handleElementMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
@@ -1834,6 +1842,7 @@ void MediaObject::handleElementMessage(GstMessage *gstMessage)
 
 gboolean MediaObject::cb_eos(GstBus *bus, GstMessage *msg, gpointer data)
 {
+    Q_UNUSED(bus)
     MediaObject *that = static_cast<MediaObject*>(data);
     gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
     QMetaObject::invokeMethod(that, "handleEOSMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
@@ -1849,6 +1858,7 @@ void MediaObject::handleEOSMessage(GstMessage *gstMessage)
 
 gboolean MediaObject::cb_duration(GstBus *bus, GstMessage *msg, gpointer data)
 {
+    Q_UNUSED(bus)
     MediaObject *that = static_cast<MediaObject*>(data);
     gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
     QMetaObject::invokeMethod(that, "handleDurationMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
