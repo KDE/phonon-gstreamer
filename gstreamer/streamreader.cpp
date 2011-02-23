@@ -35,7 +35,13 @@ StreamReader::StreamReader(const Phonon::MediaSource &source, MediaObject *paren
     , m_seekable(false)
     , m_mediaObject(parent)
 {
+    DEBUG_BLOCK;
     connectToSource(source);
+}
+
+StreamReader::~StreamReader()
+{
+    DEBUG_BLOCK;
 }
 
 int StreamReader::currentBufferSize() const
@@ -120,6 +126,7 @@ void StreamReader::endOfData()
 
 void StreamReader::start()
 {
+    DEBUG_BLOCK;
     QMutexLocker locker(&m_mutex);
     m_buffer.clear();
     m_eos = false;
@@ -132,12 +139,14 @@ void StreamReader::start()
 
 void StreamReader::stop()
 {
+    DEBUG_BLOCK;
     enoughData();
     m_waitingForData.wakeAll();
 }
 
 void StreamReader::unlock()
 {
+    DEBUG_BLOCK;
     QMutexLocker locker(&m_mutex);
     enoughData();
     m_locked = false;

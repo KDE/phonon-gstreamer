@@ -42,6 +42,7 @@ class StreamReader : public QObject, Phonon::StreamInterface
 {
 public:
     StreamReader(const Phonon::MediaSource &source, MediaObject *parent);
+    ~StreamReader();
 
     /*
      * Overloads for StreamInterface
