@@ -90,6 +90,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
 {
     qRegisterMetaType<GstCaps*>("GstCaps*");
     qRegisterMetaType<State>("State");
+    qRegisterMetaType<GstMessage*>("GstMessage*");
 
     static int count = 0;
     m_name = "MediaObject" + QString::number(count++);
@@ -100,7 +101,16 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
     } else {
         m_root = this;
         createPipeline();
-        m_backend->addBusWatcher(this);
+        GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_pipeline));
+        gst_bus_set_sync_handler(bus, gst_bus_sync_signal_handler, NULL);
+        g_signal_connect(bus, "sync-message::eos", G_CALLBACK(cb_eos), this);
+        g_signal_connect(bus, "sync-message::tag", G_CALLBACK(cb_tag), this);
+        g_signal_connect(bus, "sync-message::state-changed", G_CALLBACK(cb_state), this);
+        g_signal_connect(bus, "sync-message::element", G_CALLBACK(cb_element), this);
+        g_signal_connect(bus, "sync-message::duration", G_CALLBACK(cb_duration), this);
+        g_signal_connect(bus, "sync-message::buffering", G_CALLBACK(cb_buffering), this);
+        g_signal_connect(bus, "sync-message::warning", G_CALLBACK(cb_warning), this);
+        g_signal_connect(bus, "sync-message::error", G_CALLBACK(cb_error), this);
         connect(m_tickTimer, SIGNAL(timeout()), SLOT(emitTick()));
     }
     connect(this, SIGNAL(stateChanged(Phonon::State, Phonon::State)),
@@ -109,8 +119,9 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
 
 MediaObject::~MediaObject()
 {
-    m_backend->removeBusWatcher(this);
     if (m_pipeline) {
+        GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_pipeline));
+        g_signal_handlers_disconnect_matched(bus, G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, this);
         gst_element_set_state(m_pipeline, GST_STATE_NULL);
         gst_object_unref(m_pipeline);
     }
@@ -1488,6 +1499,14 @@ void MediaObject::beginPlay()
     m_pendingState = Phonon::PlayingState;
 }
 
+gboolean MediaObject::cb_error(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    MediaObject *that = static_cast<MediaObject*>(data);
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
+    QMetaObject::invokeMethod(that, "handleErrorMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
+    return true;
+}
+
 /**
  * Handle the GST_MESSAGE_ERROR message
  */
@@ -1523,6 +1542,15 @@ void MediaObject::handleErrorMessage(GstMessage *gstMessage)
         setError(err->message, Phonon::FatalError);
     }
     g_error_free (err);
+    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
+}
+
+gboolean MediaObject::cb_warning(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    MediaObject *that = static_cast<MediaObject*>(data);
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
+    QMetaObject::invokeMethod(that, "handleWarningMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
+    return true;
 }
 
 void MediaObject::handleWarningMessage(GstMessage *gstMessage)
@@ -1535,6 +1563,15 @@ void MediaObject::handleWarningMessage(GstMessage *gstMessage)
     m_backend->logMessage(msgString, Backend::Warning);
     g_free (debug);
     g_error_free (err);
+    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
+}
+
+gboolean MediaObject::cb_buffering(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    MediaObject *that = static_cast<MediaObject*>(data);
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
+    QMetaObject::invokeMethod(that, "handleBufferingMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
+    return true;
 }
 
 /**
@@ -1555,6 +1592,15 @@ void MediaObject::handleBufferingMessage(GstMessage *gstMessage)
         emit stateChanged(m_state, Phonon::BufferingState);
     else if (percent == 100)
         emit stateChanged(Phonon::BufferingState, m_state);
+    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
+}
+
+gboolean MediaObject::cb_state(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    MediaObject *that = static_cast<MediaObject*>(data);
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
+    QMetaObject::invokeMethod(that, "handleStateMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
+    return true;
 }
 
 /**
@@ -1569,8 +1615,10 @@ void MediaObject::handleStateMessage(GstMessage *gstMessage)
 
     if (gstMessage->src != GST_OBJECT(m_pipeline)) {
         m_backend->logMessage("State changed from "+GstHelper::stateName(oldState)+" to "+GstHelper::stateName(newState), Backend::Debug, this);
+        gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
         return;
     }
+    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
 
     if (newState == pendingState)
         return;
@@ -1630,6 +1678,13 @@ void MediaObject::handleStateMessage(GstMessage *gstMessage)
         m_tickTimer->stop();
         break;
     }
+}
+
+gboolean MediaObject::cb_tag(GstBus *bus, GstMessage *msg, gpointer data) {
+    MediaObject *that = static_cast<MediaObject*>(data);
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
+    QMetaObject::invokeMethod(that, "handleTagMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
+    return true;
 }
 
 /**
@@ -1738,6 +1793,14 @@ void MediaObject::handleTagMessage(GstMessage *msg)
                 emit metaDataChanged(m_metaData);
         }
     }
+    gst_mini_object_unref(GST_MINI_OBJECT_CAST(msg));
+}
+
+gboolean MediaObject::cb_element(GstBus *bus, GstMessage *msg, gpointer data) {
+    MediaObject *that = static_cast<MediaObject*>(data);
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
+    QMetaObject::invokeMethod(that, "handleElementMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
+    return true;
 }
 
 /**
@@ -1749,19 +1812,52 @@ void MediaObject::handleElementMessage(GstMessage *gstMessage)
     if (g_strrstr (gst_structure_get_name (gstStruct), "prepare-xwindow-id")) {
         MediaNodeEvent videoHandleEvent(MediaNodeEvent::VideoHandleRequest);
         notify(&videoHandleEvent);
+    } else {
+#if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
+        switch (gst_navigation_message_get_type(gstMessage)) {
+        case GST_NAVIGATION_MESSAGE_MOUSE_OVER: {
+            gboolean active;
+            if (!gst_navigation_message_parse_mouse_over(gstMessage, &active)) {
+                break;
+            }
+            MediaNodeEvent mouseOverEvent(MediaNodeEvent::VideoMouseOver, &active);
+            notify(&mouseOverEvent);
+            break;
+        }
+        default:
+            break;
+        }
+#endif // GST_VERSION
     }
+    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
+}
+
+gboolean MediaObject::cb_eos(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    MediaObject *that = static_cast<MediaObject*>(data);
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
+    QMetaObject::invokeMethod(that, "handleEOSMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
+    return true;
 }
 
 void MediaObject::handleEOSMessage(GstMessage *gstMessage)
 {
-    Q_UNUSED(gstMessage);
+    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
     m_backend->logMessage("EOS received", Backend::Info, this);
     handleEndOfStream();
 }
 
+gboolean MediaObject::cb_duration(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    MediaObject *that = static_cast<MediaObject*>(data);
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
+    QMetaObject::invokeMethod(that, "handleDurationMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
+    return true;
+}
+
 void MediaObject::handleDurationMessage(GstMessage *gstMessage)
 {
-    Q_UNUSED(gstMessage);
+    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
     m_backend->logMessage("GST_MESSAGE_DURATION", Backend::Debug, this);
     updateTotalTime();
 }

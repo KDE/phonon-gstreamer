@@ -140,16 +140,29 @@ public:
 
     void connectVideo(GstPad *videoPad);
     void connectAudio(GstPad *audioPad);
+
     void handleBusMessage(const Message &msg);
-    void handleTagMessage(GstMessage *msg);
-    void handleStateMessage(GstMessage *msg);
-    void handleErrorMessage(GstMessage *msg);
-    void handleWarningMessage(GstMessage *msg);
-    void handleBufferingMessage(GstMessage *msg);
-    void handleElementMessage(GstMessage *msg);
-    void handleDurationMessage(GstMessage *msg);
-    void handleEOSMessage(GstMessage *msg);
-    void handleEndOfStream();
+
+    // Bus sync-message signal handlers
+    Q_INVOKABLE void handleTagMessage(GstMessage *msg);
+    Q_INVOKABLE void handleStateMessage(GstMessage *msg);
+    Q_INVOKABLE void handleErrorMessage(GstMessage *msg);
+    Q_INVOKABLE void handleWarningMessage(GstMessage *msg);
+    Q_INVOKABLE void handleBufferingMessage(GstMessage *msg);
+    Q_INVOKABLE void handleElementMessage(GstMessage *msg);
+    Q_INVOKABLE void handleDurationMessage(GstMessage *msg);
+    Q_INVOKABLE void handleEOSMessage(GstMessage *msg);
+    Q_INVOKABLE void handleEndOfStream();
+
+    static gboolean cb_eos(GstBus *bus, GstMessage *msg, gpointer data);
+    static gboolean cb_tag(GstBus *bus, GstMessage *msg, gpointer data);
+    static gboolean cb_state(GstBus *bus, GstMessage *msg, gpointer data);
+    static gboolean cb_element(GstBus *bus, GstMessage *msg, gpointer data);
+    static gboolean cb_duration(GstBus *bus, GstMessage *msg, gpointer data);
+    static gboolean cb_buffering(GstBus *bus, GstMessage *msg, gpointer data);
+    static gboolean cb_warning(GstBus *bus, GstMessage *msg, gpointer data);
+    static gboolean cb_error(GstBus *bus, GstMessage *msg, gpointer data);
+
     void addMissingCodecName(const QString &codec) { m_missingCodecs.append(codec); }
     void invalidateGraph();
 

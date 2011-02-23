@@ -121,20 +121,6 @@ Backend::~Backend()
     PulseSupport::shutdown();
 }
 
-gboolean Backend::busCall(GstBus *bus, GstMessage *msg, gpointer data)
-{
-    Q_UNUSED(bus);
-    Q_ASSERT(msg);
-
-    MediaObject *mediaObject = static_cast<MediaObject*>(data);
-    Q_ASSERT(mediaObject);
-
-    Message message(msg, mediaObject);
-    QMetaObject::invokeMethod(mediaObject->backend(), "handleBusMessage", Qt::QueuedConnection, Q_ARG(Message, message));
-
-    return true;
-}
-
 /***
  * !reimp
  */
@@ -439,41 +425,6 @@ bool Backend::endConnectionChange(QSet<QObject *> objects)
         }
     }
     return true;
-}
-
-/***
- * Request bus messages for this mediaobject
- */
-void Backend::addBusWatcher(MediaObject* node)
-{
-    Q_ASSERT(node);
-    GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(node->pipeline()));
-    gst_bus_add_watch(bus, busCall, node);
-    gst_object_unref(bus);
-    m_watchList.insert(node);
-}
-
-/***
- * Ignore bus messages for this mediaobject
- */
-void Backend::removeBusWatcher(MediaObject* node)
-{
-    Q_ASSERT(node);
-    g_source_remove_by_user_data(node);
-    m_watchList.remove(node);
-}
-
-/***
- * Polls each mediaobject's pipeline and delivers
- * pending any pending messages
- */
-void Backend::handleBusMessage(Message message)
-{
-    MediaObject *mediaObject = message.source();
-    Q_ASSERT(mediaObject);
-    if (m_watchList.contains(mediaObject)) {
-        mediaObject->handleBusMessage(message);
-    }
 }
 
 DeviceManager* Backend::deviceManager() const
