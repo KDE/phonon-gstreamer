@@ -45,6 +45,7 @@ if (BUILD_PHONON_GSTREAMER)
       audioeffect.cpp
       audiooutput.cpp
       backend.cpp
+      debug.cpp
       devicemanager.cpp
       effect.cpp
       effectmanager.cpp
@@ -81,7 +82,7 @@ if (BUILD_PHONON_GSTREAMER)
 
    automoc4_add_library(phonon_gstreamer MODULE ${phonon_gstreamer_SRCS})
    set_target_properties(phonon_gstreamer PROPERTIES PREFIX "")
-   target_link_libraries(phonon_gstreamer      
+   target_link_libraries(phonon_gstreamer
       ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} ${PHONON_LIBRARY}
       ${QT_QTOPENGL_LIBRARY}
       ${OPENGL_gl_LIBRARY}
