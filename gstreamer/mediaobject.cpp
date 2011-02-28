@@ -26,11 +26,11 @@
 #include "phononsrc.h"
 #include "phonon-config-gstreamer.h"
 #include "gsthelper.h"
+#include "plugininstaller.h"
 
 #include <QtCore/QByteRef>
 #include <QtCore/QEvent>
 #include <QtCore/QFile>
-#include <QtCore/QLibrary>
 #include <QtCore/QPointer>
 #include <QtCore/QStringList>
 #include <QtCore/QTimer>
@@ -312,8 +312,6 @@ void MediaObject::installMissingCodecs()
     }
 }
 
-typedef void (*Ptr_gst_pb_utils_init)();
-typedef gchar* (*Ptr_gst_pb_utils_get_codec_description)(const GstCaps *);
 
 void MediaObject::cb_unknown_type (GstElement *decodebin, GstPad *pad, GstCaps *caps, gpointer data)
 {
@@ -322,41 +320,7 @@ void MediaObject::cb_unknown_type (GstElement *decodebin, GstPad *pad, GstCaps *
     MediaObject *media = static_cast<MediaObject*>(data);
     Q_ASSERT(media);
 
-    QString value = "unknown codec";
-
-    // These functions require GStreamer > 0.10.12
-#ifndef QT_NO_LIBRARY
-    static Ptr_gst_pb_utils_init p_gst_pb_utils_init = 0;
-    static Ptr_gst_pb_utils_get_codec_description p_gst_pb_utils_get_codec_description = 0;
-    if (!p_gst_pb_utils_init) {
-        p_gst_pb_utils_init =  (Ptr_gst_pb_utils_init)QLibrary::resolve(QLatin1String("gstpbutils-0.10"), 0, "gst_pb_utils_init");
-        p_gst_pb_utils_get_codec_description =  (Ptr_gst_pb_utils_get_codec_description)QLibrary::resolve(QLatin1String("gstpbutils-0.10"), 0, "gst_pb_utils_get_codec_description");
-        if (p_gst_pb_utils_init)
-            p_gst_pb_utils_init();
-    }
-    if (p_gst_pb_utils_get_codec_description) {
-        gchar *codecName = NULL;
-        codecName = p_gst_pb_utils_get_codec_description (caps);
-        value = QString::fromUtf8(codecName);
-        g_free (codecName);
-    } else
-#endif //QT_NO_LIBRARY
-    {
-        // For GStreamer versions < 0.10.12
-        GstStructure *str = gst_caps_get_structure (caps, 0);
-        value = QString::fromUtf8(gst_structure_get_name (str));
-
-    }
-
-#ifdef PLUGIN_INSTALL_API
-    QString plugins = QString("gstreamer|0.10|%0|%1|decoder-%2")
-        .arg( qApp->applicationName() )
-        .arg( value )
-        .arg( QString::fromUtf8(gst_caps_to_string (caps) ) );
-    media->addMissingCodecName( plugins );
-#else
-    media->addMissingCodecName( value );
-#endif
+    media->addMissingCodecName(PluginInstaller::buildInstallationString(caps, PluginInstaller::Codec));
 
 }
 
@@ -503,14 +467,7 @@ bool MediaObject::createPipefromDVD(const MediaSource &source)
 
     GstElement *dvdsrc = gst_element_factory_make("rsndvdbin", NULL);
     if (!dvdsrc) {
-#ifdef PLUGIN_INSTALL_API
-        QString pluginDesc = QString("gstreamer|0.10|%0|%1|element-rsndvdbin")
-            .arg( qApp->applicationName() )
-            .arg( tr("Resin DVD Reader") );
-#else
-        pluginDesc = tr("Resin DVD Reader");
-#endif
-        m_missingCodecs << pluginDesc;
+        addMissingCodecName( PluginInstaller::buildInstallationString("rsndvdbin", PluginInstaller::Element) );
         installMissingCodecs();
         return false;
     }
@@ -520,14 +477,7 @@ bool MediaObject::createPipefromDVD(const MediaSource &source)
     GstElement *spu = gst_element_factory_make("dvdspu", NULL);
 
     if (!spu) {
-#ifdef PLUGIN_INSTALL_API
-        QString pluginDesc = QString("gstreamer|0.10|%0|%1|element-dvdspu")
-            .arg( qApp->applicationName() )
-            .arg( tr("DVD Stream Decoder") );
-#else
-        pluginDesc = tr("DVD Stream Decoder");
-#endif
-        m_missingCodecs << pluginDesc;
+        addMissingCodecName( PluginInstaller::buildInstallationString("dvdspu", PluginInstaller::Element) );
         installMissingCodecs();
         return false;
     }
