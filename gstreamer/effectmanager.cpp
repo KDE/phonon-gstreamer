@@ -32,7 +32,8 @@ namespace Phonon
 namespace Gstreamer
 {
 
-EffectInfo::EffectInfo(const QString &name, const QString&description, const QString&author)
+EffectInfo::EffectInfo(const QString &name, const QString &description,
+                       const QString &author)
         : m_name(name)
         , m_description(description)
         , m_author(author) {}
@@ -42,12 +43,15 @@ EffectManager::EffectManager(Backend *backend)
         , m_backend(backend)
 {
     GList *factoryList = gst_registry_get_feature_list(gst_registry_get_default (), GST_TYPE_ELEMENT_FACTORY);
-    QString name, klass, description, author;
+    QString name;
+    QString klass;
+    QString description;
+    QString author;
     for (GList* iter = g_list_first(factoryList); iter != NULL ; iter = g_list_next(iter)) {
         GstPluginFeature *feature = GST_PLUGIN_FEATURE(iter->data);
         klass = gst_element_factory_get_klass(GST_ELEMENT_FACTORY(feature));
         if (klass == QLatin1String("Filter/Effect/Audio")) {
-            name =  GST_PLUGIN_FEATURE_NAME(feature);
+            name = GST_PLUGIN_FEATURE_NAME(feature);
 
             // These plugins simply make no sense to the frontend:
             // "audiorate" Should be internal
