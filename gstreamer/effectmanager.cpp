@@ -41,12 +41,12 @@ EffectManager::EffectManager(Backend *backend)
         : QObject(backend)
         , m_backend(backend)
 {
-    GList* factoryList = gst_registry_get_feature_list(gst_registry_get_default (), GST_TYPE_ELEMENT_FACTORY);
+    GList *factoryList = gst_registry_get_feature_list(gst_registry_get_default (), GST_TYPE_ELEMENT_FACTORY);
     QString name, klass, description, author;
-    for (GList* iter = g_list_first(factoryList) ; iter != NULL ; iter = g_list_next(iter)) {
+    for (GList* iter = g_list_first(factoryList); iter != NULL ; iter = g_list_next(iter)) {
         GstPluginFeature *feature = GST_PLUGIN_FEATURE(iter->data);
         klass = gst_element_factory_get_klass(GST_ELEMENT_FACTORY(feature));
-        if ( klass == "Filter/Effect/Audio" ) {
+        if (klass == QLatin1String("Filter/Effect/Audio")) {
             name =  GST_PLUGIN_FEATURE_NAME(feature);
 
             // These plugins simply make no sense to the frontend:
@@ -59,7 +59,7 @@ EffectManager::EffectManager(Backend *backend)
             // "audioinvert" Only works for some streams, should be invesigated
             // "lpwsinc" Crashes for large values of filter kernel
             // "name" Crashes for large values of filter kernel
-            
+
             // Seems to be working, but not well tested:
             // name == "rglimiter" Seems functional
             // name == "rgvolume" Seems to be working
@@ -67,13 +67,13 @@ EffectManager::EffectManager(Backend *backend)
             QString pluginString = qgetenv("PHONON_GST_ALL_EFFECTS");
             bool acceptAll = pluginString.toInt();
 
-            if (acceptAll 
+            if (acceptAll
                 // Plugins that have been accepted so far
-                 || name == "audiopanorama" 
-                 || name == "audioamplify" 
-                 || name == "audiodynamic" 
-                 || name == "equalizer-10bands" 
-                 || name == "speed") 
+                 || name == QLatin1String("audiopanorama")
+                 || name == QLatin1String("audioamplify")
+                 || name == QLatin1String("audiodynamic")
+                 || name == QLatin1String("equalizer-10bands")
+                 || name == QLatin1String("speed"))
                 {
                     description = gst_element_factory_get_description (GST_ELEMENT_FACTORY(feature));
                     author = gst_element_factory_get_author (GST_ELEMENT_FACTORY(feature));
