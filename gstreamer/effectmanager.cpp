@@ -83,6 +83,19 @@ EffectManager::EffectManager(Backend *backend)
                     author = gst_element_factory_get_author (GST_ELEMENT_FACTORY(feature));
                     EffectInfo *effect = new EffectInfo(name, description, author);
                     m_audioEffectList.append(effect);
+
+#ifdef __GNUC__
+#warning TODO 4.5 - get rid of equalizer name mapping (also see audioeffect.cpp)
+#endif
+                    // Map the GStreamer name to the name used by Xine, to allow
+                    // API consumers that think KEqualizer is a persistant name
+                    // to have a working equalizer with GStreamer too (e.g. Amarok).
+                    if (name == QLatin1String("equalizer-10bands")) {
+                        m_audioEffectList.append(new EffectInfo(
+                                                     QLatin1String("KEqualizer"),
+                                                     QLatin1String("Compatibility effect. Do not use in new software!"),
+                                                     author));
+                    }
             }
         }
     }
