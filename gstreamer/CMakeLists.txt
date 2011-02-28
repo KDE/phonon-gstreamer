@@ -55,6 +55,7 @@ if (BUILD_PHONON_GSTREAMER)
       mediaobject.cpp
       message.cpp
       phononsrc.cpp
+      plugininstaller.cpp
       qwidgetvideosink.cpp
       streamreader.cpp
       videodataoutput.cpp
