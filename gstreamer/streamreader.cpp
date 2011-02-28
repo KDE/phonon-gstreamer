@@ -18,6 +18,8 @@
 
 #include "streamreader.h"
 
+#include "debug.h"
+
 QT_BEGIN_NAMESPACE
 #ifndef QT_NO_PHONON_ABSTRACTMEDIASTREAM
 namespace Phonon
@@ -41,9 +43,9 @@ int StreamReader::currentBufferSize() const
     return m_buffer.size();
 }
 
-void StreamReader::writeData(const QByteArray &data) {
-    QMutexLocker locker(&m_mutex);
-
+void StreamReader::writeData(const QByteArray &data)
+{
+    DEBUG_BLOCK;
     m_buffer.append(data);
     m_waitingForData.wakeAll();
 }
@@ -64,6 +66,7 @@ quint64 StreamReader::currentPos() const
 
 GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
 {
+    DEBUG_BLOCK;
     QMutexLocker locker(&m_mutex);
 
     if (currentPos() != pos) {
@@ -109,6 +112,7 @@ GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
 
 void StreamReader::endOfData()
 {
+    DEBUG_BLOCK;
     QMutexLocker locker(&m_mutex);
     m_eos = true;
     m_waitingForData.wakeAll();
