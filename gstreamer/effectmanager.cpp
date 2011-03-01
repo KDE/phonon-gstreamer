@@ -32,7 +32,8 @@ namespace Phonon
 namespace Gstreamer
 {
 
-EffectInfo::EffectInfo(const QString &name, const QString&description, const QString&author)
+EffectInfo::EffectInfo(const QString &name, const QString &description,
+                       const QString &author)
         : m_name(name)
         , m_description(description)
         , m_author(author) {}
@@ -41,13 +42,16 @@ EffectManager::EffectManager(Backend *backend)
         : QObject(backend)
         , m_backend(backend)
 {
-    GList* factoryList = gst_registry_get_feature_list(gst_registry_get_default (), GST_TYPE_ELEMENT_FACTORY);
-    QString name, klass, description, author;
-    for (GList* iter = g_list_first(factoryList) ; iter != NULL ; iter = g_list_next(iter)) {
+    GList *factoryList = gst_registry_get_feature_list(gst_registry_get_default (), GST_TYPE_ELEMENT_FACTORY);
+    QString name;
+    QString klass;
+    QString description;
+    QString author;
+    for (GList* iter = g_list_first(factoryList); iter != NULL ; iter = g_list_next(iter)) {
         GstPluginFeature *feature = GST_PLUGIN_FEATURE(iter->data);
         klass = gst_element_factory_get_klass(GST_ELEMENT_FACTORY(feature));
-        if ( klass == "Filter/Effect/Audio" ) {
-            name =  GST_PLUGIN_FEATURE_NAME(feature);
+        if (klass == QLatin1String("Filter/Effect/Audio")) {
+            name = GST_PLUGIN_FEATURE_NAME(feature);
 
             // These plugins simply make no sense to the frontend:
             // "audiorate" Should be internal
@@ -59,7 +63,7 @@ EffectManager::EffectManager(Backend *backend)
             // "audioinvert" Only works for some streams, should be invesigated
             // "lpwsinc" Crashes for large values of filter kernel
             // "name" Crashes for large values of filter kernel
-            
+
             // Seems to be working, but not well tested:
             // name == "rglimiter" Seems functional
             // name == "rgvolume" Seems to be working
@@ -67,18 +71,31 @@ EffectManager::EffectManager(Backend *backend)
             QString pluginString = qgetenv("PHONON_GST_ALL_EFFECTS");
             bool acceptAll = pluginString.toInt();
 
-            if (acceptAll 
+            if (acceptAll
                 // Plugins that have been accepted so far
-                 || name == "audiopanorama" 
-                 || name == "audioamplify" 
-                 || name == "audiodynamic" 
-                 || name == "equalizer-10bands" 
-                 || name == "speed") 
+                 || name == QLatin1String("audiopanorama")
+                 || name == QLatin1String("audioamplify")
+                 || name == QLatin1String("audiodynamic")
+                 || name == QLatin1String("equalizer-10bands")
+                 || name == QLatin1String("speed"))
                 {
                     description = gst_element_factory_get_description (GST_ELEMENT_FACTORY(feature));
                     author = gst_element_factory_get_author (GST_ELEMENT_FACTORY(feature));
                     EffectInfo *effect = new EffectInfo(name, description, author);
                     m_audioEffectList.append(effect);
+
+#ifdef __GNUC__
+#warning TODO 4.5 - get rid of equalizer name mapping (also see audioeffect.cpp)
+#endif
+                    // Map the GStreamer name to the name used by Xine, to allow
+                    // API consumers that think KEqualizer is a persistant name
+                    // to have a working equalizer with GStreamer too (e.g. Amarok).
+                    if (name == QLatin1String("equalizer-10bands")) {
+                        m_audioEffectList.append(new EffectInfo(
+                                                     QLatin1String("KEqualizer"),
+                                                     QLatin1String("Compatibility effect. Do not use in new software!"),
+                                                     author));
+                    }
             }
         }
     }

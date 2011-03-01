@@ -43,18 +43,22 @@ public :
     {
         return m_name;
     }
+
     QString description() const
     {
         return m_description;
     }
+
     QString author() const
     {
         return m_author;
     }
+
     QStringList properties() const
     {
         return m_properties;
     }
+
     void addProperty(QString propertyName)
     {
         m_properties.append(propertyName);
