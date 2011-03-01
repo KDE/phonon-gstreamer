@@ -87,6 +87,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_currentTitle(1)
         , m_pendingTitle(1)
         , m_installingPlugin(true)
+        , m_installer(new PluginInstaller(this))
 {
     qRegisterMetaType<GstCaps*>("GstCaps*");
     qRegisterMetaType<State>("State");
@@ -112,6 +113,10 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         g_signal_connect(bus, "sync-message::warning", G_CALLBACK(cb_warning), this);
         g_signal_connect(bus, "sync-message::error", G_CALLBACK(cb_error), this);
         connect(m_tickTimer, SIGNAL(timeout()), SLOT(emitTick()));
+
+        connect(m_installer, SIGNAL(failure(const QString&)), this, SLOT(pluginInstallFailure(const QString&)));
+        connect(m_installer, SIGNAL(started()), this, SLOT(pluginInstallStarted()));
+        connect(m_installer, SIGNAL(success()), this, SLOT(pluginInstallComplete()));
     }
     connect(this, SIGNAL(stateChanged(Phonon::State, Phonon::State)),
             this, SLOT(notifyStateChange(Phonon::State, Phonon::State)));
@@ -208,111 +213,6 @@ void MediaObject::cb_newpad (GstElement *decodebin,
     media->newPadAvailable(pad);
 }
 
-#ifdef PLUGIN_INSTALL_API
-void MediaObject::pluginInstallationResult(GstInstallPluginsReturn result)
-{
-    if (!m_installingPlugin) {
-        // Changed media while the installer was working, so we just do not care what happened.
-        return;
-    }
-    bool wasInstalling = m_installingPlugin;
-    m_installingPlugin = false;
-    bool canPlay = (m_hasAudio || m_videoStreamFound);
-    Phonon::ErrorType error = canPlay ? Phonon::NormalError : Phonon::FatalError;
-    switch(result) {
-    case GST_INSTALL_PLUGINS_INVALID:
-        setError(QString(tr("Phonon attempted to install an invalid codec name.")));
-        break;
-    case GST_INSTALL_PLUGINS_CRASHED:
-        setError(QString(tr("The codec installer crashed.")), error);
-        break;
-    case GST_INSTALL_PLUGINS_NOT_FOUND:
-        setError(QString(tr("The required codec could not be found for installation.")), error);
-        break;
-    case GST_INSTALL_PLUGINS_ERROR:
-        setError(QString(tr("An unspecified error occurred during codec installation.")), error);
-        break;
-    case GST_INSTALL_PLUGINS_PARTIAL_SUCCESS:
-        setError(QString(tr("Not all codecs could be installed.")), error);
-        break;
-    case GST_INSTALL_PLUGINS_USER_ABORT:
-        setError(QString(tr("User aborted codec installation")), error);
-        break;
-    //These four should never ever be passed in.
-    //If they have, gstreamer has probably imploded in on itself.
-    case GST_INSTALL_PLUGINS_STARTED_OK:
-    case GST_INSTALL_PLUGINS_INTERNAL_FAILURE:
-    case GST_INSTALL_PLUGINS_HELPER_MISSING:
-    case GST_INSTALL_PLUGINS_INSTALL_IN_PROGRESS:
-    //But this one is OK.
-    case GST_INSTALL_PLUGINS_SUCCESS:
-        m_backend->logMessage("Updating registry");
-        if (gst_update_registry()) {
-            m_backend->logMessage("Registry updated failed");
-        }
-        if (wasInstalling) {
-            setSource(source());
-            play();
-        }
-        break;
-    }
-}
-
-void MediaObject::pluginInstallationDone(GstInstallPluginsReturn result, gpointer userData)
-{
-    QPointer<MediaObject> *that = static_cast<QPointer<MediaObject>*>(userData);
-    if (*that) {
-        qRegisterMetaType<GstInstallPluginsReturn>("GstInstallPluginsReturn");
-        QMetaObject::invokeMethod(*that, "pluginInstallationResult", Qt::QueuedConnection, Q_ARG(GstInstallPluginsReturn, result));
-    }
-}
-#endif // PLUGIN_INSTALL_API
-
-void MediaObject::installMissingCodecs()
-{
-    if (m_missingCodecs.size() > 0) {
-        bool canPlay = (m_hasAudio || m_videoStreamFound);
-        Phonon::ErrorType error = canPlay ? Phonon::NormalError : Phonon::FatalError;
-#ifdef PLUGIN_INSTALL_API
-        GstInstallPluginsContext *ctx = gst_install_plugins_context_new();
-        QWidget *activeWindow = QApplication::activeWindow();
-        if (activeWindow) {
-            gst_install_plugins_context_set_xid(ctx, static_cast<int>(activeWindow->winId()));
-        }
-        gchar *details[2];
-        QByteArray missingCodec = m_missingCodecs.first().toLocal8Bit();
-        details[0] = missingCodec.data();
-        details[1] = NULL;
-        GstInstallPluginsReturn status;
-
-        status = gst_install_plugins_async(details, ctx, pluginInstallationDone, new QPointer<MediaObject>(this));
-        gst_install_plugins_context_free(ctx);
-
-        if (status != GST_INSTALL_PLUGINS_STARTED_OK) {
-            if (status == GST_INSTALL_PLUGINS_HELPER_MISSING)
-                setError(QString(tr("Missing codec helper script assistant.")), Phonon::FatalError);
-            else
-                setError(QString(tr("Plugin codec installation failed for plugin: %1"))
-                        .arg(m_missingCodecs[0].split('|')[3]), error);
-        } else {
-            m_installingPlugin = true;
-            setState(Phonon::LoadingState);
-        }
-        m_missingCodecs.clear();
-#else
-        QString codecs = m_missingCodecs.join(", ");
-
-        if (error == Phonon::NormalError && m_hasVideo && !m_videoStreamFound) {
-            m_hasVideo = false;
-            emit hasVideoChanged(false);
-        }
-        setError(QString(tr("A required GStreamer plugin is missing. You need to install the following plugin(s) to play this content: %0"), "", codecs.size()).arg(codecs), error);
-        m_missingCodecs.clear();
-#endif
-    }
-}
-
-
 void MediaObject::cb_unknown_type (GstElement *decodebin, GstPad *pad, GstCaps *caps, gpointer data)
 {
     Q_UNUSED(decodebin);
@@ -320,8 +220,7 @@ void MediaObject::cb_unknown_type (GstElement *decodebin, GstPad *pad, GstCaps *
     MediaObject *media = static_cast<MediaObject*>(data);
     Q_ASSERT(media);
 
-    media->addMissingCodecName(PluginInstaller::buildInstallationString(caps, PluginInstaller::Codec));
-
+    media->m_installer->addPlugin(caps, PluginInstaller::Codec);
 }
 
 static void notifyVideoCaps(GObject *obj, GParamSpec *, gpointer data)
@@ -461,26 +360,20 @@ bool MediaObject::createPipefromDVD(const MediaSource &source)
     // video output stream. The audio and video streams are then funneled into
     // the audioGraph and videoGraph bins by way of connectAudio and decodebin,
     // respectively.
-
+    
+    m_installer->addPlugin("rsndvdbin", PluginInstaller::Element);
+    m_installer->addPlugin("dvdspu", PluginInstaller::Element);
+    if (m_installer->checkInstalledPlugins() != PluginInstaller::Installed)
+        return false;
     m_datasource = gst_bin_new(NULL);
     gst_bin_add(GST_BIN(m_pipeline), m_datasource);
 
     GstElement *dvdsrc = gst_element_factory_make("rsndvdbin", NULL);
-    if (!dvdsrc) {
-        addMissingCodecName( PluginInstaller::buildInstallationString("rsndvdbin", PluginInstaller::Element) );
-        installMissingCodecs();
-        return false;
-    }
 
     // Check for the dvdspu element from gst-plugins-bad before continuing.
     // Fedora keeps rsndvdbin and dvdspu in separate packages for some reason.
     GstElement *spu = gst_element_factory_make("dvdspu", NULL);
 
-    if (!spu) {
-        addMissingCodecName( PluginInstaller::buildInstallationString("dvdspu", PluginInstaller::Element) );
-        installMissingCodecs();
-        return false;
-    }
     gst_bin_add(GST_BIN(m_datasource), dvdsrc);
 
     QByteArray mediaDevice = QFile::encodeName(source.deviceName());
@@ -1114,7 +1007,7 @@ void MediaObject::setSource(const MediaSource &source)
     m_source = source;
     emit currentSourceChanged(m_source);
     m_previousTickTime = -1;
-    m_missingCodecs.clear();
+    m_installer->reset();
 
     // Go into to loading state
     changeState(Phonon::LoadingState);
@@ -1488,7 +1381,7 @@ void MediaObject::handleErrorMessage(GstMessage *gstMessage)
         }
     } else if ((err->domain == GST_CORE_ERROR && err->code == GST_CORE_ERROR_MISSING_PLUGIN)
             || (err->domain == GST_STREAM_ERROR && err->code == GST_STREAM_ERROR_CODEC_NOT_FOUND)) {
-        installMissingCodecs();
+        m_installer->checkInstalledPlugins();
     } else if (!(err->domain == GST_STREAM_ERROR && m_installingPlugin)) {
         setError(err->message, Phonon::FatalError);
     }
@@ -2035,6 +1928,33 @@ void MediaObject::setTrack(int title)
         emit titleChanged(title);
         emit totalTimeChanged(totalTime());
     }
+}
+
+void MediaObject::pluginInstallComplete()
+{
+    if (!m_installingPlugin)
+        return;
+
+    bool wasInstalling = m_installingPlugin;
+    m_installingPlugin = false;
+    if (wasInstalling) {
+        setSource(source());
+        play();
+    }
+}
+
+void MediaObject::pluginInstallStarted()
+{
+    setState(Phonon::LoadingState);
+    m_installingPlugin = true;
+}
+
+void MediaObject::pluginInstallFailure(const QString &msg)
+{
+    m_installingPlugin = false;
+    bool canPlay = (m_hasAudio || m_videoStreamFound);
+    Phonon::ErrorType error = canPlay ? Phonon::NormalError : Phonon::FatalError;
+    setError(msg, error);
 }
 
 } // ns Gstreamer

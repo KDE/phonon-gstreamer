@@ -19,7 +19,11 @@
 #define Phonon_GSTREAMER_PLUGININSTALLER_H
 
 #include "common.h"
+#include <QtCore/QObject>
 #include <gst/gstcaps.h>
+#include <gst/pbutils/install-plugins.h>
+#include "phonon-config-gstreamer.h"
+
 
 QT_BEGIN_NAMESPACE
 
@@ -40,7 +44,8 @@ typedef gchar* (*Ptr_gst_pb_utils_get_codec_description)(const GstCaps *);
  * A class to help with installing missing gstreamer plugins
  */
 
-class PluginInstaller {
+class PluginInstaller : public QObject {
+    Q_OBJECT
     public: 
         enum PluginType {
             Source,
@@ -51,11 +56,33 @@ class PluginInstaller {
             Codec
         };
 
+        enum InstallStatus {
+            Idle,
+            Installed,
+            Installing,
+            Missing
+        };
+
+        PluginInstaller(QObject *parent = 0);
+
+        void addPlugin(const QString &name, PluginType type);
+        void addPlugin(const GstCaps *caps, PluginType type);
+
+        InstallStatus checkInstalledPlugins();
+#ifdef PLUGIN_INSTALL_API
+        static void pluginInstallationDone(GstInstallPluginsReturn result, gpointer data);
+        void pluginInstallationResult(GstInstallPluginsReturn result);
+        void run();
+#endif
+        void reset();
+
         /**
          * Returns the translated, user-friendly string that describes a plugin
          */
         static QString description(const gchar *name, PluginType type);
         static QString description(const GstCaps *caps, PluginType type);
+
+        static QString getCapType(const GstCaps *caps);
 
         /**
          * Builds a string suitable for passing to gst_install_plugins_*
@@ -63,7 +90,14 @@ class PluginInstaller {
         static QString buildInstallationString(const gchar *name, PluginType type);
         static QString buildInstallationString(const GstCaps *caps, PluginType type);
 
+    Q_SIGNALS:
+        void started();
+        void success();
+        void failure(const QString &message);
+
     private:
+        QHash<QString, PluginType> m_pluginList;
+        QHash<GstCaps *, PluginType> m_capList;
         static bool init();
         static bool s_ready;
         static Ptr_gst_pb_utils_init p_gst_pb_utils_init;

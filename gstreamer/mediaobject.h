@@ -46,6 +46,7 @@ class VideoWidget;
 class AudioPath;
 class VideoPath;
 class AudioOutput;
+class PluginInstaller;
 
 class MediaObject : public QObject, public MediaObjectInterface
 #ifndef QT_NO_PHONON_MEDIACONTROLLER
@@ -163,7 +164,6 @@ public:
     static gboolean cb_warning(GstBus *bus, GstMessage *msg, gpointer data);
     static gboolean cb_error(GstBus *bus, GstMessage *msg, gpointer data);
 
-    void addMissingCodecName(const QString &codec) { m_missingCodecs.append(codec); }
     void invalidateGraph();
 
     static void cb_newpad (GstElement *decodebin, GstPad *pad, gboolean last, gpointer data);
@@ -233,15 +233,14 @@ protected:
     }
 
 private Q_SLOTS:
-    void installMissingCodecs();
     void getStreamInfo();
     void emitTick();
     void beginPlay();
     void setVideoCaps(GstCaps *caps);
     void notifyStateChange(Phonon::State newstate, Phonon::State oldstate);
-#ifdef PLUGIN_INSTALL_API
-    void pluginInstallationResult(GstInstallPluginsReturn result);
-#endif // PLUGIN_INSTALL_API
+    void pluginInstallComplete();
+    void pluginInstallFailure(const QString &msg);
+    void pluginInstallStarted();
 
 private:
     // GStreamer specific :
@@ -257,9 +256,6 @@ private:
     int _iface_currentTitle() const;
     void _iface_setCurrentTitle(int title);
     void setTrack(int title);
-
-    // Plugin API callback
-    static void pluginInstallationDone(GstInstallPluginsReturn result, gpointer userData);
 
     bool m_resumeState;
     State m_oldState;
@@ -305,13 +301,13 @@ private:
     GstElement *m_videoGraph;
     int m_previousTickTime;
     bool m_resetNeeded;
-    QStringList m_missingCodecs;
     QMultiMap<QString, QString> m_metaData;
     bool m_autoplayTitles;
     int m_availableTitles;
     int m_currentTitle;
     int m_pendingTitle;
     bool m_installingPlugin;
+    PluginInstaller *m_installer;
 };
 }
 } //namespace Phonon::Gstreamer
