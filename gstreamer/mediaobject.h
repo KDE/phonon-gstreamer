@@ -104,10 +104,6 @@ public:
     bool hasInterface(Interface) const;
     QVariant interfaceCall(Interface, int, const QList<QVariant> &);
 #endif
-    bool isLoading()
-    {
-        return m_loading;
-    }
 
     bool audioAvailable()
     {
@@ -173,7 +169,7 @@ public:
     void resumeState();
 
 public Q_SLOTS:
-    void setState(State);
+    void transitionToState(State, bool force = false);
 
 Q_SIGNALS:
     void currentSourceChanged(const MediaSource &newSource);
@@ -209,7 +205,6 @@ protected:
     void beginLoad();
     void loadingComplete();
     void newPadAvailable (GstPad *pad);
-    void changeState(State);
     void setError(const QString &errorString, Phonon::ErrorType error = NormalError);
     /*
      * @param encodedUrl percent-encoded QString for source compat reasons.  Should change to QUrl
@@ -256,6 +251,8 @@ private:
     int _iface_currentTitle() const;
     void _iface_setCurrentTitle(int title);
     void setTrack(int title);
+    void changeState(State);
+    void transitionToNextState();
 
     bool m_resumeState;
     State m_oldState;
@@ -276,7 +273,6 @@ private:
 
     bool m_prefinishMarkReachedNotEmitted;
     bool m_aboutToFinishEmitted;
-    bool m_loading;
     gulong m_capsHandler;
 
     GstElement *m_datasource;
