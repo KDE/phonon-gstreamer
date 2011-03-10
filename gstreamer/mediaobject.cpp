@@ -1155,18 +1155,28 @@ void MediaObject::updateNavigation()
                 GstNavigationCommand cmd;
                 if (!gst_navigation_query_parse_commands_nth(query, i, &cmd))
                     break;
-                if (cmd == GST_NAVIGATION_COMMAND_DVD_MENU)
+                switch (cmd) {
+                case GST_NAVIGATION_COMMAND_DVD_MENU:
                     ret << MediaController::MainMenu;
-                if (cmd == GST_NAVIGATION_COMMAND_DVD_TITLE_MENU)
+                    break;
+                case GST_NAVIGATION_COMMAND_DVD_TITLE_MENU:
                     ret << MediaController::TitleMenu;
-                if (cmd == GST_NAVIGATION_COMMAND_DVD_ROOT_MENU)
+                    break;
+                case GST_NAVIGATION_COMMAND_DVD_ROOT_MENU:
                     ret << MediaController::RootMenu;
-                if (cmd == GST_NAVIGATION_COMMAND_DVD_AUDIO_MENU)
+                    break;
+                case GST_NAVIGATION_COMMAND_DVD_AUDIO_MENU:
                     ret << MediaController::AudioMenu;
-                if (cmd == GST_NAVIGATION_COMMAND_DVD_CHAPTER_MENU)
+                    break;
+                case GST_NAVIGATION_COMMAND_DVD_CHAPTER_MENU:
                     ret << MediaController::ChapterMenu;
-                if (cmd == GST_NAVIGATION_COMMAND_DVD_ANGLE_MENU)
+                    break;
+                case GST_NAVIGATION_COMMAND_DVD_ANGLE_MENU:
                     ret << MediaController::AngleMenu;
+                    break;
+                default:
+                    break;
+                }
             }
         }
     }
