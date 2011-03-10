@@ -1151,7 +1151,7 @@ void MediaObject::updateNavigation()
         gboolean res = gst_element_query(target, query);
         guint count;
         if (res && gst_navigation_query_parse_commands_length(query, &count)) {
-            for(guint i = 0;i<count;i++) {
+            for(guint i = 0; i < count; ++i) {
                 GstNavigationCommand cmd;
                 if (!gst_navigation_query_parse_commands_nth(query, i, &cmd))
                     break;
