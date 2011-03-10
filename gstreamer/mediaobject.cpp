@@ -360,7 +360,7 @@ bool MediaObject::createPipefromDVD(const MediaSource &source)
     // video output stream. The audio and video streams are then funneled into
     // the audioGraph and videoGraph bins by way of connectAudio and decodebin,
     // respectively.
-    
+
     m_installer->addPlugin("rsndvdbin", PluginInstaller::Element);
     m_installer->addPlugin("dvdspu", PluginInstaller::Element);
     if (m_installer->checkInstalledPlugins() != PluginInstaller::Installed)
@@ -1156,17 +1156,17 @@ void MediaObject::updateNavigation()
                 if (!gst_navigation_query_parse_commands_nth(query, i, &cmd))
                     break;
                 if (cmd == GST_NAVIGATION_COMMAND_DVD_MENU)
-                    ret << MediaController::MenuMain;
+                    ret << MediaController::MainMenu;
                 if (cmd == GST_NAVIGATION_COMMAND_DVD_TITLE_MENU)
-                    ret << MediaController::MenuTitle;
+                    ret << MediaController::TitleMenu;
                 if (cmd == GST_NAVIGATION_COMMAND_DVD_ROOT_MENU)
-                    ret << MediaController::MenuRoot;
+                    ret << MediaController::RootMenu;
                 if (cmd == GST_NAVIGATION_COMMAND_DVD_AUDIO_MENU)
-                    ret << MediaController::MenuAudio;
+                    ret << MediaController::AudioMenu;
                 if (cmd == GST_NAVIGATION_COMMAND_DVD_CHAPTER_MENU)
-                    ret << MediaController::MenuChapter;
+                    ret << MediaController::ChapterMenu;
                 if (cmd == GST_NAVIGATION_COMMAND_DVD_ANGLE_MENU)
-                    ret << MediaController::MenuAngle;
+                    ret << MediaController::AngleMenu;
             }
         }
     }
@@ -1950,22 +1950,22 @@ void MediaObject::_iface_jumpToMenu(MediaController::NavigationMenu menu)
 #if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
     GstNavigationCommand command;
     switch(menu) {
-        case MediaController::MenuMain:
+        case MediaController::MainMenu:
             command = GST_NAVIGATION_COMMAND_DVD_MENU;
             break;
-        case MediaController::MenuTitle:
+        case MediaController::TitleMenu:
             command = GST_NAVIGATION_COMMAND_DVD_TITLE_MENU;
             break;
-        case MediaController::MenuRoot:
+        case MediaController::RootMenu:
             command = GST_NAVIGATION_COMMAND_DVD_ROOT_MENU;
             break;
-        case MediaController::MenuAudio:
+        case MediaController::AudioMenu:
             command = GST_NAVIGATION_COMMAND_DVD_AUDIO_MENU;
             break;
-        case MediaController::MenuChapter:
+        case MediaController::ChapterMenu:
             command = GST_NAVIGATION_COMMAND_DVD_CHAPTER_MENU;
             break;
-        case MediaController::MenuAngle:
+        case MediaController::AngleMenu:
             command = GST_NAVIGATION_COMMAND_DVD_ANGLE_MENU;
             break;
         default:
