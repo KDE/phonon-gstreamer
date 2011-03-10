@@ -1242,6 +1242,8 @@ void MediaObject::emitTick()
 
     qint64 currentTime = getPipelinePos();
     qint64 totalTime = m_totalTime;
+    // We don't get any other kind of notification when we change DVD chapters, so here's the best place...
+    updateTotalTime();
 
     if (m_tickInterval > 0 && currentTime != m_previousTickTime) {
         emit tick(currentTime);
