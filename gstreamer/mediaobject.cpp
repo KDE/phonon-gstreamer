@@ -1141,10 +1141,47 @@ void MediaObject::loadingComplete()
     emit metaDataChanged(m_metaData);
 }
 
+void MediaObject::updateNavigation()
+{
+    QList<MediaController::NavigationMenu> ret;
+#if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
+    GstElement *target = gst_bin_get_by_interface(GST_BIN(m_pipeline), GST_TYPE_NAVIGATION);
+    if (target) {
+        GstQuery *query = gst_navigation_query_new_commands();
+        gboolean res = gst_element_query(target, query);
+        guint count;
+        if (res && gst_navigation_query_parse_commands_length(query, &count)) {
+            for(guint i = 0;i<count;i++) {
+                GstNavigationCommand cmd;
+                if (!gst_navigation_query_parse_commands_nth(query, i, &cmd))
+                    break;
+                if (cmd == GST_NAVIGATION_COMMAND_DVD_MENU)
+                    ret << MediaController::MenuMain;
+                if (cmd == GST_NAVIGATION_COMMAND_DVD_TITLE_MENU)
+                    ret << MediaController::MenuTitle;
+                if (cmd == GST_NAVIGATION_COMMAND_DVD_ROOT_MENU)
+                    ret << MediaController::MenuRoot;
+                if (cmd == GST_NAVIGATION_COMMAND_DVD_AUDIO_MENU)
+                    ret << MediaController::MenuAudio;
+                if (cmd == GST_NAVIGATION_COMMAND_DVD_CHAPTER_MENU)
+                    ret << MediaController::MenuChapter;
+                if (cmd == GST_NAVIGATION_COMMAND_DVD_ANGLE_MENU)
+                    ret << MediaController::MenuAngle;
+            }
+        }
+    }
+#endif
+    if (ret != m_menus) {
+        m_menus = ret;
+        emit availableMenusChanged(m_menus);
+    }
+}
+
 void MediaObject::getStreamInfo()
 {
     updateSeekable();
     updateTotalTime();
+    updateNavigation();
 
     if (m_videoStreamFound != m_hasVideo) {
         m_hasVideo = m_videoStreamFound;
@@ -1677,6 +1714,9 @@ void MediaObject::handleElementMessage(GstMessage *gstMessage)
             notify(&mouseOverEvent);
             break;
         }
+        case GST_NAVIGATION_MESSAGE_COMMANDS_CHANGED:
+            updateNavigation();
+            break;
         default:
             break;
         }
@@ -1856,7 +1896,7 @@ void MediaObject::notifyStateChange(Phonon::State newstate, Phonon::State oldsta
 //interface management
 bool MediaObject::hasInterface(Interface iface) const
 {
-    return iface == AddonInterface::TitleInterface;
+    return iface == AddonInterface::TitleInterface || iface == AddonInterface::NavigationInterface;
 }
 
 QVariant MediaObject::interfaceCall(Interface iface, int command, const QList<QVariant> &params)
@@ -1884,11 +1924,59 @@ QVariant MediaObject::interfaceCall(Interface iface, int command, const QList<QV
             break;
                 default:
             break;
+        case NavigationInterface:
+            switch(command)
+            {
+                case availableMenus:
+                    return QVariant::fromValue<QList<MediaController::NavigationMenu> >(_iface_availableMenus());
+                case setMenu:
+                    _iface_jumpToMenu(params.first().value<MediaController::NavigationMenu>());
+                    break;
+            }
+            break;
         }
     }
     return QVariant();
 }
 #endif
+
+QList<MediaController::NavigationMenu> MediaObject::_iface_availableMenus() const
+{
+    return m_menus;
+}
+
+void MediaObject::_iface_jumpToMenu(MediaController::NavigationMenu menu)
+{
+#if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
+    GstNavigationCommand command;
+    switch(menu) {
+        case MediaController::MenuMain:
+            command = GST_NAVIGATION_COMMAND_DVD_MENU;
+            break;
+        case MediaController::MenuTitle:
+            command = GST_NAVIGATION_COMMAND_DVD_TITLE_MENU;
+            break;
+        case MediaController::MenuRoot:
+            command = GST_NAVIGATION_COMMAND_DVD_ROOT_MENU;
+            break;
+        case MediaController::MenuAudio:
+            command = GST_NAVIGATION_COMMAND_DVD_AUDIO_MENU;
+            break;
+        case MediaController::MenuChapter:
+            command = GST_NAVIGATION_COMMAND_DVD_CHAPTER_MENU;
+            break;
+        case MediaController::MenuAngle:
+            command = GST_NAVIGATION_COMMAND_DVD_ANGLE_MENU;
+            break;
+        default:
+            return;
+    }
+
+    GstElement *target = gst_bin_get_by_interface(GST_BIN(m_pipeline), GST_TYPE_NAVIGATION);
+    if (target)
+        gst_navigation_send_command(GST_NAVIGATION(target), command);
+#endif
+}
 
 int MediaObject::_iface_availableTitles() const
 {
