@@ -27,7 +27,7 @@
 #include "phonon-config-gstreamer.h"
 #include "gsthelper.h"
 #include "plugininstaller.h"
-#include "debug.h"
+
 #include <QtCore/QByteRef>
 #include <QtCore/QEvent>
 #include <QtCore/QFile>
@@ -1957,8 +1957,6 @@ QList<MediaController::NavigationMenu> MediaObject::_iface_availableMenus() cons
 
 void MediaObject::_iface_jumpToMenu(MediaController::NavigationMenu menu)
 {
-    DEBUG_BLOCK;
-    debug() << menu;
 #if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
     GstNavigationCommand command;
     switch(menu) {
