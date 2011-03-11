@@ -27,7 +27,7 @@
 #include "phonon-config-gstreamer.h"
 #include "gsthelper.h"
 #include "plugininstaller.h"
-
+#include "debug.h"
 #include <QtCore/QByteRef>
 #include <QtCore/QEvent>
 #include <QtCore/QFile>
@@ -1156,17 +1156,17 @@ void MediaObject::updateNavigation()
                 if (!gst_navigation_query_parse_commands_nth(query, i, &cmd))
                     break;
                 switch (cmd) {
-                case GST_NAVIGATION_COMMAND_DVD_MENU:
-                    ret << MediaController::MainMenu;
+                case GST_NAVIGATION_COMMAND_DVD_ROOT_MENU:
+                    ret << MediaController::RootMenu;
                     break;
                 case GST_NAVIGATION_COMMAND_DVD_TITLE_MENU:
                     ret << MediaController::TitleMenu;
                     break;
-                case GST_NAVIGATION_COMMAND_DVD_ROOT_MENU:
-                    ret << MediaController::RootMenu;
-                    break;
                 case GST_NAVIGATION_COMMAND_DVD_AUDIO_MENU:
                     ret << MediaController::AudioMenu;
+                    break;
+                case GST_NAVIGATION_COMMAND_DVD_SUBPICTURE_MENU:
+                    ret << MediaController::SubtitleMenu;
                     break;
                 case GST_NAVIGATION_COMMAND_DVD_CHAPTER_MENU:
                     ret << MediaController::ChapterMenu;
@@ -1940,7 +1940,7 @@ QVariant MediaObject::interfaceCall(Interface iface, int command, const QList<QV
                 case availableMenus:
                     return QVariant::fromValue<QList<MediaController::NavigationMenu> >(_iface_availableMenus());
                 case setMenu:
-                    _iface_jumpToMenu(params.first().value<MediaController::NavigationMenu>());
+                    _iface_jumpToMenu(params.first().value<Phonon::MediaController::NavigationMenu>());
                     break;
             }
             break;
@@ -1957,29 +1957,31 @@ QList<MediaController::NavigationMenu> MediaObject::_iface_availableMenus() cons
 
 void MediaObject::_iface_jumpToMenu(MediaController::NavigationMenu menu)
 {
+    DEBUG_BLOCK;
+    debug() << menu;
 #if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
     GstNavigationCommand command;
     switch(menu) {
-        case MediaController::MainMenu:
-            command = GST_NAVIGATION_COMMAND_DVD_MENU;
-            break;
-        case MediaController::TitleMenu:
-            command = GST_NAVIGATION_COMMAND_DVD_TITLE_MENU;
-            break;
-        case MediaController::RootMenu:
-            command = GST_NAVIGATION_COMMAND_DVD_ROOT_MENU;
-            break;
-        case MediaController::AudioMenu:
-            command = GST_NAVIGATION_COMMAND_DVD_AUDIO_MENU;
-            break;
-        case MediaController::ChapterMenu:
-            command = GST_NAVIGATION_COMMAND_DVD_CHAPTER_MENU;
-            break;
-        case MediaController::AngleMenu:
-            command = GST_NAVIGATION_COMMAND_DVD_ANGLE_MENU;
-            break;
-        default:
-            return;
+    case MediaController::RootMenu:
+        command = GST_NAVIGATION_COMMAND_DVD_ROOT_MENU;
+        break;
+    case MediaController::TitleMenu:
+        command = GST_NAVIGATION_COMMAND_DVD_TITLE_MENU;
+        break;
+    case MediaController::AudioMenu:
+        command = GST_NAVIGATION_COMMAND_DVD_AUDIO_MENU;
+        break;
+    case MediaController::SubtitleMenu:
+        command = GST_NAVIGATION_COMMAND_DVD_SUBPICTURE_MENU;
+        break;
+    case MediaController::ChapterMenu:
+        command = GST_NAVIGATION_COMMAND_DVD_CHAPTER_MENU;
+        break;
+    case MediaController::AngleMenu:
+        command = GST_NAVIGATION_COMMAND_DVD_ANGLE_MENU;
+        break;
+    default:
+        return;
     }
 
     GstElement *target = gst_bin_get_by_interface(GST_BIN(m_pipeline), GST_TYPE_NAVIGATION);
