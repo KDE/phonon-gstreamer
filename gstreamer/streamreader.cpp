@@ -44,25 +44,13 @@ StreamReader::~StreamReader()
     DEBUG_BLOCK;
 }
 
+//------------------------------------------------------------------------------
+// Thead safe because every changing function is locked ------------------------
+//------------------------------------------------------------------------------
+
 int StreamReader::currentBufferSize() const
 {
     return m_buffer.size();
-}
-
-void StreamReader::writeData(const QByteArray &data)
-{
-    DEBUG_BLOCK;
-    m_buffer.append(data);
-    m_waitingForData.wakeAll();
-}
-
-void StreamReader::setCurrentPos(qint64 pos)
-{
-    QMutexLocker locker(&m_mutex);
-
-    m_pos = pos;
-    seekStream(pos);
-    m_buffer.clear();
 }
 
 quint64 StreamReader::currentPos() const
@@ -70,10 +58,42 @@ quint64 StreamReader::currentPos() const
     return m_pos;
 }
 
+qint64 StreamReader::streamSize() const
+{
+    return m_size;
+}
+
+bool StreamReader::streamSeekable() const
+{
+    // TODO - problems with pull seeking and the way our current stack works.
+    return false;
+//    return m_seekable;
+}
+
+//------------------------------------------------------------------------------
+// Explicit thread safe by locking the mutex ---------------------------------
+//------------------------------------------------------------------------------
+
+void StreamReader::setCurrentPos(qint64 pos)
+{
+    QMutexLocker locker(&m_mutex);
+    m_pos = pos;
+    seekStream(pos);
+    m_buffer.clear();
+}
+
+void StreamReader::writeData(const QByteArray &data)
+{
+    QMutexLocker locker(&m_mutex);
+    DEBUG_BLOCK;
+    m_buffer.append(data);
+    m_waitingForData.wakeAll();
+}
+
 GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
 {
-    DEBUG_BLOCK;
     QMutexLocker locker(&m_mutex);
+    DEBUG_BLOCK;
 
     if (currentPos() != pos) {
         if (!streamSeekable()) {
@@ -118,16 +138,16 @@ GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
 
 void StreamReader::endOfData()
 {
-    DEBUG_BLOCK;
     QMutexLocker locker(&m_mutex);
+    DEBUG_BLOCK;
     m_eos = true;
     m_waitingForData.wakeAll();
 }
 
 void StreamReader::start()
 {
-    DEBUG_BLOCK;
     QMutexLocker locker(&m_mutex);
+    DEBUG_BLOCK;
     m_buffer.clear();
     m_eos = false;
     m_locked = true;
@@ -139,6 +159,7 @@ void StreamReader::start()
 
 void StreamReader::stop()
 {
+    QMutexLocker locker(&m_mutex);
     DEBUG_BLOCK;
     enoughData();
     m_waitingForData.wakeAll();
@@ -146,8 +167,8 @@ void StreamReader::stop()
 
 void StreamReader::unlock()
 {
-    DEBUG_BLOCK;
     QMutexLocker locker(&m_mutex);
+    DEBUG_BLOCK;
     enoughData();
     m_locked = false;
     m_waitingForData.wakeAll();
@@ -155,29 +176,19 @@ void StreamReader::unlock()
 
 void StreamReader::setStreamSize(qint64 newSize)
 {
+    QMutexLocker locker(&m_mutex);
     m_size = newSize;
-}
-
-qint64 StreamReader::streamSize() const
-{
-    return m_size;
 }
 
 void StreamReader::setStreamSeekable(bool seekable)
 {
+    QMutexLocker locker(&m_mutex);
 //    if (seekable) {
 //        // The initial stream size of a seekable stream *must* not be 0 or
 //        // GStreamer will refuse to typefind.
 //        m_size = 1;
 //    }
     m_seekable = seekable;
-}
-
-bool StreamReader::streamSeekable() const
-{
-    // TODO - problems with pull seeking and the way our current stack works.
-    return false;
-//    return m_seekable;
 }
 
 }
