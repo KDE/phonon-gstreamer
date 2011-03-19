@@ -1,6 +1,7 @@
 /*  This file is part of the KDE project.
 
     Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+    Copyright (C) 2011 Trever Fischer <tdfischer@fedoraproject.org>
 
     This library is free software: you can redistribute it and/or modify
     it under the terms of the GNU Lesser General Public License as published by
@@ -21,6 +22,7 @@
 #include "medianode.h"
 #include <phonon/mediaobjectinterface.h>
 #include <phonon/addoninterface.h>
+#include <phonon/MediaController>
 
 #include <QtCore/QObject>
 #include <QtCore/QString>
@@ -195,6 +197,7 @@ Q_SIGNALS:
     // AddonInterface:
     void titleChanged(int);
     void availableTitlesChanged(int);
+    void availableMenusChanged(QList<MediaController::NavigationMenu>);
 
     // Not implemented
     void chapterChanged(int);
@@ -250,11 +253,14 @@ private:
     void getStreamsInfo();
     bool updateTotalTime();
     void updateSeekable();
+    void updateNavigation();
     qint64 getPipelinePos() const;
 
     int _iface_availableTitles() const;
     int _iface_currentTitle() const;
     void _iface_setCurrentTitle(int title);
+    QList<MediaController::NavigationMenu> _iface_availableMenus() const;
+    void _iface_jumpToMenu(MediaController::NavigationMenu menu);
     void setTrack(int title);
 
     bool m_resumeState;
@@ -308,6 +314,7 @@ private:
     int m_pendingTitle;
     bool m_installingPlugin;
     PluginInstaller *m_installer;
+    QList<MediaController::NavigationMenu> m_menus;
 };
 }
 } //namespace Phonon::Gstreamer

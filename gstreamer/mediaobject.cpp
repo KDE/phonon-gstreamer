@@ -1,6 +1,8 @@
 /*  This file is part of the KDE project.
 
     Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+    Copyright (C) 2011 Trever Fischer <tdfischer@fedoraproject.org>
+    Copyright (C) 2011 Harald Sitter <sitter@kde.org>
 
     This library is free software: you can redistribute it and/or modify
     it under the terms of the GNU Lesser General Public License as published by
@@ -14,6 +16,7 @@
     You should have received a copy of the GNU Lesser General Public License
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #include <cmath>
 #include <gst/interfaces/navigation.h>
 #include <gst/interfaces/propertyprobe.h>
@@ -360,7 +363,7 @@ bool MediaObject::createPipefromDVD(const MediaSource &source)
     // video output stream. The audio and video streams are then funneled into
     // the audioGraph and videoGraph bins by way of connectAudio and decodebin,
     // respectively.
-    
+
     m_installer->addPlugin("rsndvdbin", PluginInstaller::Element);
     m_installer->addPlugin("dvdspu", PluginInstaller::Element);
     if (m_installer->checkInstalledPlugins() != PluginInstaller::Installed)
@@ -1141,10 +1144,57 @@ void MediaObject::loadingComplete()
     emit metaDataChanged(m_metaData);
 }
 
+void MediaObject::updateNavigation()
+{
+    QList<MediaController::NavigationMenu> ret;
+#if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
+    GstElement *target = gst_bin_get_by_interface(GST_BIN(m_pipeline), GST_TYPE_NAVIGATION);
+    if (target) {
+        GstQuery *query = gst_navigation_query_new_commands();
+        gboolean res = gst_element_query(target, query);
+        guint count;
+        if (res && gst_navigation_query_parse_commands_length(query, &count)) {
+            for(guint i = 0; i < count; ++i) {
+                GstNavigationCommand cmd;
+                if (!gst_navigation_query_parse_commands_nth(query, i, &cmd))
+                    break;
+                switch (cmd) {
+                case GST_NAVIGATION_COMMAND_DVD_ROOT_MENU:
+                    ret << MediaController::RootMenu;
+                    break;
+                case GST_NAVIGATION_COMMAND_DVD_TITLE_MENU:
+                    ret << MediaController::TitleMenu;
+                    break;
+                case GST_NAVIGATION_COMMAND_DVD_AUDIO_MENU:
+                    ret << MediaController::AudioMenu;
+                    break;
+                case GST_NAVIGATION_COMMAND_DVD_SUBPICTURE_MENU:
+                    ret << MediaController::SubtitleMenu;
+                    break;
+                case GST_NAVIGATION_COMMAND_DVD_CHAPTER_MENU:
+                    ret << MediaController::ChapterMenu;
+                    break;
+                case GST_NAVIGATION_COMMAND_DVD_ANGLE_MENU:
+                    ret << MediaController::AngleMenu;
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+    }
+#endif
+    if (ret != m_menus) {
+        m_menus = ret;
+        emit availableMenusChanged(m_menus);
+    }
+}
+
 void MediaObject::getStreamInfo()
 {
     updateSeekable();
     updateTotalTime();
+    updateNavigation();
 
     if (m_videoStreamFound != m_hasVideo) {
         m_hasVideo = m_videoStreamFound;
@@ -1677,6 +1727,9 @@ void MediaObject::handleElementMessage(GstMessage *gstMessage)
             notify(&mouseOverEvent);
             break;
         }
+        case GST_NAVIGATION_MESSAGE_COMMANDS_CHANGED:
+            updateNavigation();
+            break;
         default:
             break;
         }
@@ -1856,7 +1909,7 @@ void MediaObject::notifyStateChange(Phonon::State newstate, Phonon::State oldsta
 //interface management
 bool MediaObject::hasInterface(Interface iface) const
 {
-    return iface == AddonInterface::TitleInterface;
+    return iface == AddonInterface::TitleInterface || iface == AddonInterface::NavigationInterface;
 }
 
 QVariant MediaObject::interfaceCall(Interface iface, int command, const QList<QVariant> &params)
@@ -1884,11 +1937,59 @@ QVariant MediaObject::interfaceCall(Interface iface, int command, const QList<QV
             break;
                 default:
             break;
+        case NavigationInterface:
+            switch(command)
+            {
+                case availableMenus:
+                    return QVariant::fromValue<QList<MediaController::NavigationMenu> >(_iface_availableMenus());
+                case setMenu:
+                    _iface_jumpToMenu(params.first().value<Phonon::MediaController::NavigationMenu>());
+                    break;
+            }
+            break;
         }
     }
     return QVariant();
 }
 #endif
+
+QList<MediaController::NavigationMenu> MediaObject::_iface_availableMenus() const
+{
+    return m_menus;
+}
+
+void MediaObject::_iface_jumpToMenu(MediaController::NavigationMenu menu)
+{
+#if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
+    GstNavigationCommand command;
+    switch(menu) {
+    case MediaController::RootMenu:
+        command = GST_NAVIGATION_COMMAND_DVD_ROOT_MENU;
+        break;
+    case MediaController::TitleMenu:
+        command = GST_NAVIGATION_COMMAND_DVD_TITLE_MENU;
+        break;
+    case MediaController::AudioMenu:
+        command = GST_NAVIGATION_COMMAND_DVD_AUDIO_MENU;
+        break;
+    case MediaController::SubtitleMenu:
+        command = GST_NAVIGATION_COMMAND_DVD_SUBPICTURE_MENU;
+        break;
+    case MediaController::ChapterMenu:
+        command = GST_NAVIGATION_COMMAND_DVD_CHAPTER_MENU;
+        break;
+    case MediaController::AngleMenu:
+        command = GST_NAVIGATION_COMMAND_DVD_ANGLE_MENU;
+        break;
+    default:
+        return;
+    }
+
+    GstElement *target = gst_bin_get_by_interface(GST_BIN(m_pipeline), GST_TYPE_NAVIGATION);
+    if (target)
+        gst_navigation_send_command(GST_NAVIGATION(target), command);
+#endif
+}
 
 int MediaObject::_iface_availableTitles() const
 {
