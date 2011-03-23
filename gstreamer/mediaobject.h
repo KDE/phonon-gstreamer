@@ -27,7 +27,6 @@
 #include <QtCore/QObject>
 #include <QtCore/QString>
 #include <QtCore/QStringList>
-#include <QtCore/QUrl>
 #include <QtCore/QVariant>
 
 #include <gst/pbutils/install-plugins.h>
@@ -41,6 +40,9 @@ typedef QMultiMap<QString, QString> TagMap;
 
 namespace Phonon
 {
+
+class Mrl;
+
 namespace Gstreamer
 {
 
@@ -87,7 +89,6 @@ public:
     QString errorString() const;
     Phonon::ErrorType errorType() const;
 
-    QUrl url() const;
     qint64 totalTime() const;
 
     qint32 prefinishMark() const;
@@ -217,7 +218,7 @@ protected:
     /*
      * @param encodedUrl percent-encoded QString for source compat reasons.  Should change to QUrl
      */
-    bool createPipefromURL(const QUrl &url);
+    bool createPipefromURL(const Mrl &mrl);
     bool createPipefromStream(const MediaSource &);
     bool createPipefromDevice(const MediaSource &);
     bool createPipefromDVD(const MediaSource &);

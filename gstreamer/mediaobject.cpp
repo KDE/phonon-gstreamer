@@ -447,7 +447,7 @@ bool MediaObject::createPipefromDevice(const MediaSource &source)
  *
  * returns true if successful
  */
-bool MediaObject::createPipefromURL(const QUrl &url)
+bool MediaObject::createPipefromURL(const Mrl &mrl)
 {
     // Remove any existing data source
     if (m_datasource) {
@@ -457,27 +457,14 @@ bool MediaObject::createPipefromURL(const QUrl &url)
     }
 
     // Verify that the uri can be parsed
-    if (!url.isValid()) {
-        m_backend->logMessage(QString("%1 is not a valid URI").arg(url.toString()));
+    if (!mrl.isValid()) {
+        m_backend->logMessage(QString("%1 is not a valid URI").arg(mrl.toString()));
         return false;
     }
 
     // Create a new datasource based on the input URL
-    // add the 'file' scheme if it's missing; the double '/' is needed!
-    QByteArray encoded_cstr_url;
-    if (url.scheme() == QLatin1String("")) {
-        encoded_cstr_url = QFile::encodeName("file://" + url.toString()).toPercentEncoding(":/\\?=&,@");
-    } else if (url.scheme() == QLatin1String("file")) {
-#ifdef __GNUC__
-#warning TODO 4.5
-#endif
-        // TODO 4.5: investigate whether this is necessary. Harald was a bit worrid
-        // that QFile::encodeName on an actual streaming URI could cause problems.
-        encoded_cstr_url = QFile::encodeName(url.toString()).toPercentEncoding(":/\\?=&,@");
-    } else {
-        encoded_cstr_url = url.toEncoded();
-    }
-    m_datasource = gst_element_make_from_uri(GST_URI_SRC, encoded_cstr_url.constData(), (const char*)NULL);
+    QByteArray encodedMrl = mrl.toEncoded();
+    m_datasource = gst_element_make_from_uri(GST_URI_SRC, encodedMrl.constData(), (const char*)NULL);
     if (!m_datasource)
         return false;
 
@@ -493,7 +480,7 @@ bool MediaObject::createPipefromURL(const QUrl &url)
 
     /* make HTTP sources send extra headers so we get icecast
      * metadata in case the stream is an icecast stream */
-    if (encoded_cstr_url.startsWith("http://")
+    if (mrl.scheme() == QLatin1String("http://")
         && g_object_class_find_property (G_OBJECT_GET_CLASS (m_datasource), "iradio-mode")) {
         g_object_set (m_datasource, "iradio-mode", TRUE, NULL);
         m_isStream = true;
@@ -1049,15 +1036,10 @@ void MediaObject::setSource(const MediaSource &source)
     m_isStream = false;
 
     switch (source.type()) {
-    case MediaSource::Url: {
-            if (!createPipefromURL(source.url()))
-                setError(tr("Could not open media source."));
-        }
-        break;
-
+    case MediaSource::Url:
     case MediaSource::LocalFile: {
-            if (!createPipefromURL(QUrl::fromLocalFile(source.fileName())))
-                setError(tr("Could not open media source."));
+        if (!createPipefromURL(source.mrl()))
+            setError(tr("Could not open media source."));
         }
         break;
 
