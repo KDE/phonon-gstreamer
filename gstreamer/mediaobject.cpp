@@ -480,7 +480,7 @@ bool MediaObject::createPipefromURL(const Mrl &mrl)
 
     /* make HTTP sources send extra headers so we get icecast
      * metadata in case the stream is an icecast stream */
-    if (mrl.scheme() == QLatin1String("http://")
+    if (mrl.scheme() == QLatin1String("http")
         && g_object_class_find_property (G_OBJECT_GET_CLASS (m_datasource), "iradio-mode")) {
         g_object_set (m_datasource, "iradio-mode", TRUE, NULL);
         m_isStream = true;
