@@ -32,14 +32,6 @@ namespace Phonon
 namespace Gstreamer
 {
 
-typedef void (*Ptr_gst_pb_utils_init)();
-typedef gchar* (*Ptr_gst_pb_utils_get_source_description)(const gchar *);
-typedef gchar* (*Ptr_gst_pb_utils_get_sink_description)(const gchar *);
-typedef gchar* (*Ptr_gst_pb_utils_get_decoder_description)(const GstCaps *);
-typedef gchar* (*Ptr_gst_pb_utils_get_encoder_description)(const GstCaps *);
-typedef gchar* (*Ptr_gst_pb_utils_get_element_description)(const gchar *);
-typedef gchar* (*Ptr_gst_pb_utils_get_codec_description)(const GstCaps *);
-
 /**
  * A class to help with installing missing gstreamer plugins
  */
@@ -100,13 +92,6 @@ class PluginInstaller : public QObject {
         QHash<GstCaps *, PluginType> m_capList;
         static bool init();
         static bool s_ready;
-        static Ptr_gst_pb_utils_init p_gst_pb_utils_init;
-        static Ptr_gst_pb_utils_get_source_description p_gst_pb_utils_get_source_description;
-        static Ptr_gst_pb_utils_get_sink_description p_gst_pb_utils_get_sink_description;
-        static Ptr_gst_pb_utils_get_decoder_description p_gst_pb_utils_get_decoder_description;
-        static Ptr_gst_pb_utils_get_encoder_description p_gst_pb_utils_get_encoder_description;
-        static Ptr_gst_pb_utils_get_element_description p_gst_pb_utils_get_element_description;
-        static Ptr_gst_pb_utils_get_codec_description p_gst_pb_utils_get_codec_description;
 };
 
 } // ns Gstreamer

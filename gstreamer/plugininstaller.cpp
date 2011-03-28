@@ -25,62 +25,44 @@
 #include <QtCore/QMetaType>
 #include <QtCore/QDebug>
 
+#ifdef PLUGIN_INSTALL_API
+#include <gst/pbutils/pbutils.h>
+#endif
+
 QT_BEGIN_NAMESPACE
 
 namespace Phonon
 {
 namespace Gstreamer
 {
-
-Ptr_gst_pb_utils_init PluginInstaller::p_gst_pb_utils_init = 0;
-Ptr_gst_pb_utils_get_source_description PluginInstaller::p_gst_pb_utils_get_source_description = 0;
-Ptr_gst_pb_utils_get_sink_description PluginInstaller::p_gst_pb_utils_get_sink_description = 0;
-Ptr_gst_pb_utils_get_decoder_description PluginInstaller::p_gst_pb_utils_get_decoder_description = 0;
-Ptr_gst_pb_utils_get_encoder_description PluginInstaller::p_gst_pb_utils_get_encoder_description = 0;
-Ptr_gst_pb_utils_get_element_description PluginInstaller::p_gst_pb_utils_get_element_description = 0;
-Ptr_gst_pb_utils_get_codec_description PluginInstaller::p_gst_pb_utils_get_codec_description = 0;
 bool PluginInstaller::s_ready = false;
 
 bool PluginInstaller::init()
 {
-#ifndef QT_NO_LIBRARY
-        if (!p_gst_pb_utils_init) {
-            p_gst_pb_utils_init =  (Ptr_gst_pb_utils_init)QLibrary::resolve(QLatin1String("gstpbutils-0.10"), 0, "gst_pb_utils_init");
-            p_gst_pb_utils_get_source_description =  (Ptr_gst_pb_utils_get_source_description)QLibrary::resolve(QLatin1String("gstpbutils-0.10"), 0, "gst_pb_utils_get_source_description");
-            p_gst_pb_utils_get_sink_description =  (Ptr_gst_pb_utils_get_sink_description)QLibrary::resolve(QLatin1String("gstpbutils-0.10"), 0, "gst_pb_utils_get_sink_description");
-            p_gst_pb_utils_get_decoder_description =  (Ptr_gst_pb_utils_get_decoder_description)QLibrary::resolve(QLatin1String("gstpbutils-0.10"), 0, "gst_pb_utils_get_encoder_description");
-            p_gst_pb_utils_get_encoder_description =  (Ptr_gst_pb_utils_get_encoder_description)QLibrary::resolve(QLatin1String("gstpbutils-0.10"), 0, "gst_pb_utils_get_encoder_description");
-            p_gst_pb_utils_get_element_description =  (Ptr_gst_pb_utils_get_element_description)QLibrary::resolve(QLatin1String("gstpbutils-0.10"), 0, "gst_pb_utils_get_element_description");
-            p_gst_pb_utils_get_codec_description =  (Ptr_gst_pb_utils_get_codec_description)QLibrary::resolve(QLatin1String("gstpbutils-0.10"), 0, "gst_pb_utils_get_codec_description");
-            if (p_gst_pb_utils_init
-                && p_gst_pb_utils_get_source_description
-                && p_gst_pb_utils_get_sink_description
-                && p_gst_pb_utils_get_decoder_description
-                && p_gst_pb_utils_get_encoder_description
-                && p_gst_pb_utils_get_element_description
-                && p_gst_pb_utils_get_codec_description) {
-                p_gst_pb_utils_init();
-                s_ready = true;
-            }
-        }
+    if (!s_ready) {
+#ifdef PLUGIN_INSTALL_API
+        gst_pb_utils_init();
+        s_ready = true;
 #endif
-        return s_ready;
+    }
+    return s_ready;
 }
 
 QString PluginInstaller::description(const GstCaps *caps, PluginType type)
 {
+#ifdef PLUGIN_INSTALL_API
     if (init()) {
         QString pluginStr;
         gchar *pluginDesc = NULL;
         switch(type) {
             case Decoder:
-                pluginDesc = p_gst_pb_utils_get_decoder_description(caps);
+                pluginDesc = gst_pb_utils_get_decoder_description(caps);
                 break;
             case Encoder:
-                pluginDesc = p_gst_pb_utils_get_encoder_description(caps);
+                pluginDesc = gst_pb_utils_get_encoder_description(caps);
                 break;
             case Codec:
-                pluginDesc = p_gst_pb_utils_get_codec_description(caps);
+                pluginDesc = gst_pb_utils_get_codec_description(caps);
                 break;
             default:
                 return 0;
@@ -89,23 +71,25 @@ QString PluginInstaller::description(const GstCaps *caps, PluginType type)
         g_free (pluginDesc);
         return pluginStr;
     }
+#endif
     return getCapType(caps);
 }
 
 QString PluginInstaller::description(const gchar *name, PluginType type)
 {
+#ifdef PLUGIN_INSTALL_API
     if (init()) {
         QString pluginStr;
         gchar *pluginDesc = NULL;
         switch(type) {
             case Source:
-                pluginDesc = p_gst_pb_utils_get_source_description(name);
+                pluginDesc = gst_pb_utils_get_source_description(name);
                 break;
             case Sink:
-                pluginDesc = p_gst_pb_utils_get_sink_description(name);
+                pluginDesc = gst_pb_utils_get_sink_description(name);
                 break;
             case Element:
-                pluginDesc = p_gst_pb_utils_get_element_description(name);
+                pluginDesc = gst_pb_utils_get_element_description(name);
                 break;
             default:
                 return 0;
@@ -114,6 +98,7 @@ QString PluginInstaller::description(const gchar *name, PluginType type)
         g_free (pluginDesc);
         return pluginStr;
     }
+#endif
     return name;
 }
 
