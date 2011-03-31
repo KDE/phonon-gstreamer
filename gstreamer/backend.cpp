@@ -88,7 +88,7 @@ Backend::Backend(QObject *parent, const QVariantList &)
     setProperty("backendName",    QLatin1String("Gstreamer"));
     setProperty("backendComment", QLatin1String("Gstreamer plugin for Phonon"));
     setProperty("backendVersion", QLatin1String(PHONON_GST_VERSION));
-    setProperty("backendWebsite", QLatin1String("http://qt.nokia.com/"));
+    setProperty("backendWebsite", QLatin1String("http://phonon.kde.org/"));
 #endif //QT_NO_PROPERTIES
 
     //check if we should enable debug output
