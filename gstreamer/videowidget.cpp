@@ -31,7 +31,6 @@
 #include "common.h"
 #include "devicemanager.h"
 #include "mediaobject.h"
-#include "message.h"
 
 #include "glrenderer.h"
 #include "widgetrenderer.h"

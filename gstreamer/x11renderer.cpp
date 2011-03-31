@@ -23,7 +23,6 @@
 #include "common.h"
 #include "backend.h"
 #include "mediaobject.h"
-#include "message.h"
 #include <QtGui/QPalette>
 #include <QtGui/QApplication>
 #include <QtGui/QPainter>

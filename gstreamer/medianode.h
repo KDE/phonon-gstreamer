@@ -32,7 +32,6 @@ QT_BEGIN_NAMESPACE
 namespace Phonon {
 namespace Gstreamer {
 
-class Message;
 class MediaObject;
 class Backend;
 

@@ -25,7 +25,6 @@
 #include "videowidget.h"
 #include "devicemanager.h"
 #include "effectmanager.h"
-#include "message.h"
 #include "volumefadereffect.h"
 #include <gst/interfaces/propertyprobe.h>
 #include <phonon/pulsesupport.h>
@@ -85,7 +84,6 @@ Backend::Backend(QObject *parent, const QVariantList &)
     if (err)
         g_error_free(err);
 
-    qRegisterMetaType<Message>("Message");
 #ifndef QT_NO_PROPERTIES
     setProperty("identifier",     QLatin1String("phonon_gstreamer"));
     setProperty("backendName",    QLatin1String("Gstreamer"));

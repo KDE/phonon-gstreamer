@@ -23,7 +23,6 @@
 #include "common.h"
 #include "mediaobject.h"
 #include "videowidget.h"
-#include "message.h"
 #include "backend.h"
 #include "streamreader.h"
 #include "phononsrc.h"
@@ -1800,86 +1799,6 @@ void MediaObject::handleDurationMessage(GstMessage *gstMessage)
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
     m_backend->logMessage("GST_MESSAGE_DURATION", Backend::Debug, this);
     updateTotalTime();
-}
-
-/**
- * Handle GStreamer bus messages
- */
-void MediaObject::handleBusMessage(const Message &message)
-{
-    if (!isValid())
-        return;
-
-    GstMessage *gstMessage = message.rawMessage();
-    Q_ASSERT(m_pipeline);
-
-    if (m_backend->debugLevel() >= Backend::Debug) {
-        int type = GST_MESSAGE_TYPE(gstMessage);
-        gchar* name = gst_element_get_name(gstMessage->src);
-        QString msgString = QString("Bus: %0 (%1)").arg(gst_message_type_get_name ((GstMessageType)type)).arg(name);
-        g_free(name);
-        m_backend->logMessage(msgString, Backend::Debug, this);
-    }
-
-    switch (GST_MESSAGE_TYPE (gstMessage)) {
-
-    case GST_MESSAGE_EOS:
-        handleEOSMessage(gstMessage);
-        break;
-
-    case GST_MESSAGE_TAG:
-        handleTagMessage(gstMessage);
-        break;
-
-    case GST_MESSAGE_STATE_CHANGED :
-        handleStateMessage(gstMessage);
-        break;
-
-    case GST_MESSAGE_ERROR:
-        handleErrorMessage(gstMessage);
-        break;
-
-    case GST_MESSAGE_WARNING:
-        handleWarningMessage(gstMessage);
-        break;
-
-    case GST_MESSAGE_ELEMENT:
-        handleElementMessage(gstMessage);
-        break;
-
-    case GST_MESSAGE_DURATION:
-        handleDurationMessage(gstMessage);
-        break;
-
-    case GST_MESSAGE_BUFFERING:
-        handleBufferingMessage(gstMessage);
-        break;
-        //case GST_MESSAGE_INFO:
-        //case GST_MESSAGE_STREAM_STATUS:
-        //case GST_MESSAGE_CLOCK_PROVIDE:
-        //case GST_MESSAGE_NEW_CLOCK:
-        //case GST_MESSAGE_STEP_DONE:
-        //case GST_MESSAGE_LATENCY: only from 0.10.12
-        //case GST_MESSAGE_ASYNC_DONE: only from 0.10.13
-    default:
-        break;
-    }
-
-#if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
-    switch (gst_navigation_message_get_type(gstMessage)) {
-    case GST_NAVIGATION_MESSAGE_MOUSE_OVER: {
-        gboolean active;
-        if (!gst_navigation_message_parse_mouse_over(gstMessage, &active)) {
-            break;
-        }
-        MediaNodeEvent mouseOverEvent(MediaNodeEvent::VideoMouseOver, &active);
-        notify(&mouseOverEvent);
-        break;
-    }
-    default:
-        break;
-    }
-#endif // GST_VERSION
 }
 
 void MediaObject::handleEndOfStream()

@@ -19,7 +19,6 @@
 #include "medianode.h"
 #include "medianodeevent.h"
 #include "mediaobject.h"
-#include "message.h"
 #include "backend.h"
 #include "gsthelper.h"
 

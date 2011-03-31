@@ -18,7 +18,6 @@
 #include <gst/gst.h>
 #include "backend.h"
 #include "common.h"
-#include "message.h"
 #include "mediaobject.h"
 #include "qwidgetvideosink.h"
 #include "widgetrenderer.h"

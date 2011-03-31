@@ -19,7 +19,6 @@
 #define Phonon_GSTREAMER_BACKEND_H
 
 #include "common.h"
-#include "message.h"
 
 #include <phonon/objectdescription.h>
 #include <phonon/backendinterface.h>
