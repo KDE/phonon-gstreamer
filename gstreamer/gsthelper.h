@@ -38,7 +38,6 @@ public:
     static bool setProperty(GstElement *elem, const char *propertyName, const QByteArray &propertyValue);
     static QByteArray property(GstElement *elem, const char *propertyName);
     static QByteArray name(GstObject *elem);
-    static GstElement* createPluggablePlaybin();
     static QString stateName(GstState);
 };
 
