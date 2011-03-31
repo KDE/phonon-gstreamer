@@ -18,7 +18,6 @@
 #ifndef Phonon_GSTREAMER_AUDIOEFFECT_H
 #define Phonon_GSTREAMER_AUDIOEFFECT_H
 
-#include "common.h"
 #include "effect.h"
 
 #include <gst/gstelement.h>

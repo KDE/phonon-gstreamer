@@ -18,8 +18,8 @@
 #ifndef Phonon_GSTREAMER_PLUGININSTALLER_H
 #define Phonon_GSTREAMER_PLUGININSTALLER_H
 
-#include "common.h"
 #include <QtCore/QObject>
+#include <QtCore/QHash>
 #include <gst/gstcaps.h>
 #include <gst/pbutils/install-plugins.h>
 #include "phonon-config-gstreamer.h"

@@ -18,7 +18,6 @@
 #ifndef Phonon_GSTREAMER_GLRENDERER_H
 #define Phonon_GSTREAMER_GLRENDERER_H
 
-#include "common.h"
 #include "abstractrenderer.h"
 
 #ifndef QT_NO_OPENGL

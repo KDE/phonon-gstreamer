@@ -21,7 +21,6 @@
 #ifndef QT_NO_OPENGL
 
 #include "backend.h"
-#include "common.h"
 #include "mediaobject.h"
 #include "qwidgetvideosink.h"
 #include "glrenderer.h"

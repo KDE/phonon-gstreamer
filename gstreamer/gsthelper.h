@@ -18,8 +18,9 @@
 #ifndef Phonon_GSTREAMER_GSTHELPER_H
 #define Phonon_GSTREAMER_GSTHELPER_H
 
-#include "common.h"
-
+#include <QtCore/QList>
+#include <QtCore/QByteArray>
+#include <QtCore/QString>
 #include <gst/gstelement.h>
 
 QT_BEGIN_NAMESPACE

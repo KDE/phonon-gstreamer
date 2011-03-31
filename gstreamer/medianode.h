@@ -18,7 +18,6 @@
 #ifndef Phonon_GSTREAMER_MEDIANODE_H
 #define Phonon_GSTREAMER_MEDIANODE_H
 
-#include "common.h"
 #include "medianodeevent.h"
 
 #include <QtCore/QObject>

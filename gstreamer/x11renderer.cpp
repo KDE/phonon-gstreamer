@@ -20,7 +20,6 @@
 
 #ifndef Q_WS_QWS
 
-#include "common.h"
 #include "backend.h"
 #include "mediaobject.h"
 #include <QtGui/QPalette>

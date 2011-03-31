@@ -15,12 +15,10 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "common.h"
 #include "medianode.h"
 #include "medianodeevent.h"
 #include "mediaobject.h"
 #include "backend.h"
-#include "gsthelper.h"
 
 #include <gst/gstbin.h>
 #include <gst/gstutils.h>

@@ -17,7 +17,6 @@
 
 #include <gst/interfaces/propertyprobe.h>
 #include <gst/gst.h>
-#include "common.h"
 #include "gsthelper.h"
 
 #include <QtCore/QList>

@@ -20,9 +20,7 @@
 #include <cmath>
 #include <gst/interfaces/navigation.h>
 #include <gst/interfaces/propertyprobe.h>
-#include "common.h"
 #include "mediaobject.h"
-#include "videowidget.h"
 #include "backend.h"
 #include "streamreader.h"
 #include "phononsrc.h"

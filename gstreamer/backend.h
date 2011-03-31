@@ -18,8 +18,6 @@
 #ifndef Phonon_GSTREAMER_BACKEND_H
 #define Phonon_GSTREAMER_BACKEND_H
 
-#include "common.h"
-
 #include <phonon/objectdescription.h>
 #include <phonon/backendinterface.h>
 
