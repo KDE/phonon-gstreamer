@@ -71,6 +71,9 @@ QString PluginInstaller::description(const GstCaps *caps, PluginType type)
         g_free (pluginDesc);
         return pluginStr;
     }
+#else
+    Q_UNUSED(type)
+    Q_UNUSED(caps)
 #endif
     return getCapType(caps);
 }
