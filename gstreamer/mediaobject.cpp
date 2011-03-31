@@ -194,8 +194,10 @@ void MediaObject::newPadAvailable (GstPad *pad)
             connectVideo(pad);
         } else if (mediaString.startsWith("audio")) {
             connectAudio(pad);
+        } else if (mediaString.startsWith("text")) {
+            addSubtitle(pad);
         } else {
-            m_backend->logMessage("Could not connect pad", Backend::Warning);
+            m_backend->logMessage(QString("Could not connect %0 pad").arg(mediaString), Backend::Warning);
         }
         gst_caps_unref (caps);
     }
@@ -271,6 +273,23 @@ bool MediaObject::addToPipeline(GstElement *elem)
         success = gst_bin_add(GST_BIN(m_pipeline), elem);
     }
     return success;
+}
+
+void MediaObject::addSubtitle(GstPad *pad)
+{
+    GstState currentState = GST_STATE(m_pipeline);
+    if (addToPipeline(m_videoGraph)) {
+        GstPad *subtitlepad = gst_element_get_pad(m_videoGraph, "subtitle_sink");
+        if (!GST_PAD_IS_LINKED(subtitlepad) && (gst_pad_link(pad, subtitlepad) == GST_PAD_LINK_OK)) {
+            gst_element_set_state(m_videoGraph, currentState == GST_STATE_PLAYING ? GST_STATE_PLAYING : GST_STATE_PAUSED);
+            m_backend->logMessage("Subtitle track connected", Backend::Info, this);
+        } else {
+            m_backend->logMessage("Could not connect subtitle track");
+        }
+        gst_object_unref(subtitlepad);
+    } else {
+        m_backend->logMessage("The video stream could not be plugged.", Backend::Info, this);
+    }
 }
 
 void MediaObject::connectVideo(GstPad *pad)
@@ -576,17 +595,48 @@ void MediaObject::createPipeline()
     gst_object_ref (GST_OBJECT (m_videoGraph));
     gst_object_sink (GST_OBJECT (m_videoGraph));
 
-    m_videoPipe = gst_element_factory_make("queue", NULL);
-    g_object_set(G_OBJECT(m_videoPipe), "max-size-time", MAX_QUEUE_TIME, (const char*)NULL);
+    m_videoPipe = gst_bin_new(NULL);
+    gst_bin_add(GST_BIN(m_videoGraph), m_videoPipe);
+
+
+    GstElement *subtitles = gst_element_factory_make("subtitleoverlay", NULL);
+    GstElement *videoQueue = gst_element_factory_make("queue", NULL);
+    gst_bin_add_many(GST_BIN(m_videoPipe), subtitles, videoQueue, NULL);
+
+    gst_element_link_pads(videoQueue, "src", subtitles, "video_sink");
+
+    // Link subtitle overlay and queue to container bin
+    GstPad *videoPad = gst_element_get_pad(videoQueue, "sink");
+    gst_element_add_pad(m_videoPipe, gst_ghost_pad_new("sink", videoPad));
+    gst_object_unref(videoPad);
+
+    GstPad *subtitlePad = gst_element_get_pad(subtitles, "subtitle_sink");
+    gst_element_add_pad(m_videoPipe, gst_ghost_pad_new("subtitle_sink", subtitlePad));
+    gst_object_unref(subtitlePad);
+
+    GstPad *videoOutPad = gst_element_get_pad(subtitles, "src");
+    gst_element_add_pad(m_videoPipe, gst_ghost_pad_new("src", videoOutPad));
+    gst_object_unref(videoOutPad);
+
+    // Link container bin to video graph bin
+    videoPad = gst_element_get_pad(m_videoPipe, "sink");
+    gst_element_add_pad(m_videoGraph, gst_ghost_pad_new("sink", videoPad));
+    gst_object_unref(videoPad);
+
+    subtitlePad = gst_element_get_pad(m_videoPipe, "subtitle_sink");
+    gst_element_add_pad(m_videoGraph, gst_ghost_pad_new("subtitle_sink", subtitlePad));
+    gst_object_unref(subtitlePad);
+
+    g_object_set(G_OBJECT(videoQueue), "max-size-time", MAX_QUEUE_TIME, (const char*)NULL);
+
+    // Set some sensible default for the subs. 11pt is too tiny!
+    g_object_set(G_OBJECT(subtitles), "font-desc", "sans-serif 22px", NULL);
+
     if (!tegraEnv.isEmpty()) {
-        g_object_set(G_OBJECT(m_videoPipe), "max-size-time", 33000, (const char*)NULL);
+        g_object_set(G_OBJECT(videoQueue), "max-size-time", 33000, (const char*)NULL);
         g_object_set(G_OBJECT(m_audioPipe), "max-size-buffers", 1, (const char*)NULL);
         g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0, (const char*)NULL);
     }
-    gst_bin_add(GST_BIN(m_videoGraph), m_videoPipe);
-    GstPad *videopad = gst_element_get_pad (m_videoPipe, "sink");
-    gst_element_add_pad (m_videoGraph, gst_ghost_pad_new ("sink", videopad));
-    gst_object_unref (videopad);
 
     if (m_pipeline && m_decodebin && m_audioGraph && m_videoGraph && m_audioPipe && m_videoPipe)
         m_isValid = true;

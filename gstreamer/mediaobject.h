@@ -144,6 +144,7 @@ public:
 
     void connectVideo(GstPad *videoPad);
     void connectAudio(GstPad *audioPad);
+    void addSubtitle(GstPad *pad);
 
     void handleBusMessage(const Message &msg);
 
