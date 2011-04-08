@@ -16,7 +16,6 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "common.h"
 #include "audiooutput.h"
 #include "backend.h"
 #include "devicemanager.h"

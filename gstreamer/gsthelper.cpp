@@ -17,7 +17,6 @@
 
 #include <gst/interfaces/propertyprobe.h>
 #include <gst/gst.h>
-#include "common.h"
 #include "gsthelper.h"
 
 #include <QtCore/QList>
@@ -107,60 +106,6 @@ QByteArray GstHelper::name(GstObject *obj)
         g_free (value);
     }
     return retVal;
-}
-
-
-/***
- * Creates an instance of a playbin with "audio-src" and
- * "video-src" ghost pads to allow redirected output streams.
- *
- * ### This function is probably not required now that MediaObject is based
- *     on decodebin directly.
- */
-GstElement* GstHelper::createPluggablePlaybin()
-{
-    GstElement *playbin = 0;
-    //init playbin and add to our pipeline
-    playbin = gst_element_factory_make("playbin2", NULL);
-
-    //Create an identity element to redirect sound
-    GstElement *audioSinkBin =  gst_bin_new (NULL);
-    GstElement *audioPipe = gst_element_factory_make("identity", NULL);
-    gst_bin_add(GST_BIN(audioSinkBin), audioPipe);
-
-    //Create a sinkpad on the identity
-    GstPad *audiopad = gst_element_get_pad (audioPipe, "sink");
-    gst_element_add_pad (audioSinkBin, gst_ghost_pad_new ("sink", audiopad));
-    gst_object_unref (audiopad);
-
-    //Create an "audio_src" source pad on the playbin
-    GstPad *audioPlaypad = gst_element_get_pad (audioPipe, "src");
-    gst_element_add_pad (playbin, gst_ghost_pad_new ("audio_src", audioPlaypad));
-    gst_object_unref (audioPlaypad);
-
-    //Done with our audio redirection
-    g_object_set (G_OBJECT(playbin), "audio-sink", audioSinkBin, (const char*)NULL);
-
-    // * * Redirect video to "video_src" pad : * *
-
-    //Create an identity element to redirect sound
-    GstElement *videoSinkBin =  gst_bin_new (NULL);
-    GstElement *videoPipe = gst_element_factory_make("identity", NULL);
-    gst_bin_add(GST_BIN(videoSinkBin), videoPipe);
-
-    //Create a sinkpad on the identity
-    GstPad *videopad = gst_element_get_pad (videoPipe, "sink");
-    gst_element_add_pad (videoSinkBin, gst_ghost_pad_new ("sink", videopad));
-    gst_object_unref (videopad);
-
-    //Create an "audio_src" source pad on the playbin
-    GstPad *videoPlaypad = gst_element_get_pad (videoPipe, "src");
-    gst_element_add_pad (playbin, gst_ghost_pad_new ("video_src", videoPlaypad));
-    gst_object_unref (videoPlaypad);
-
-    //Done with our video redirection
-    g_object_set (G_OBJECT(playbin), "video-sink", videoSinkBin, (const char*)NULL);
-    return playbin;
 }
 
 QString GstHelper::stateName(GstState state)

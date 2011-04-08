@@ -28,10 +28,8 @@
 #include <gst/interfaces/propertyprobe.h>
 #include "abstractrenderer.h"
 #include "backend.h"
-#include "common.h"
 #include "devicemanager.h"
 #include "mediaobject.h"
-#include "message.h"
 
 #include "glrenderer.h"
 #include "widgetrenderer.h"

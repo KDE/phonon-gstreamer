@@ -18,8 +18,6 @@
 #ifndef Phonon_GSTREAMER_EFFECTMANAGER_H
 #define Phonon_GSTREAMER_EFFECTMANAGER_H
 
-#include "common.h"
-
 #include <QtCore/QObject>
 #include <QtCore/QStringList>
 

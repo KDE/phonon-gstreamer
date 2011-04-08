@@ -19,7 +19,6 @@
 #ifndef Phonon_GSTREAMER_AUDIOOUTPUT_H
 #define Phonon_GSTREAMER_AUDIOOUTPUT_H
 
-#include "common.h"
 #include "medianode.h"
 
 #include <phonon/audiooutputinterface.h>

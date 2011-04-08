@@ -18,8 +18,6 @@
 #ifndef Phonon_GSTREAMER_DEVICEMANAGER_H
 #define Phonon_GSTREAMER_DEVICEMANAGER_H
 
-#include "common.h"
-
 #include <phonon/audiooutputinterface.h>
 
 #include <QtCore/QObject>

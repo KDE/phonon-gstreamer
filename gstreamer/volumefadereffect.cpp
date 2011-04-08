@@ -16,7 +16,6 @@
 */
 
 #include "volumefadereffect.h"
-#include "common.h"
 
 #include <gst/gstbin.h>
 #include <gst/gstghostpad.h>

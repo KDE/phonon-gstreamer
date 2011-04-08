@@ -16,12 +16,10 @@
 */
 
 #include "effect.h"
-#include "common.h"
 #include "audiooutput.h"
 #include "backend.h"
 #include "medianode.h"
 #include "effectmanager.h"
-#include "gsthelper.h"
 
 #include <gst/gst.h>
 
