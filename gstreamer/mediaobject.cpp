@@ -20,10 +20,7 @@
 #include <cmath>
 #include <gst/interfaces/navigation.h>
 #include <gst/interfaces/propertyprobe.h>
-#include "common.h"
 #include "mediaobject.h"
-#include "videowidget.h"
-#include "message.h"
 #include "backend.h"
 #include "streamreader.h"
 #include "phononsrc.h"
@@ -194,8 +191,10 @@ void MediaObject::newPadAvailable (GstPad *pad)
             connectVideo(pad);
         } else if (mediaString.startsWith("audio")) {
             connectAudio(pad);
+        } else if (mediaString.startsWith("text")) {
+            addSubtitle(pad);
         } else {
-            m_backend->logMessage("Could not connect pad", Backend::Warning);
+            m_backend->logMessage(QString("Could not connect %0 pad").arg(mediaString), Backend::Warning);
         }
         gst_caps_unref (caps);
     }
@@ -271,6 +270,23 @@ bool MediaObject::addToPipeline(GstElement *elem)
         success = gst_bin_add(GST_BIN(m_pipeline), elem);
     }
     return success;
+}
+
+void MediaObject::addSubtitle(GstPad *pad)
+{
+    GstState currentState = GST_STATE(m_pipeline);
+    if (addToPipeline(m_videoGraph)) {
+        GstPad *subtitlepad = gst_element_get_pad(m_videoGraph, "subtitle_sink");
+        if (!GST_PAD_IS_LINKED(subtitlepad) && (gst_pad_link(pad, subtitlepad) == GST_PAD_LINK_OK)) {
+            gst_element_set_state(m_videoGraph, currentState == GST_STATE_PLAYING ? GST_STATE_PLAYING : GST_STATE_PAUSED);
+            m_backend->logMessage("Subtitle track connected", Backend::Info, this);
+        } else {
+            m_backend->logMessage("Could not connect subtitle track");
+        }
+        gst_object_unref(subtitlepad);
+    } else {
+        m_backend->logMessage("The video stream could not be plugged.", Backend::Info, this);
+    }
 }
 
 void MediaObject::connectVideo(GstPad *pad)
@@ -576,17 +592,48 @@ void MediaObject::createPipeline()
     gst_object_ref (GST_OBJECT (m_videoGraph));
     gst_object_sink (GST_OBJECT (m_videoGraph));
 
-    m_videoPipe = gst_element_factory_make("queue", NULL);
-    g_object_set(G_OBJECT(m_videoPipe), "max-size-time", MAX_QUEUE_TIME, (const char*)NULL);
+    m_videoPipe = gst_bin_new(NULL);
+    gst_bin_add(GST_BIN(m_videoGraph), m_videoPipe);
+
+
+    GstElement *subtitles = gst_element_factory_make("subtitleoverlay", NULL);
+    GstElement *videoQueue = gst_element_factory_make("queue", NULL);
+    gst_bin_add_many(GST_BIN(m_videoPipe), subtitles, videoQueue, NULL);
+
+    gst_element_link_pads(videoQueue, "src", subtitles, "video_sink");
+
+    // Link subtitle overlay and queue to container bin
+    GstPad *videoPad = gst_element_get_pad(videoQueue, "sink");
+    gst_element_add_pad(m_videoPipe, gst_ghost_pad_new("sink", videoPad));
+    gst_object_unref(videoPad);
+
+    GstPad *subtitlePad = gst_element_get_pad(subtitles, "subtitle_sink");
+    gst_element_add_pad(m_videoPipe, gst_ghost_pad_new("subtitle_sink", subtitlePad));
+    gst_object_unref(subtitlePad);
+
+    GstPad *videoOutPad = gst_element_get_pad(subtitles, "src");
+    gst_element_add_pad(m_videoPipe, gst_ghost_pad_new("src", videoOutPad));
+    gst_object_unref(videoOutPad);
+
+    // Link container bin to video graph bin
+    videoPad = gst_element_get_pad(m_videoPipe, "sink");
+    gst_element_add_pad(m_videoGraph, gst_ghost_pad_new("sink", videoPad));
+    gst_object_unref(videoPad);
+
+    subtitlePad = gst_element_get_pad(m_videoPipe, "subtitle_sink");
+    gst_element_add_pad(m_videoGraph, gst_ghost_pad_new("subtitle_sink", subtitlePad));
+    gst_object_unref(subtitlePad);
+
+    g_object_set(G_OBJECT(videoQueue), "max-size-time", MAX_QUEUE_TIME, (const char*)NULL);
+
+    // Set some sensible default for the subs. 11pt is too tiny!
+    g_object_set(G_OBJECT(subtitles), "font-desc", "sans-serif 22px", NULL);
+
     if (!tegraEnv.isEmpty()) {
-        g_object_set(G_OBJECT(m_videoPipe), "max-size-time", 33000, (const char*)NULL);
+        g_object_set(G_OBJECT(videoQueue), "max-size-time", 33000, (const char*)NULL);
         g_object_set(G_OBJECT(m_audioPipe), "max-size-buffers", 1, (const char*)NULL);
         g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0, (const char*)NULL);
     }
-    gst_bin_add(GST_BIN(m_videoGraph), m_videoPipe);
-    GstPad *videopad = gst_element_get_pad (m_videoPipe, "sink");
-    gst_element_add_pad (m_videoGraph, gst_ghost_pad_new ("sink", videopad));
-    gst_object_unref (videopad);
 
     if (m_pipeline && m_decodebin && m_audioGraph && m_videoGraph && m_audioPipe && m_videoPipe)
         m_isValid = true;
@@ -1750,86 +1797,6 @@ void MediaObject::handleDurationMessage(GstMessage *gstMessage)
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
     m_backend->logMessage("GST_MESSAGE_DURATION", Backend::Debug, this);
     updateTotalTime();
-}
-
-/**
- * Handle GStreamer bus messages
- */
-void MediaObject::handleBusMessage(const Message &message)
-{
-    if (!isValid())
-        return;
-
-    GstMessage *gstMessage = message.rawMessage();
-    Q_ASSERT(m_pipeline);
-
-    if (m_backend->debugLevel() >= Backend::Debug) {
-        int type = GST_MESSAGE_TYPE(gstMessage);
-        gchar* name = gst_element_get_name(gstMessage->src);
-        QString msgString = QString("Bus: %0 (%1)").arg(gst_message_type_get_name ((GstMessageType)type)).arg(name);
-        g_free(name);
-        m_backend->logMessage(msgString, Backend::Debug, this);
-    }
-
-    switch (GST_MESSAGE_TYPE (gstMessage)) {
-
-    case GST_MESSAGE_EOS:
-        handleEOSMessage(gstMessage);
-        break;
-
-    case GST_MESSAGE_TAG:
-        handleTagMessage(gstMessage);
-        break;
-
-    case GST_MESSAGE_STATE_CHANGED :
-        handleStateMessage(gstMessage);
-        break;
-
-    case GST_MESSAGE_ERROR:
-        handleErrorMessage(gstMessage);
-        break;
-
-    case GST_MESSAGE_WARNING:
-        handleWarningMessage(gstMessage);
-        break;
-
-    case GST_MESSAGE_ELEMENT:
-        handleElementMessage(gstMessage);
-        break;
-
-    case GST_MESSAGE_DURATION:
-        handleDurationMessage(gstMessage);
-        break;
-
-    case GST_MESSAGE_BUFFERING:
-        handleBufferingMessage(gstMessage);
-        break;
-        //case GST_MESSAGE_INFO:
-        //case GST_MESSAGE_STREAM_STATUS:
-        //case GST_MESSAGE_CLOCK_PROVIDE:
-        //case GST_MESSAGE_NEW_CLOCK:
-        //case GST_MESSAGE_STEP_DONE:
-        //case GST_MESSAGE_LATENCY: only from 0.10.12
-        //case GST_MESSAGE_ASYNC_DONE: only from 0.10.13
-    default:
-        break;
-    }
-
-#if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
-    switch (gst_navigation_message_get_type(gstMessage)) {
-    case GST_NAVIGATION_MESSAGE_MOUSE_OVER: {
-        gboolean active;
-        if (!gst_navigation_message_parse_mouse_over(gstMessage, &active)) {
-            break;
-        }
-        MediaNodeEvent mouseOverEvent(MediaNodeEvent::VideoMouseOver, &active);
-        notify(&mouseOverEvent);
-        break;
-    }
-    default:
-        break;
-    }
-#endif // GST_VERSION
 }
 
 void MediaObject::handleEndOfStream()

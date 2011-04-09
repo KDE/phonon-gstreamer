@@ -18,8 +18,6 @@
 #ifndef Phonon_GSTREAMER_ABSTRACTRENDERER_H
 #define Phonon_GSTREAMER_ABSTRACTRENDERER_H
 
-#include "common.h"
-
 #include <phonon/videowidget.h>
 
 #include <gst/gstelement.h>

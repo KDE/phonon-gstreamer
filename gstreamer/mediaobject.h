@@ -144,8 +144,7 @@ public:
 
     void connectVideo(GstPad *videoPad);
     void connectAudio(GstPad *audioPad);
-
-    void handleBusMessage(const Message &msg);
+    void addSubtitle(GstPad *pad);
 
     // Bus sync-message signal handlers
     Q_INVOKABLE void handleTagMessage(GstMessage *msg);

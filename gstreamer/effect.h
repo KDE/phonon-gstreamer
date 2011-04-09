@@ -18,7 +18,6 @@
 #ifndef Phonon_GSTREAMER_EFFECT_H
 #define Phonon_GSTREAMER_EFFECT_H
 
-#include "common.h"
 #include "medianode.h"
 
 #include <phonon/effectparameter.h>

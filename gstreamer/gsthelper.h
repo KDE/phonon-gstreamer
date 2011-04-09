@@ -18,8 +18,9 @@
 #ifndef Phonon_GSTREAMER_GSTHELPER_H
 #define Phonon_GSTREAMER_GSTHELPER_H
 
-#include "common.h"
-
+#include <QtCore/QList>
+#include <QtCore/QByteArray>
+#include <QtCore/QString>
 #include <gst/gstelement.h>
 
 QT_BEGIN_NAMESPACE
@@ -38,7 +39,6 @@ public:
     static bool setProperty(GstElement *elem, const char *propertyName, const QByteArray &propertyValue);
     static QByteArray property(GstElement *elem, const char *propertyName);
     static QByteArray name(GstObject *elem);
-    static GstElement* createPluggablePlaybin();
     static QString stateName(GstState);
 };
 

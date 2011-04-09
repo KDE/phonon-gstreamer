@@ -15,7 +15,6 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "common.h"
 #include "backend.h"
 #include "audiooutput.h"
 #include "audiodataoutput.h"
@@ -25,7 +24,6 @@
 #include "videowidget.h"
 #include "devicemanager.h"
 #include "effectmanager.h"
-#include "message.h"
 #include "volumefadereffect.h"
 #include <gst/interfaces/propertyprobe.h>
 #include <phonon/pulsesupport.h>
@@ -85,13 +83,12 @@ Backend::Backend(QObject *parent, const QVariantList &)
     if (err)
         g_error_free(err);
 
-    qRegisterMetaType<Message>("Message");
 #ifndef QT_NO_PROPERTIES
     setProperty("identifier",     QLatin1String("phonon_gstreamer"));
     setProperty("backendName",    QLatin1String("Gstreamer"));
     setProperty("backendComment", QLatin1String("Gstreamer plugin for Phonon"));
     setProperty("backendVersion", QLatin1String(PHONON_GST_VERSION));
-    setProperty("backendWebsite", QLatin1String("http://qt.nokia.com/"));
+    setProperty("backendWebsite", QLatin1String("http://phonon.kde.org/"));
 #endif //QT_NO_PROPERTIES
 
     //check if we should enable debug output
