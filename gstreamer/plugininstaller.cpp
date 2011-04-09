@@ -189,7 +189,7 @@ void PluginInstaller::run()
     } else {
         emit started();
     }
-    for(i;i>0;i--)
+    for(; i > 0; i--)
         free(details[i]);
     reset();
 }
