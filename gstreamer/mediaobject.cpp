@@ -739,7 +739,7 @@ void MediaObject::setState(State newstate)
 
     case Phonon::PlayingState:
 #ifdef __GNUC__
-#warning TODO 4.5
+#warning TODO - drop m_resetNeeded (messes with one-time-connection URLs)
 #endif
         // TODO 4.5: drop m_resetNeeded completely and use live connections, whatever
         // those might be.
