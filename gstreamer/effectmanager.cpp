@@ -85,7 +85,7 @@ EffectManager::EffectManager(Backend *backend)
                     m_audioEffectList.append(effect);
 
 #ifdef __GNUC__
-#warning TODO 4.5 - get rid of equalizer name mapping (also see audioeffect.cpp)
+#warning TODO - get rid of equalizer name mapping (also see audioeffect.cpp)
 #endif
                     // Map the GStreamer name to the name used by Xine, to allow
                     // API consumers that think KEqualizer is a persistant name
