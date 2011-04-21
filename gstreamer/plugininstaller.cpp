@@ -68,7 +68,7 @@ QString PluginInstaller::description(const GstCaps *caps, PluginType type)
                 return 0;
         }
         pluginStr = QString::fromUtf8(pluginDesc);
-        g_free (pluginDesc);
+        g_free(pluginDesc);
         return pluginStr;
     }
 #else
@@ -98,7 +98,7 @@ QString PluginInstaller::description(const gchar *name, PluginType type)
                 return 0;
         }
         pluginStr = QString::fromUtf8(pluginDesc);
-        g_free (pluginDesc);
+        g_free(pluginDesc);
         return pluginStr;
     }
 #endif
@@ -121,10 +121,10 @@ QString PluginInstaller::buildInstallationString(const GstCaps *caps, PluginType
     }
 
     return QString("gstreamer|0.10|%0|%1|%2-%3")
-        .arg( qApp->applicationName() )
-        .arg( description(caps, type) )
-        .arg( descType )
-        .arg( getCapType(caps) );
+        .arg(qApp->applicationName())
+        .arg(description(caps, type))
+        .arg(descType)
+        .arg(getCapType(caps));
 }
 
 QString PluginInstaller::buildInstallationString(const gchar *name, PluginType type)
@@ -138,10 +138,10 @@ QString PluginInstaller::buildInstallationString(const gchar *name, PluginType t
             return QString();
     }
     return QString("gstreamer|0.10|%0|%1|%2-%3")
-        .arg( qApp->applicationName() )
-        .arg( description(name, type) )
-        .arg( descType )
-        .arg( name );
+        .arg(qApp->applicationName())
+        .arg(description(name, type))
+        .arg(descType)
+        .arg(name);
 }
 
 PluginInstaller::PluginInstaller(QObject *parent)
@@ -169,11 +169,11 @@ void PluginInstaller::run()
     }
     gchar *details[m_pluginList.size()+m_capList.size()+1];
     int i = 0;
-    foreach(QString plugin, m_pluginList.keys()) {
+    foreach (QString plugin, m_pluginList.keys()) {
         details[i] = strdup(buildInstallationString(plugin.toLocal8Bit().data(), m_pluginList[plugin]).toLocal8Bit().data());
         i++;
     }
-    foreach(GstCaps *caps, m_capList.keys()) {
+    foreach (GstCaps *caps, m_capList.keys()) {
         details[i] = strdup(buildInstallationString(caps, m_capList[caps]).toLocal8Bit().data());
         i++;
     }
@@ -246,7 +246,7 @@ void PluginInstaller::pluginInstallationResult(GstInstallPluginsReturn result)
 PluginInstaller::InstallStatus PluginInstaller::checkInstalledPlugins()
 {
     bool allFound = true;
-    foreach(QString plugin, m_pluginList.keys()) {
+    foreach (QString plugin, m_pluginList.keys()) {
         if (!gst_default_registry_check_feature_version(plugin.toLocal8Bit().data(), 0, 10, 0)) {
             allFound = false;
             break;
@@ -266,13 +266,13 @@ PluginInstaller::InstallStatus PluginInstaller::checkInstalledPlugins()
 
 QString PluginInstaller::getCapType(const GstCaps *caps)
 {
-    GstStructure *str = gst_caps_get_structure (caps, 0);
-    return QString::fromUtf8(gst_structure_get_name (str));;
+    GstStructure *str = gst_caps_get_structure(caps, 0);
+    return QString::fromUtf8(gst_structure_get_name(str));
 }
 
 void PluginInstaller::reset()
 {
-    foreach(GstCaps *caps, m_capList.keys()) {
+    foreach (GstCaps *caps, m_capList.keys()) {
         gst_caps_unref(caps);
     }
     m_capList.clear();
