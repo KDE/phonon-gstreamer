@@ -109,14 +109,12 @@ QString PluginInstaller::buildInstallationString(const GstCaps *caps, PluginType
 {
     QString descType;
     switch(type) {
+        case Codec:
         case Decoder:
             descType = "decoder";
             break;
         case Encoder:
             descType = "encoder";
-            break;
-        case Codec:
-            descType = "codec";
             break;
         default:
             return 0;
