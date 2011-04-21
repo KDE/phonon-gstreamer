@@ -53,7 +53,7 @@ QString PluginInstaller::description(const GstCaps *caps, PluginType type)
 #ifdef PLUGIN_INSTALL_API
     if (init()) {
         QString pluginStr;
-        gchar *pluginDesc = NULL;
+        gchar *pluginDesc = 0;
         switch(type) {
             case Decoder:
                 pluginDesc = gst_pb_utils_get_decoder_description(caps);
@@ -83,7 +83,7 @@ QString PluginInstaller::description(const gchar *name, PluginType type)
 #ifdef PLUGIN_INSTALL_API
     if (init()) {
         QString pluginStr;
-        gchar *pluginDesc = NULL;
+        gchar *pluginDesc = 0;
         switch(type) {
             case Source:
                 pluginDesc = gst_pb_utils_get_source_description(name);
@@ -177,7 +177,7 @@ void PluginInstaller::run()
         details[i] = strdup(buildInstallationString(caps, m_capList[caps]).toLocal8Bit().data());
         i++;
     }
-    details[i] = NULL;
+    details[i] = 0;
 
     GstInstallPluginsReturn status;
     status = gst_install_plugins_async(details, ctx, pluginInstallationDone, new QPointer<PluginInstaller>(this));
