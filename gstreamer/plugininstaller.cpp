@@ -117,7 +117,7 @@ QString PluginInstaller::buildInstallationString(const GstCaps *caps, PluginType
             descType = "encoder";
             break;
         default:
-            return 0;
+            return QString();
     }
 
     return QString("gstreamer|0.10|%0|%1|%2-%3")
@@ -135,7 +135,7 @@ QString PluginInstaller::buildInstallationString(const gchar *name, PluginType t
             descType = "element";
             break;
         default:
-            return 0;
+            return QString();
     }
     return QString("gstreamer|0.10|%0|%1|%2-%3")
         .arg( qApp->applicationName() )
