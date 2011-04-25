@@ -20,7 +20,9 @@
 #include "backend.h"
 #include "gsthelper.h"
 #include "videowidget.h"
+#ifdef OPENGL_FOUND
 #include "glrenderer.h"
+#endif
 #include "widgetrenderer.h"
 #include "x11renderer.h"
 #include <phonon/pulsesupport.h>
@@ -301,7 +303,7 @@ GstElement *DeviceManager::createAudioSink(Category category)
 #ifndef QT_NO_PHONON_VIDEO
 AbstractRenderer *DeviceManager::createVideoRenderer(VideoWidget *parent)
 {
-#if !defined(QT_NO_OPENGL) && !defined(QT_OPENGL_ES)
+#if !defined(QT_NO_OPENGL) && !defined(QT_OPENGL_ES) && defined(OPENGL_FOUND)
     if (m_videoSinkWidget == "opengl") {
         return new GLRenderer(parent);
     } else
