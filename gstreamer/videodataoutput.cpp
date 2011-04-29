@@ -38,8 +38,8 @@ namespace Gstreamer
 
 VideoDataOutput::VideoDataOutput(Backend *backend, QObject *parent)
     : QObject(parent),
-    MediaNode(backend, VideoSink),
-	m_frontend(0)
+      MediaNode(backend, VideoSink),
+      m_frontend(0)
 {
     static int count = 0;
     m_name = "VideoDataOutput" + QString::number(count++);

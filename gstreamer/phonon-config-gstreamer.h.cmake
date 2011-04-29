@@ -9,3 +9,5 @@
 /* If api-plugin is defined */
 #cmakedefine PLUGIN_INSTALL_API 1
 
+/* If OpenGL is available */
+#cmakedefine OPENGL_FOUND 1

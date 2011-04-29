@@ -49,7 +49,6 @@ if (BUILD_PHONON_GSTREAMER)
       devicemanager.cpp
       effect.cpp
       effectmanager.cpp
-      glrenderer.cpp
       gsthelper.cpp
       medianode.cpp
       medianodeevent.cpp
@@ -63,6 +62,10 @@ if (BUILD_PHONON_GSTREAMER)
       volumefadereffect.cpp
       widgetrenderer.cpp
       )
+
+   if(OPENGL_FOUND)
+        list(APPEND phonon_gstreamer_SRCS glrenderer.cpp)
+   endif(OPENGL_FOUND)
 
    if(NOT WIN32)
       set(phonon_gstreamer_SRCS
@@ -84,8 +87,6 @@ if (BUILD_PHONON_GSTREAMER)
    set_target_properties(phonon_gstreamer PROPERTIES PREFIX "")
    target_link_libraries(phonon_gstreamer
       ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} ${PHONON_LIBRARY}
-      ${QT_QTOPENGL_LIBRARY}
-      ${OPENGL_gl_LIBRARY}
       ${GSTREAMER_LIBRARIES} ${GSTREAMER_BASE_LIBRARY} ${GSTREAMER_INTERFACE_LIBRARY}
       ${GSTREAMER_PLUGIN_VIDEO_LIBRARY} ${GSTREAMER_PLUGIN_AUDIO_LIBRARY} ${GSTREAMER_PLUGIN_PBUTILS_LIBRARY}
       ${GLIB2_LIBRARIES} ${GOBJECT_LIBRARIES})
@@ -95,6 +96,9 @@ if (BUILD_PHONON_GSTREAMER)
    if(USE_INSTALL_PLUGIN)
        target_link_libraries(phonon_gstreamer ${GSTREAMER_PLUGIN_PBUTILS_LIBRARIES})
    endif(USE_INSTALL_PLUGIN)
+   if(OPENGL_FOUND)
+      target_link_libraries(phonon_gstreamer ${QT_QTOPENGL_LIBRARY} ${OPENGL_gl_LIBRARY})
+   endif(OPENGL_FOUND)
 
    install(TARGETS phonon_gstreamer DESTINATION ${PLUGIN_INSTALL_DIR}/plugins/phonon_backend)
    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gstreamer.desktop DESTINATION ${SERVICES_INSTALL_DIR}/phononbackends)

@@ -31,9 +31,7 @@
 #include "devicemanager.h"
 #include "mediaobject.h"
 
-#include "glrenderer.h"
 #include "widgetrenderer.h"
-#include "x11renderer.h"
 
 #ifndef QT_NO_PHONON_VIDEO
 QT_BEGIN_NAMESPACE

@@ -20,11 +20,6 @@
 
 #include "abstractrenderer.h"
 
-#ifndef QT_NO_OPENGL
-#include <QtOpenGL/QGLFormat>
-#include <QtOpenGL/QGLWidget>
-#endif
-
 #ifndef QT_NO_PHONON_VIDEO
 QT_BEGIN_NAMESPACE
 
