@@ -213,6 +213,7 @@ QStringList Backend::availableMimeTypes() const
         (mpegFactory = gst_element_factory_find ("mad")) ||
         (mpegFactory = gst_element_factory_find ("flump3dec"))) {
         availableMimeTypes << QLatin1String("audio/x-mp3");
+        availableMimeTypes << QLatin1String("audio/x-ape");// ape is available from ffmpeg
         gst_object_unref(GST_OBJECT(mpegFactory));
     }
 
