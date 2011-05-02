@@ -125,6 +125,11 @@ QString GstHelper::stateName(GstState state)
     return "";
 }
 
+void GstHelper::writePipelineDot(GstBin *bin, const char *type)
+{
+    GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS(bin, GST_DEBUG_GRAPH_SHOW_ALL, type);
+}
+
 
 } //namespace Gstreamer
 } //namespace Phonon

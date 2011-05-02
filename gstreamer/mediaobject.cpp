@@ -981,12 +981,16 @@ void MediaObject::updateSeekable()
             emit seekableChanged(m_seekable);
         }
 
-        if (m_seekable)
+        if (m_seekable) {
             m_backend->logMessage("Stream is seekable", Backend::Info, this);
-        else
+            GstHelper::writePipelineDot(GST_BIN(m_pipeline), "pgst-updateSeekable-true");
+        } else {
             m_backend->logMessage("Stream is non-seekable", Backend::Info, this);
+            GstHelper::writePipelineDot(GST_BIN(m_pipeline), "pgst-updateSeekable-false");
+        }
     } else {
         m_backend->logMessage("updateSeekable query failed", Backend::Info, this);
+        GstHelper::writePipelineDot(GST_BIN(m_pipeline), "pgst-updateSeekable-failed");
     }
     gst_query_unref (query);
 }
@@ -1143,6 +1147,8 @@ void MediaObject::setSource(const MediaSource &source)
 
     MediaNodeEvent event(MediaNodeEvent::SourceChanged);
     notify(&event);
+
+    GstHelper::writePipelineDot(GST_BIN(m_pipeline), "pgst-setSource-complete");
 
     // We need to link this node to ensure that fake sinks are connected
     // before loading, otherwise the stream will be blocked

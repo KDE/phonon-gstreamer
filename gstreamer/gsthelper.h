@@ -22,6 +22,7 @@
 #include <QtCore/QByteArray>
 #include <QtCore/QString>
 #include <gst/gstelement.h>
+#include <gst/gstbin.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -40,6 +41,7 @@ public:
     static QByteArray property(GstElement *elem, const char *propertyName);
     static QByteArray name(GstObject *elem);
     static QString stateName(GstState);
+    static void writePipelineDot(GstBin *elem, const char *type);
 };
 
 } // ns Gstreamer
