@@ -33,6 +33,7 @@ namespace Phonon
 {
 namespace Gstreamer
 {
+class MediaObject;
 class GstHelper
 {
 public:
@@ -41,7 +42,7 @@ public:
     static QByteArray property(GstElement *elem, const char *propertyName);
     static QByteArray name(GstObject *elem);
     static QString stateName(GstState);
-    static void writePipelineDot(GstBin *elem, const char *type);
+    static void writePipelineDot(MediaObject *media, const QString &type);
 };
 
 } // ns Gstreamer

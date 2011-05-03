@@ -18,6 +18,8 @@
 #include <gst/interfaces/propertyprobe.h>
 #include <gst/gst.h>
 #include "gsthelper.h"
+#include "mediaobject.h"
+#include "backend.h"
 
 #include <QtCore/QList>
 
@@ -125,9 +127,11 @@ QString GstHelper::stateName(GstState state)
     return "";
 }
 
-void GstHelper::writePipelineDot(GstBin *bin, const char *type)
+void GstHelper::writePipelineDot(MediaObject *media, const QString &type)
 {
-    GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS(bin, GST_DEBUG_GRAPH_SHOW_ALL, type);
+    GstBin *bin = GST_BIN(media->pipeline());
+    media->backend()->logMessage(QString("Dumping %0.dot").arg(type), Backend::Debug, media);
+    GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS(bin, GST_DEBUG_GRAPH_SHOW_ALL, QString("phonon-%0").arg(type).toUtf8().constData());
 }
 
 

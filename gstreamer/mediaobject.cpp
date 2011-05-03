@@ -983,14 +983,14 @@ void MediaObject::updateSeekable()
 
         if (m_seekable) {
             m_backend->logMessage("Stream is seekable", Backend::Info, this);
-            GstHelper::writePipelineDot(GST_BIN(m_pipeline), "pgst-updateSeekable-true");
+            GstHelper::writePipelineDot(this, "updateSeekable-true");
         } else {
             m_backend->logMessage("Stream is non-seekable", Backend::Info, this);
-            GstHelper::writePipelineDot(GST_BIN(m_pipeline), "pgst-updateSeekable-false");
+            GstHelper::writePipelineDot(this, "updateSeekable-false");
         }
     } else {
         m_backend->logMessage("updateSeekable query failed", Backend::Info, this);
-        GstHelper::writePipelineDot(GST_BIN(m_pipeline), "pgst-updateSeekable-failed");
+        GstHelper::writePipelineDot(this, "updateSeekable-failed");
     }
     gst_query_unref (query);
 }
@@ -1092,6 +1092,9 @@ void MediaObject::setSource(const MediaSource &source)
         if (!createPipefromURL(source.mrl()))
             setError(tr("Could not open media source."));
         }
+        GstHelper::writePipelineDot(this,
+                                    QString("setSource-mrl-%0")
+                                    .arg(QUrl::toPercentEncoding(source.mrl().toString()).constData()));
         break;
 
     case MediaSource::Invalid:
@@ -1104,6 +1107,7 @@ void MediaObject::setSource(const MediaSource &source)
     case MediaSource::Stream:
         if (!createPipefromStream(source))
             setError(tr("Could not open media source."));
+        GstHelper::writePipelineDot(this, "setSource-stream");
         break;
 
     case MediaSource::Disc:
@@ -1111,6 +1115,7 @@ void MediaObject::setSource(const MediaSource &source)
             if (source.discType() == Phonon::Dvd) {
                 if (!createPipefromDVD(source))
                     setError(tr("Could not open DVD."));
+                GstHelper::writePipelineDot(this, "setSource-dvd");
             } else {
                 QString mediaUrl;
                 switch (source.discType()) {
@@ -1129,6 +1134,9 @@ void MediaObject::setSource(const MediaSource &source)
                 }
                 if (mediaUrl.isEmpty() || !createPipefromURL(QUrl(mediaUrl)))
                     setError(tr("Could not open media source."));
+                GstHelper::writePipelineDot(this,
+                                            QString("setSource-disc-%0")
+                                            .arg(mediaUrl));
             }
         }
         break;
@@ -1148,7 +1156,9 @@ void MediaObject::setSource(const MediaSource &source)
     MediaNodeEvent event(MediaNodeEvent::SourceChanged);
     notify(&event);
 
-    GstHelper::writePipelineDot(GST_BIN(m_pipeline), "pgst-setSource-complete");
+    GstHelper::writePipelineDot(this,
+                                QString("setSource-complete-%0")
+                                .arg(QUrl::toPercentEncoding(source.mrl().toString()).constData()));
 
     // We need to link this node to ensure that fake sinks are connected
     // before loading, otherwise the stream will be blocked
