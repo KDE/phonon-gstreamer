@@ -456,6 +456,10 @@ Backend::DebugLevel Backend::debugLevel() const
  */
 void Backend::logMessage(const QString &message, int priority, QObject *obj) const
 {
+    // Backend is a singleton, so this is just fine.
+    static QString lastLogMessage = QString();
+    static int logMessageSkipCount = 0;
+    
     if (debugLevel() > 0) {
         QString output;
         if (obj) {
@@ -470,9 +474,14 @@ void Backend::logMessage(const QString &message, int priority, QObject *obj) con
         else {
             output = message;
         }
-        if (priority <= (int)debugLevel()) {
+        if (priority <= (int)debugLevel() && lastLogMessage != output) {
+            if (logMessageSkipCount != 0) 
+                qDebug() << "  PGST: Last message repeated" << logMessageSkipCount << "time(s)";
             qDebug() << QString("PGST(%1): %2").arg(priority).arg(output);
-        }
+            lastLogMessage = output;
+            logMessageSkipCount = 0;
+        } else
+            ++logMessageSkipCount;
     }
 }
 
