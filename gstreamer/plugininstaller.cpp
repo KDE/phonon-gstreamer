@@ -268,7 +268,10 @@ PluginInstaller::InstallStatus PluginInstaller::checkInstalledPlugins()
 QString PluginInstaller::getCapType(const GstCaps *caps)
 {
     GstStructure *str = gst_caps_get_structure(caps, 0);
-    return QString::fromUtf8(gst_structure_get_name(str));
+    gchar *strstr = gst_structure_to_string(str);
+    QString capType = QString::fromUtf8(strstr);
+    g_free(strstr);
+    return capType;
 }
 
 void PluginInstaller::reset()
