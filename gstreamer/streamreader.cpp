@@ -35,13 +35,11 @@ StreamReader::StreamReader(const Phonon::MediaSource &source, MediaObject *paren
     , m_seekable(false)
     , m_mediaObject(parent)
 {
-    DEBUG_BLOCK;
     connectToSource(source);
 }
 
 StreamReader::~StreamReader()
 {
-    DEBUG_BLOCK;
 }
 
 //------------------------------------------------------------------------------
@@ -85,7 +83,6 @@ void StreamReader::setCurrentPos(qint64 pos)
 void StreamReader::writeData(const QByteArray &data)
 {
     QMutexLocker locker(&m_mutex);
-    DEBUG_BLOCK;
     m_buffer.append(data);
     m_waitingForData.wakeAll();
 }
@@ -93,7 +90,6 @@ void StreamReader::writeData(const QByteArray &data)
 GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
 {
     QMutexLocker locker(&m_mutex);
-    DEBUG_BLOCK;
 
     if (currentPos() != pos) {
         if (!streamSeekable()) {
@@ -139,7 +135,6 @@ GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
 void StreamReader::endOfData()
 {
     QMutexLocker locker(&m_mutex);
-    DEBUG_BLOCK;
     m_eos = true;
     m_waitingForData.wakeAll();
 }
@@ -147,7 +142,6 @@ void StreamReader::endOfData()
 void StreamReader::start()
 {
     QMutexLocker locker(&m_mutex);
-    DEBUG_BLOCK;
     m_buffer.clear();
     m_eos = false;
     m_locked = true;
@@ -160,7 +154,6 @@ void StreamReader::start()
 void StreamReader::stop()
 {
     QMutexLocker locker(&m_mutex);
-    DEBUG_BLOCK;
     enoughData();
     m_waitingForData.wakeAll();
 }
@@ -168,7 +161,6 @@ void StreamReader::stop()
 void StreamReader::unlock()
 {
     QMutexLocker locker(&m_mutex);
-    DEBUG_BLOCK;
     enoughData();
     m_locked = false;
     m_waitingForData.wakeAll();
