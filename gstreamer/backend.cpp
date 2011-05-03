@@ -173,7 +173,7 @@ bool Backend::supportsVideo() const
     return isValid();
 }
 
-bool Backend::checkDependencies() const
+bool Backend::checkDependencies(bool retry) const
 {
     bool success = false;
     // Verify that gst-plugins-base is installed
@@ -186,11 +186,19 @@ bool Backend::checkDependencies() const
         if (csFactory) {
             gst_object_unref(csFactory);
         } else {
+            if (!retry) {
+                gst_update_registry();
+                checkDependencies(true);
+            }
             QString message = tr("Warning: You do not seem to have the package gstreamer0.10-plugins-good installed.\n"
                                  "          Some video features have been disabled.");
             qDebug() << message;
         }
     } else {
+        if (!retry) {
+            gst_update_registry();
+            checkDependencies(true);
+        }
         qWarning() << tr("Warning: You do not seem to have the base GStreamer plugins installed.\n"
                          "          All audio and video support has been disabled");
     }

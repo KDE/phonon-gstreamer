@@ -66,7 +66,8 @@ public:
     DebugLevel debugLevel() const;
 
     void logMessage(const QString &message, int priority = 2, QObject *obj = 0) const;
-    bool checkDependencies() const;
+    // 'retry' indicates that we'd like to check the deps after a registry rebuild
+    bool checkDependencies(bool retry = false) const;
 
 Q_SIGNALS:
     void objectDescriptionChanged(ObjectDescriptionType);
