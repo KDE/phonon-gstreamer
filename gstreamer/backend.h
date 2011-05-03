@@ -30,6 +30,7 @@ namespace Phonon
 {
 namespace Gstreamer
 {
+
 class AudioOutput;
 class DeviceManager;
 class EffectManager;
@@ -76,10 +77,8 @@ private:
     EffectManager *m_effectManager;
     DebugLevel m_debugLevel;
     bool m_isValid;
-
-    // To ensure that only such messages get forwarded that target a still existing MediaObject.
-    QSet<MediaObject *> m_watchList;
 };
+
 }
 } // namespace Phonon::Gstreamer
 
