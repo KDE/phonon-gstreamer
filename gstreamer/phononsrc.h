@@ -31,6 +31,8 @@ namespace Gstreamer
 
 G_BEGIN_DECLS
 
+gboolean register_phonon_elements();
+
 #define GST_TYPE_PHONON_SRC \
   (phonon_src_get_type())
 #define GST_PHONON_SRC(obj) \

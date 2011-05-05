@@ -25,6 +25,7 @@
 #include "devicemanager.h"
 #include "effectmanager.h"
 #include "volumefadereffect.h"
+#include "phononsrc.h"
 #include <gst/interfaces/propertyprobe.h>
 #include <phonon/pulsesupport.h>
 
@@ -109,6 +110,9 @@ Backend::Backend(QObject *parent, const QVariantList &)
 
     m_deviceManager = new DeviceManager(this);
     m_effectManager = new EffectManager(this);
+
+    // Register gst plugin
+    register_phonon_elements();
 }
 
 Backend::~Backend()

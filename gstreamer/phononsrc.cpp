@@ -60,6 +60,28 @@ static gboolean phonon_src_get_size(GstBaseSrc *src, guint64 *size);
 static GstFlowReturn phonon_src_create(GstBaseSrc *src, guint64 offset,
                                        guint length, GstBuffer **buffer);
 
+static gboolean register_elements(GstPlugin *plugin)
+{
+    if (!gst_element_register(plugin, "phononsrc", GST_RANK_NONE, GST_TYPE_PHONON_SRC))
+        return FALSE;
+    return TRUE;
+}
+
+gboolean register_phonon_elements()
+{
+    gst_plugin_register_static(
+        GST_VERSION_MAJOR,
+        GST_VERSION_MINOR,
+        "phonon-plugins",
+        "Private elements of Phonon",
+        register_elements,
+        PHONON_VERSION_STR,
+        "LGPL",
+        "phonon",
+        "phonon",
+        "http://phonon.kde.org");
+}
+
 static void _do_init(GType filesrc_type)
 {
     Q_UNUSED(filesrc_type);

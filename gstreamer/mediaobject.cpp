@@ -23,7 +23,6 @@
 #include "mediaobject.h"
 #include "backend.h"
 #include "streamreader.h"
-#include "phononsrc.h"
 #include "phonon-config-gstreamer.h"
 #include "gsthelper.h"
 #include "plugininstaller.h"
@@ -528,7 +527,7 @@ bool MediaObject::createPipefromStream(const MediaSource &source)
         m_datasource = 0;
     }
 
-    m_datasource = GST_ELEMENT(g_object_new(phonon_src_get_type(), NULL));
+    m_datasource = gst_element_factory_make("phononsrc", NULL);
     if (!m_datasource)
         return false;
 
