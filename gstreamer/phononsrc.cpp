@@ -80,6 +80,7 @@ gboolean register_phonon_elements()
         "phonon",
         "phonon",
         "http://phonon.kde.org");
+    return TRUE;
 }
 
 static void _do_init(GType filesrc_type)
