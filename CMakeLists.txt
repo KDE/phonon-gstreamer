@@ -14,8 +14,6 @@ set(PHONON_GST_PATCH_VERSION "1")
 set(PHONON_GST_VERSION "${PHONON_GST_MAJOR_VERSION}.${PHONON_GST_MINOR_VERSION}.${PHONON_GST_PATCH_VERSION}")
 add_definitions(-DPHONON_GST_VERSION="${PHONON_GST_VERSION}")
 
-if (Q_WS_X11)
-    add_subdirectory(gstreamer)
-endif (Q_WS_X11)
+add_subdirectory(gstreamer)
 
 macro_display_feature_log()
