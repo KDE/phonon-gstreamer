@@ -762,7 +762,7 @@ void MediaObject::setState(State newstate)
         m_backend->logMessage("phonon state request: paused", Backend::Info, this);
         if (currentState == GST_STATE_PAUSED) {
             changeState(Phonon::PausedState);
-        } else if (gst_element_set_state(m_pipeline->element(), GST_STATE_PAUSED) != GST_STATE_CHANGE_FAILURE) {
+        } else if (m_pipeline->setState(GST_STATE_PAUSED) != GST_STATE_CHANGE_FAILURE) {
             m_pendingState = Phonon::PausedState;
         } else {
             m_backend->logMessage("phonon state request failed", Backend::Info, this);
@@ -773,7 +773,7 @@ void MediaObject::setState(State newstate)
         m_backend->logMessage("phonon state request: Stopped", Backend::Info, this);
         if (currentState == GST_STATE_READY) {
             changeState(Phonon::StoppedState);
-        } else if (gst_element_set_state(m_pipeline->element(), GST_STATE_READY) != GST_STATE_CHANGE_FAILURE) {
+        } else if (m_pipeline->setState(GST_STATE_READY) != GST_STATE_CHANGE_FAILURE) {
             m_pendingState = Phonon::StoppedState;
         } else {
             m_backend->logMessage("phonon state request failed", Backend::Info, this);
@@ -797,7 +797,7 @@ void MediaObject::setState(State newstate)
             // handled by medianode when we implement live connections.
             // This generally happens if medianodes have been connected after the MediaSource was set
             // Note that a side-effect of this is that we resend all meta data.
-            gst_element_set_state(m_pipeline->element(), GST_STATE_NULL);
+            m_pipeline->setState(GST_STATE_NULL);
             m_resetNeeded = false;
             // Send a source change so the X11 renderer
             // will re-set the overlay
@@ -811,7 +811,7 @@ void MediaObject::setState(State newstate)
             m_backend->logMessage("Already playing", Backend::Info, this);
             changeState(Phonon::PlayingState);
         } else {
-            GstStateChangeReturn status = gst_element_set_state(m_pipeline->element(), GST_STATE_PLAYING);
+            GstStateChangeReturn status = m_pipeline->setState(GST_STATE_PLAYING);
             if (status == GST_STATE_CHANGE_ASYNC) {
                 m_backend->logMessage("Playing state is now pending");
                 m_pendingState = Phonon::PlayingState;
@@ -893,7 +893,7 @@ void MediaObject::setError(const QString &errorString, Phonon::ErrorType error)
     if (error == Phonon::FatalError) {
         m_hasVideo = false;
         emit hasVideoChanged(false);
-        gst_element_set_state(m_pipeline->element(), GST_STATE_READY);
+        m_pipeline->setState(GST_STATE_READY);
         changeState(Phonon::ErrorState);
     } else {
         if (m_loading) //Flag error only after loading has completed
@@ -1039,7 +1039,7 @@ void MediaObject::setSource(const MediaSource &source)
     // remnants of the old pipeline can result in strangenes
     // such as failing duration queries etc
     GstState state;
-    gst_element_set_state(m_pipeline->element(), GST_STATE_NULL);
+    m_pipeline->setState(GST_STATE_NULL);
     gst_element_get_state(m_pipeline->element(), &state, NULL, 2000);
 
     m_source = source;
@@ -1165,7 +1165,7 @@ void MediaObject::setSource(const MediaSource &source)
 
 void MediaObject::beginLoad()
 {
-    if (gst_element_set_state(m_pipeline->element(), GST_STATE_PAUSED) != GST_STATE_CHANGE_FAILURE) {
+    if (m_pipeline->setState(GST_STATE_PAUSED) != GST_STATE_CHANGE_FAILURE) {
         m_backend->logMessage("Begin source load", Backend::Info, this);
     } else {
         setError(tr("Could not open media source."));

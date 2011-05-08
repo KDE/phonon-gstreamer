@@ -35,6 +35,7 @@ class Pipeline : public QObject
         Pipeline(QObject *parent = 0);
         virtual ~Pipeline();
         GstElement *element() const;
+        GstStateChangeReturn setState(GstState state);
 
     private:
         GstPipeline *m_pipeline;

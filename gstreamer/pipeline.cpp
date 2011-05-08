@@ -42,6 +42,11 @@ GstElement *Pipeline::element() const
     return GST_ELEMENT(m_pipeline);
 }
 
+GstStateChangeReturn Pipeline::setState(GstState state)
+{
+    return gst_element_set_state(GST_ELEMENT(m_pipeline), state);
+}
+
 }
 };
 
