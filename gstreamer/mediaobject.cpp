@@ -273,7 +273,7 @@ bool MediaObject::addToPipeline(GstElement *elem)
 
 void MediaObject::addSubtitle(GstPad *pad)
 {
-    GstState currentState = GST_STATE(m_pipeline->element());
+    GstState currentState = m_pipeline->state();
     if (addToPipeline(m_videoGraph)) {
         GstPad *subtitlepad = gst_element_get_pad(m_videoGraph, "subtitle_sink");
         if (!GST_PAD_IS_LINKED(subtitlepad) && (gst_pad_link(pad, subtitlepad) == GST_PAD_LINK_OK)) {
@@ -290,7 +290,7 @@ void MediaObject::addSubtitle(GstPad *pad)
 
 void MediaObject::connectVideo(GstPad *pad)
 {
-    GstState currentState = GST_STATE(m_pipeline->element());
+    GstState currentState = m_pipeline->state();
     if (addToPipeline(m_videoGraph)) {
         GstPad *videopad = gst_element_get_pad (m_videoGraph, "sink");
         if (!GST_PAD_IS_LINKED (videopad) && (gst_pad_link (pad, videopad) == GST_PAD_LINK_OK)) {
@@ -315,7 +315,7 @@ void MediaObject::connectVideo(GstPad *pad)
 
 void MediaObject::connectAudio(GstPad *pad)
 {
-    GstState currentState = GST_STATE(m_pipeline->element());
+    GstState currentState = m_pipeline->state();
     if (addToPipeline(m_audioGraph)) {
         GstPad *audiopad = gst_element_get_pad (m_audioGraph, "sink");
         if (!GST_PAD_IS_LINKED (audiopad) && (gst_pad_link (pad, audiopad)==GST_PAD_LINK_OK)) {
@@ -750,8 +750,7 @@ void MediaObject::setState(State newstate)
         return;
     }
 
-    GstState currentState;
-    gst_element_get_state (m_pipeline->element(), &currentState, NULL, 1000);
+    GstState currentState = m_pipeline->state();
 
     switch (newstate) {
     case Phonon::BufferingState:
@@ -1038,9 +1037,8 @@ void MediaObject::setSource(const MediaSource &source)
     // We have to reset the state completely here, otherwise
     // remnants of the old pipeline can result in strangenes
     // such as failing duration queries etc
-    GstState state;
     m_pipeline->setState(GST_STATE_NULL);
-    gst_element_get_state(m_pipeline->element(), &state, NULL, 2000);
+    m_pipeline->state();
 
     m_source = source;
     emit currentSourceChanged(m_source);

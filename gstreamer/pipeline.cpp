@@ -61,6 +61,13 @@ bool Pipeline::queryDuration(GstFormat *format, gint64 *duration)
     return gst_element_query_duration(GST_ELEMENT(m_pipeline), format, duration);
 }
 
+GstState Pipeline::state() const
+{
+    GstState state;
+    gst_element_get_state(GST_ELEMENT(m_pipeline), &state, NULL, 1000);
+    return state;
+}
+
 }
 };
 

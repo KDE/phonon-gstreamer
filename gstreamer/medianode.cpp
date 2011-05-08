@@ -294,7 +294,7 @@ bool MediaNode::addOutput(MediaNode *output, GstElement *tee)
     if (!sinkElement)
         return false;
 
-    GstState state = GST_STATE (root()->pipeline()->element());
+    GstState state = root()->pipeline()->state();
     GstPad *srcPad = gst_element_get_request_pad (tee, "src%d");
     GstPad *sinkPad = gst_element_get_pad (sinkElement, "sink");
 

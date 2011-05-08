@@ -39,6 +39,7 @@ class Pipeline : public QObject
         virtual ~Pipeline();
         GstElement *element() const;
         GstStateChangeReturn setState(GstState state);
+        GstState state() const;
         void writeToDot(MediaObject *media, const QString &type);
         bool queryDuration(GstFormat *format, gint64 *duration);
 
