@@ -102,9 +102,10 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
     } else {
         m_root = this;
         createPipeline();
+
+        connect(m_pipeline, SIGNAL(eos()), this, SLOT(handleEndOfStream()));
+
         GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_pipeline->element()));
-        gst_bus_set_sync_handler(bus, gst_bus_sync_signal_handler, NULL);
-        g_signal_connect(bus, "sync-message::eos", G_CALLBACK(cb_eos), this);
         g_signal_connect(bus, "sync-message::tag", G_CALLBACK(cb_tag), this);
         g_signal_connect(bus, "sync-message::state-changed", G_CALLBACK(cb_state), this);
         g_signal_connect(bus, "sync-message::element", G_CALLBACK(cb_element), this);
@@ -1778,22 +1779,6 @@ void MediaObject::handleElementMessage(GstMessage *gstMessage)
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
 }
 
-gboolean MediaObject::cb_eos(GstBus *bus, GstMessage *msg, gpointer data)
-{
-    Q_UNUSED(bus)
-    MediaObject *that = static_cast<MediaObject*>(data);
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
-    QMetaObject::invokeMethod(that, "handleEOSMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
-    return true;
-}
-
-void MediaObject::handleEOSMessage(GstMessage *gstMessage)
-{
-    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
-    m_backend->logMessage("EOS received", Backend::Info, this);
-    handleEndOfStream();
-}
-
 gboolean MediaObject::cb_duration(GstBus *bus, GstMessage *msg, gpointer data)
 {
     Q_UNUSED(bus)
@@ -1812,6 +1797,7 @@ void MediaObject::handleDurationMessage(GstMessage *gstMessage)
 
 void MediaObject::handleEndOfStream()
 {
+    m_backend->logMessage("EOS received", Backend::Info, this);
     // If the stream is not seekable ignore
     // otherwise chained radio broadcasts would stop
 

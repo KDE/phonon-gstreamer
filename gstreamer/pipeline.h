@@ -42,6 +42,11 @@ class Pipeline : public QObject
         GstState state() const;
         void writeToDot(MediaObject *media, const QString &type);
         bool queryDuration(GstFormat *format, gint64 *duration);
+        Q_INVOKABLE void handleEOSMessage(GstMessage *msg);
+        static gboolean cb_eos(GstBus *bus, GstMessage *msg, gpointer data);
+
+    signals:
+        void eos();
 
     private:
         GstPipeline *m_pipeline;

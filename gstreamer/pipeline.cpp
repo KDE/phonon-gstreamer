@@ -31,6 +31,10 @@ Pipeline::Pipeline(QObject *parent)
     m_pipeline = GST_PIPELINE(gst_pipeline_new(NULL));
     gst_object_ref(m_pipeline);
     gst_object_sink(m_pipeline);
+
+    GstBus *bus = gst_pipeline_get_bus(m_pipeline);
+    gst_bus_set_sync_handler(bus, gst_bus_sync_signal_handler, NULL);
+    g_signal_connect(bus, "sync-message::eos", G_CALLBACK(cb_eos), this);
 }
 
 Pipeline::~Pipeline()
@@ -66,6 +70,21 @@ GstState Pipeline::state() const
     GstState state;
     gst_element_get_state(GST_ELEMENT(m_pipeline), &state, NULL, 1000);
     return state;
+}
+
+gboolean Pipeline::cb_eos(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    Q_UNUSED(bus)
+    MediaObject *that = static_cast<MediaObject*>(data);
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
+    QMetaObject::invokeMethod(that, "handleEOSMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
+    return true;
+}
+
+void Pipeline::handleEOSMessage(GstMessage *gstMessage)
+{
+    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
+    emit eos();
 }
 
 }
