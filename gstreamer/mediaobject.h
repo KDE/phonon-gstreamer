@@ -20,6 +20,7 @@
 #define Phonon_GSTREAMER_MEDIAOBJECT_H
 
 #include "medianode.h"
+#include "pipeline.h"
 #include <phonon/mediaobjectinterface.h>
 #include <phonon/addoninterface.h>
 #include <phonon/MediaController>
@@ -134,7 +135,7 @@ public:
 
     GstElement *pipeline()
     {
-        return m_pipeline;
+        return m_pipeline->element();
     };
 
     gulong capsHandler()
@@ -302,7 +303,7 @@ private:
     Phonon::ErrorType m_error;
     QString m_errorString;
 
-    GstElement *m_pipeline;
+    Pipeline *m_pipeline;
     GstElement *m_audioGraph;
     GstElement *m_videoGraph;
     int m_previousTickTime;

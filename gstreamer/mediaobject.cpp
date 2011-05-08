@@ -26,6 +26,7 @@
 #include "phonon-config-gstreamer.h"
 #include "gsthelper.h"
 #include "plugininstaller.h"
+#include "pipeline.h"
 
 #include <QtCore/QByteRef>
 #include <QtCore/QEvent>
@@ -101,7 +102,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
     } else {
         m_root = this;
         createPipeline();
-        GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_pipeline));
+        GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_pipeline->element()));
         gst_bus_set_sync_handler(bus, gst_bus_sync_signal_handler, NULL);
         g_signal_connect(bus, "sync-message::eos", G_CALLBACK(cb_eos), this);
         g_signal_connect(bus, "sync-message::tag", G_CALLBACK(cb_tag), this);
@@ -124,10 +125,9 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
 MediaObject::~MediaObject()
 {
     if (m_pipeline) {
-        GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_pipeline));
+        GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_pipeline->element()));
         g_signal_handlers_disconnect_matched(bus, G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, this);
-        gst_element_set_state(m_pipeline, GST_STATE_NULL);
-        gst_object_unref(m_pipeline);
+        delete m_pipeline;
     }
     if (m_audioGraph) {
         gst_element_set_state(m_audioGraph, GST_STATE_NULL);
@@ -266,14 +266,14 @@ bool MediaObject::addToPipeline(GstElement *elem)
 {
     bool success = true;
     if (!GST_ELEMENT_PARENT(elem)) { // If not already in pipeline
-        success = gst_bin_add(GST_BIN(m_pipeline), elem);
+        success = gst_bin_add(GST_BIN(m_pipeline->element()), elem);
     }
     return success;
 }
 
 void MediaObject::addSubtitle(GstPad *pad)
 {
-    GstState currentState = GST_STATE(m_pipeline);
+    GstState currentState = GST_STATE(m_pipeline->element());
     if (addToPipeline(m_videoGraph)) {
         GstPad *subtitlepad = gst_element_get_pad(m_videoGraph, "subtitle_sink");
         if (!GST_PAD_IS_LINKED(subtitlepad) && (gst_pad_link(pad, subtitlepad) == GST_PAD_LINK_OK)) {
@@ -290,7 +290,7 @@ void MediaObject::addSubtitle(GstPad *pad)
 
 void MediaObject::connectVideo(GstPad *pad)
 {
-    GstState currentState = GST_STATE(m_pipeline);
+    GstState currentState = GST_STATE(m_pipeline->element());
     if (addToPipeline(m_videoGraph)) {
         GstPad *videopad = gst_element_get_pad (m_videoGraph, "sink");
         if (!GST_PAD_IS_LINKED (videopad) && (gst_pad_link (pad, videopad) == GST_PAD_LINK_OK)) {
@@ -315,7 +315,7 @@ void MediaObject::connectVideo(GstPad *pad)
 
 void MediaObject::connectAudio(GstPad *pad)
 {
-    GstState currentState = GST_STATE(m_pipeline);
+    GstState currentState = GST_STATE(m_pipeline->element());
     if (addToPipeline(m_audioGraph)) {
         GstPad *audiopad = gst_element_get_pad (m_audioGraph, "sink");
         if (!GST_PAD_IS_LINKED (audiopad) && (gst_pad_link (pad, audiopad)==GST_PAD_LINK_OK)) {
@@ -344,7 +344,7 @@ bool MediaObject::createV4lPipe(const DeviceAccess &access, const MediaSource &s
     Q_UNUSED(source);
     QString v4lDevice = access.second;
     if (m_datasource) {
-        gst_bin_remove(GST_BIN(m_pipeline), m_datasource);
+        gst_bin_remove(GST_BIN(m_pipeline->element()), m_datasource);
         m_datasource = 0;
     }
     m_datasource = gst_element_factory_make("v4l2src", "v4l2src");
@@ -354,7 +354,7 @@ bool MediaObject::createV4lPipe(const DeviceAccess &access, const MediaSource &s
     }
     g_object_set(G_OBJECT(m_datasource), "device", v4lDevice.toUtf8().data(), (const char*)NULL);
     m_backend->logMessage("Created video device element");
-    gst_bin_add(GST_BIN(m_pipeline), m_datasource);
+    gst_bin_add(GST_BIN(m_pipeline->element()), m_datasource);
     gst_element_link(m_datasource, m_decodebin);
     return true;
 }
@@ -363,7 +363,7 @@ bool MediaObject::createPipefromDVD(const MediaSource &source)
 {
     // Remove any existing data source
     if (m_datasource) {
-        gst_bin_remove(GST_BIN(m_pipeline), m_datasource);
+        gst_bin_remove(GST_BIN(m_pipeline->element()), m_datasource);
         // m_pipeline has the only ref to datasource
         m_datasource = 0;
     }
@@ -384,7 +384,7 @@ bool MediaObject::createPipefromDVD(const MediaSource &source)
     if (m_installer->checkInstalledPlugins() != PluginInstaller::Installed)
         return false;
     m_datasource = gst_bin_new(NULL);
-    gst_bin_add(GST_BIN(m_pipeline), m_datasource);
+    gst_bin_add(GST_BIN(m_pipeline->element()), m_datasource);
 
     GstElement *dvdsrc = gst_element_factory_make("rsndvdbin", NULL);
 
@@ -466,7 +466,7 @@ bool MediaObject::createPipefromURL(const Mrl &mrl)
 {
     // Remove any existing data source
     if (m_datasource) {
-        gst_bin_remove(GST_BIN(m_pipeline), m_datasource);
+        gst_bin_remove(GST_BIN(m_pipeline->element()), m_datasource);
         // m_pipeline has the only ref to datasource
         m_datasource = 0;
     }
@@ -502,7 +502,7 @@ bool MediaObject::createPipefromURL(const Mrl &mrl)
     }
 
     // Link data source into pipeline
-    gst_bin_add(GST_BIN(m_pipeline), m_datasource);
+    gst_bin_add(GST_BIN(m_pipeline->element()), m_datasource);
     if (!gst_element_link(m_datasource, m_decodebin)) {
         // For sources with dynamic pads (such as RtspSrc) we need to connect dynamically
         GstPad *decodepad = gst_element_get_pad (m_decodebin, "sink");
@@ -522,7 +522,7 @@ bool MediaObject::createPipefromStream(const MediaSource &source)
 #ifndef QT_NO_PHONON_ABSTRACTMEDIASTREAM
     // Remove any existing data source
     if (m_datasource) {
-        gst_bin_remove(GST_BIN(m_pipeline), m_datasource);
+        gst_bin_remove(GST_BIN(m_pipeline->element()), m_datasource);
         // m_pipeline has the only ref to datasource
         m_datasource = 0;
     }
@@ -535,9 +535,9 @@ bool MediaObject::createPipefromStream(const MediaSource &source)
     g_object_set (G_OBJECT (m_datasource), "iodevice", streamReader, (const char*)NULL);
 
     // Link data source into pipeline
-    gst_bin_add(GST_BIN(m_pipeline), m_datasource);
+    gst_bin_add(GST_BIN(m_pipeline->element()), m_datasource);
     if (!gst_element_link(m_datasource, m_decodebin)) {
-        gst_bin_remove(GST_BIN(m_pipeline), m_datasource);
+        gst_bin_remove(GST_BIN(m_pipeline->element()), m_datasource);
         return false;
     }
     m_isStream = true;
@@ -550,15 +550,13 @@ bool MediaObject::createPipefromStream(const MediaSource &source)
 
 void MediaObject::createPipeline()
 {
-    m_pipeline = gst_pipeline_new (NULL);
-    gst_object_ref (GST_OBJECT (m_pipeline));
-    gst_object_sink (GST_OBJECT (m_pipeline));
+    m_pipeline = new Pipeline(this);
 
     m_decodebin = gst_element_factory_make ("decodebin2", NULL);
     g_signal_connect (m_decodebin, "new-decoded-pad", G_CALLBACK (&cb_newpad), this);
     g_signal_connect (m_decodebin, "unknown-type", G_CALLBACK (&cb_unknown_type), this);
 
-    gst_bin_add(GST_BIN(m_pipeline), m_decodebin);
+    gst_bin_add(GST_BIN(m_pipeline->element()), m_decodebin);
 
     // Create a bin to contain the gst elements for this medianode
 
@@ -753,7 +751,7 @@ void MediaObject::setState(State newstate)
     }
 
     GstState currentState;
-    gst_element_get_state (m_pipeline, &currentState, NULL, 1000);
+    gst_element_get_state (m_pipeline->element(), &currentState, NULL, 1000);
 
     switch (newstate) {
     case Phonon::BufferingState:
@@ -764,7 +762,7 @@ void MediaObject::setState(State newstate)
         m_backend->logMessage("phonon state request: paused", Backend::Info, this);
         if (currentState == GST_STATE_PAUSED) {
             changeState(Phonon::PausedState);
-        } else if (gst_element_set_state(m_pipeline, GST_STATE_PAUSED) != GST_STATE_CHANGE_FAILURE) {
+        } else if (gst_element_set_state(m_pipeline->element(), GST_STATE_PAUSED) != GST_STATE_CHANGE_FAILURE) {
             m_pendingState = Phonon::PausedState;
         } else {
             m_backend->logMessage("phonon state request failed", Backend::Info, this);
@@ -775,7 +773,7 @@ void MediaObject::setState(State newstate)
         m_backend->logMessage("phonon state request: Stopped", Backend::Info, this);
         if (currentState == GST_STATE_READY) {
             changeState(Phonon::StoppedState);
-        } else if (gst_element_set_state(m_pipeline, GST_STATE_READY) != GST_STATE_CHANGE_FAILURE) {
+        } else if (gst_element_set_state(m_pipeline->element(), GST_STATE_READY) != GST_STATE_CHANGE_FAILURE) {
             m_pendingState = Phonon::StoppedState;
         } else {
             m_backend->logMessage("phonon state request failed", Backend::Info, this);
@@ -799,7 +797,7 @@ void MediaObject::setState(State newstate)
             // handled by medianode when we implement live connections.
             // This generally happens if medianodes have been connected after the MediaSource was set
             // Note that a side-effect of this is that we resend all meta data.
-            gst_element_set_state(m_pipeline, GST_STATE_NULL);
+            gst_element_set_state(m_pipeline->element(), GST_STATE_NULL);
             m_resetNeeded = false;
             // Send a source change so the X11 renderer
             // will re-set the overlay
@@ -813,7 +811,7 @@ void MediaObject::setState(State newstate)
             m_backend->logMessage("Already playing", Backend::Info, this);
             changeState(Phonon::PlayingState);
         } else {
-            GstStateChangeReturn status = gst_element_set_state(m_pipeline, GST_STATE_PLAYING);
+            GstStateChangeReturn status = gst_element_set_state(m_pipeline->element(), GST_STATE_PLAYING);
             if (status == GST_STATE_CHANGE_ASYNC) {
                 m_backend->logMessage("Playing state is now pending");
                 m_pendingState = Phonon::PlayingState;
@@ -895,7 +893,7 @@ void MediaObject::setError(const QString &errorString, Phonon::ErrorType error)
     if (error == Phonon::FatalError) {
         m_hasVideo = false;
         emit hasVideoChanged(false);
-        gst_element_set_state(m_pipeline, GST_STATE_READY);
+        gst_element_set_state(m_pipeline->element(), GST_STATE_READY);
         changeState(Phonon::ErrorState);
     } else {
         if (m_loading) //Flag error only after loading has completed
@@ -950,7 +948,7 @@ bool MediaObject::updateTotalTime()
 {
     GstFormat   format = GST_FORMAT_TIME;
     gint64 duration = 0;
-    if (gst_element_query_duration (GST_ELEMENT(m_pipeline), &format, &duration)) {
+    if (gst_element_query_duration (GST_ELEMENT(m_pipeline->element()), &format, &duration)) {
         setTotalTime(duration / GST_MSECOND);
         return true;
     }
@@ -969,7 +967,7 @@ void MediaObject::updateSeekable()
     gboolean result;
     gint64 start, stop;
     query = gst_query_new_seeking(GST_FORMAT_TIME);
-    result = gst_element_query (m_pipeline, query);
+    result = gst_element_query (m_pipeline->element(), query);
     if (result) {
         gboolean seekable;
         GstFormat format;
@@ -1009,7 +1007,7 @@ qint64 MediaObject::getPipelinePos() const
 
     gint64 pos = 0;
     GstFormat format = GST_FORMAT_TIME;
-    gst_element_query_position (GST_ELEMENT(m_pipeline), &format, &pos);
+    gst_element_query_position (GST_ELEMENT(m_pipeline->element()), &format, &pos);
     return (pos / GST_MSECOND);
 }
 
@@ -1041,8 +1039,8 @@ void MediaObject::setSource(const MediaSource &source)
     // remnants of the old pipeline can result in strangenes
     // such as failing duration queries etc
     GstState state;
-    gst_element_set_state(m_pipeline, GST_STATE_NULL);
-    gst_element_get_state(m_pipeline, &state, NULL, 2000);
+    gst_element_set_state(m_pipeline->element(), GST_STATE_NULL);
+    gst_element_get_state(m_pipeline->element(), &state, NULL, 2000);
 
     m_source = source;
     emit currentSourceChanged(m_source);
@@ -1060,9 +1058,9 @@ void MediaObject::setSource(const MediaSource &source)
 
      // Make sure we start out unconnected
     if (GST_ELEMENT_PARENT(m_audioGraph))
-        gst_bin_remove(GST_BIN(m_pipeline), m_audioGraph);
+        gst_bin_remove(GST_BIN(m_pipeline->element()), m_audioGraph);
     if (GST_ELEMENT_PARENT(m_videoGraph))
-        gst_bin_remove(GST_BIN(m_pipeline), m_videoGraph);
+        gst_bin_remove(GST_BIN(m_pipeline->element()), m_videoGraph);
 
     // Clear any existing errors
     m_aboutToFinishEmitted = false;
@@ -1167,7 +1165,7 @@ void MediaObject::setSource(const MediaSource &source)
 
 void MediaObject::beginLoad()
 {
-    if (gst_element_set_state(m_pipeline, GST_STATE_PAUSED) != GST_STATE_CHANGE_FAILURE) {
+    if (gst_element_set_state(m_pipeline->element(), GST_STATE_PAUSED) != GST_STATE_CHANGE_FAILURE) {
         m_backend->logMessage("Begin source load", Backend::Info, this);
     } else {
         setError(tr("Could not open media source."));
@@ -1192,7 +1190,7 @@ void MediaObject::updateNavigation()
 {
     QList<MediaController::NavigationMenu> ret;
 #if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
-    GstElement *target = gst_bin_get_by_interface(GST_BIN(m_pipeline), GST_TYPE_NAVIGATION);
+    GstElement *target = gst_bin_get_by_interface(GST_BIN(m_pipeline->element()), GST_TYPE_NAVIGATION);
     if (target) {
         GstQuery *query = gst_navigation_query_new_commands();
         gboolean res = gst_element_query(target, query);
@@ -1248,7 +1246,7 @@ void MediaObject::getStreamInfo()
     if (m_source.discType() == Phonon::Cd) {
         gint64 titleCount;
         GstFormat format = gst_format_get_by_nick("track");
-        if (gst_element_query_duration (m_pipeline, &format, &titleCount)) {
+        if (gst_element_query_duration (m_pipeline->element(), &format, &titleCount)) {
         //check if returned format is still "track",
         //gstreamer sometimes returns the total time, if tracks information is not available.
             if (qstrcmp(gst_format_get_name(format), "track") == 0)  {
@@ -1308,7 +1306,7 @@ void MediaObject::seek(qint64 time)
             m_posAtSeek = getPipelinePos();
             m_tickTimer->stop();
 
-            if (gst_element_seek(m_pipeline, 1.0, GST_FORMAT_TIME,
+            if (gst_element_seek(m_pipeline->element(), 1.0, GST_FORMAT_TIME,
                                  GST_SEEK_FLAG_FLUSH, GST_SEEK_TYPE_SET,
                                  time * GST_MSECOND, GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE))
             break;
@@ -1556,7 +1554,7 @@ void MediaObject::handleStateMessage(GstMessage *gstMessage)
     GstState pendingState;
     gst_message_parse_state_changed (gstMessage, &oldState, &newState, &pendingState);
 
-    if (gstMessage->src != GST_OBJECT(m_pipeline)) {
+    if (gstMessage->src != GST_OBJECT(m_pipeline->element())) {
         m_backend->logMessage("State changed from "+GstHelper::stateName(oldState)+" to "+GstHelper::stateName(newState), Backend::Debug, this);
         gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
         return;
@@ -1949,7 +1947,7 @@ void MediaObject::_iface_jumpToMenu(MediaController::NavigationMenu menu)
         return;
     }
 
-    GstElement *target = gst_bin_get_by_interface(GST_BIN(m_pipeline), GST_TYPE_NAVIGATION);
+    GstElement *target = gst_bin_get_by_interface(GST_BIN(m_pipeline->element()), GST_TYPE_NAVIGATION);
     if (target)
         gst_navigation_send_command(GST_NAVIGATION(target), command);
 #endif
@@ -1988,7 +1986,7 @@ void MediaObject::setTrack(int title)
     //let's seek to the beginning of the song
     GstFormat trackFormat = gst_format_get_by_nick("track");
     m_backend->logMessage(QString("setTrack %0").arg(title), Backend::Info, this);
-    if (gst_element_seek_simple(m_pipeline, trackFormat, GST_SEEK_FLAG_FLUSH, title - 1)) {
+    if (gst_element_seek_simple(m_pipeline->element(), trackFormat, GST_SEEK_FLAG_FLUSH, title - 1)) {
         m_currentTitle = title;
         updateTotalTime();
         m_atEndOfStream = false;
