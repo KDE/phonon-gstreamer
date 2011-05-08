@@ -87,6 +87,28 @@ void Pipeline::handleEOSMessage(GstMessage *gstMessage)
     emit eos();
 }
 
+gboolean Pipeline::cb_warning(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    Q_UNUSED(bus)
+    MediaObject *that = static_cast<MediaObject*>(data);
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
+    QMetaObject::invokeMethod(that, "handleWarningMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
+    return true;
+}
+
+void Pipeline::handleWarningMessage(GstMessage *gstMessage)
+{
+    gchar *debug;
+    GError *err;
+    gst_message_parse_warning(gstMessage, &err, &debug);
+    QString msgString;
+    msgString.sprintf("Warning: %s\nMessage:%s", debug, err->message);
+    emit warning(msgString);
+    g_free (debug);
+    g_error_free (err);
+    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
+}
+
 }
 };
 

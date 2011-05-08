@@ -151,7 +151,6 @@ public:
     Q_INVOKABLE void handleTagMessage(GstMessage *msg);
     Q_INVOKABLE void handleStateMessage(GstMessage *msg);
     Q_INVOKABLE void handleErrorMessage(GstMessage *msg);
-    Q_INVOKABLE void handleWarningMessage(GstMessage *msg);
     Q_INVOKABLE void handleBufferingMessage(GstMessage *msg);
     Q_INVOKABLE void handleElementMessage(GstMessage *msg);
     Q_INVOKABLE void handleDurationMessage(GstMessage *msg);
@@ -161,7 +160,6 @@ public:
     static gboolean cb_element(GstBus *bus, GstMessage *msg, gpointer data);
     static gboolean cb_duration(GstBus *bus, GstMessage *msg, gpointer data);
     static gboolean cb_buffering(GstBus *bus, GstMessage *msg, gpointer data);
-    static gboolean cb_warning(GstBus *bus, GstMessage *msg, gpointer data);
     static gboolean cb_error(GstBus *bus, GstMessage *msg, gpointer data);
 
     void invalidateGraph();
@@ -242,7 +240,9 @@ private Q_SLOTS:
     void pluginInstallComplete();
     void pluginInstallFailure(const QString &msg);
     void pluginInstallStarted();
+
     void handleEndOfStream();
+    void logWarning(const QString &);
 
 private:
     // GStreamer specific :

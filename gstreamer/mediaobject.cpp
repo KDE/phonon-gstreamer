@@ -104,6 +104,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         createPipeline();
 
         connect(m_pipeline, SIGNAL(eos()), this, SLOT(handleEndOfStream()));
+        connect(m_pipeline, SIGNAL(warning(const QString &)), this, SLOT(logWarning(const QString &)));
 
         GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_pipeline->element()));
         g_signal_connect(bus, "sync-message::tag", G_CALLBACK(cb_tag), this);
@@ -111,7 +112,6 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         g_signal_connect(bus, "sync-message::element", G_CALLBACK(cb_element), this);
         g_signal_connect(bus, "sync-message::duration", G_CALLBACK(cb_duration), this);
         g_signal_connect(bus, "sync-message::buffering", G_CALLBACK(cb_buffering), this);
-        g_signal_connect(bus, "sync-message::warning", G_CALLBACK(cb_warning), this);
         g_signal_connect(bus, "sync-message::error", G_CALLBACK(cb_error), this);
         connect(m_tickTimer, SIGNAL(timeout()), SLOT(emitTick()));
 
@@ -1482,28 +1482,6 @@ void MediaObject::handleErrorMessage(GstMessage *gstMessage)
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
 }
 
-gboolean MediaObject::cb_warning(GstBus *bus, GstMessage *msg, gpointer data)
-{
-    Q_UNUSED(bus)
-    MediaObject *that = static_cast<MediaObject*>(data);
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
-    QMetaObject::invokeMethod(that, "handleWarningMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
-    return true;
-}
-
-void MediaObject::handleWarningMessage(GstMessage *gstMessage)
-{
-    gchar *debug;
-    GError *err;
-    gst_message_parse_warning(gstMessage, &err, &debug);
-    QString msgString;
-    msgString.sprintf("Warning: %s\nMessage:%s", debug, err->message);
-    m_backend->logMessage(msgString, Backend::Warning);
-    g_free (debug);
-    g_error_free (err);
-    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
-}
-
 gboolean MediaObject::cb_buffering(GstBus *bus, GstMessage *msg, gpointer data)
 {
     Q_UNUSED(bus)
@@ -2004,6 +1982,11 @@ void MediaObject::pluginInstallFailure(const QString &msg)
     bool canPlay = (m_hasAudio || m_videoStreamFound);
     Phonon::ErrorType error = canPlay ? Phonon::NormalError : Phonon::FatalError;
     setError(msg, error);
+}
+
+void MediaObject::logWarning(const QString &msg)
+{
+    m_backend->logMessage(msg, Backend::Warning);
 }
 
 } // ns Gstreamer
