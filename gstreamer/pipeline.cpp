@@ -56,6 +56,11 @@ void Pipeline::writeToDot(MediaObject *media, const QString &type)
     GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS(bin, GST_DEBUG_GRAPH_SHOW_ALL, QString("phonon-%0").arg(type).toUtf8().constData());
 }
 
+bool Pipeline::queryDuration(GstFormat *format, gint64 *duration)
+{
+    return gst_element_query_duration(GST_ELEMENT(m_pipeline), format, duration);
+}
+
 }
 };
 

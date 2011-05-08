@@ -948,7 +948,7 @@ bool MediaObject::updateTotalTime()
 {
     GstFormat   format = GST_FORMAT_TIME;
     gint64 duration = 0;
-    if (gst_element_query_duration (GST_ELEMENT(m_pipeline->element()), &format, &duration)) {
+    if (m_pipeline->queryDuration(&format, &duration)) {
         setTotalTime(duration / GST_MSECOND);
         return true;
     }
@@ -1246,7 +1246,7 @@ void MediaObject::getStreamInfo()
     if (m_source.discType() == Phonon::Cd) {
         gint64 titleCount;
         GstFormat format = gst_format_get_by_nick("track");
-        if (gst_element_query_duration (m_pipeline->element(), &format, &titleCount)) {
+        if (m_pipeline->queryDuration(&format, &titleCount)) {
         //check if returned format is still "track",
         //gstreamer sometimes returns the total time, if tracks information is not available.
             if (qstrcmp(gst_format_get_name(format), "track") == 0)  {
