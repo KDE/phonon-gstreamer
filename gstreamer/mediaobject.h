@@ -153,12 +153,10 @@ public:
     Q_INVOKABLE void handleErrorMessage(GstMessage *msg);
     Q_INVOKABLE void handleBufferingMessage(GstMessage *msg);
     Q_INVOKABLE void handleElementMessage(GstMessage *msg);
-    Q_INVOKABLE void handleDurationMessage(GstMessage *msg);
 
     static gboolean cb_tag(GstBus *bus, GstMessage *msg, gpointer data);
     static gboolean cb_state(GstBus *bus, GstMessage *msg, gpointer data);
     static gboolean cb_element(GstBus *bus, GstMessage *msg, gpointer data);
-    static gboolean cb_duration(GstBus *bus, GstMessage *msg, gpointer data);
     static gboolean cb_buffering(GstBus *bus, GstMessage *msg, gpointer data);
     static gboolean cb_error(GstBus *bus, GstMessage *msg, gpointer data);
 
@@ -243,6 +241,7 @@ private Q_SLOTS:
 
     void handleEndOfStream();
     void logWarning(const QString &);
+    bool updateTotalTime();
 
 private:
     // GStreamer specific :
@@ -250,7 +249,6 @@ private:
     bool addToPipeline(GstElement *elem);
     void setTotalTime(qint64 newTime);
     void getStreamsInfo();
-    bool updateTotalTime();
     void updateSeekable();
     void updateNavigation();
     qint64 getPipelinePos() const;

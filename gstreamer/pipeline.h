@@ -49,9 +49,13 @@ class Pipeline : public QObject
         static gboolean cb_warning(GstBus *bus, GstMessage *msg, gpointer data);
         Q_INVOKABLE void handleWarningMessage(GstMessage *msg);
 
+        static gboolean cb_duration(GstBus *bus, GstMessage *msg, gpointer data);
+        Q_INVOKABLE void handleDurationMessage(GstMessage *msg);
+
     signals:
         void eos();
         void warning(const QString &message);
+        void durationChanged();
 
     private:
         GstPipeline *m_pipeline;

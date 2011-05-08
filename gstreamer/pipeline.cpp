@@ -109,6 +109,22 @@ void Pipeline::handleWarningMessage(GstMessage *gstMessage)
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
 }
 
+gboolean Pipeline::cb_duration(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    Q_UNUSED(bus)
+    MediaObject *that = static_cast<MediaObject*>(data);
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
+    QMetaObject::invokeMethod(that, "handleDurationMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
+    return true;
+}
+
+void Pipeline::handleDurationMessage(GstMessage *gstMessage)
+{
+    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
+    emit durationChanged();
+}
+
+
 }
 };
 

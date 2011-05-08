@@ -105,12 +105,12 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
 
         connect(m_pipeline, SIGNAL(eos()), this, SLOT(handleEndOfStream()));
         connect(m_pipeline, SIGNAL(warning(const QString &)), this, SLOT(logWarning(const QString &)));
+        connect(m_pipeline, SIGNAL(durationChanged()), this, SLOT(updateTotalTime()));
 
         GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_pipeline->element()));
         g_signal_connect(bus, "sync-message::tag", G_CALLBACK(cb_tag), this);
         g_signal_connect(bus, "sync-message::state-changed", G_CALLBACK(cb_state), this);
         g_signal_connect(bus, "sync-message::element", G_CALLBACK(cb_element), this);
-        g_signal_connect(bus, "sync-message::duration", G_CALLBACK(cb_duration), this);
         g_signal_connect(bus, "sync-message::buffering", G_CALLBACK(cb_buffering), this);
         g_signal_connect(bus, "sync-message::error", G_CALLBACK(cb_error), this);
         connect(m_tickTimer, SIGNAL(timeout()), SLOT(emitTick()));
@@ -1755,22 +1755,6 @@ void MediaObject::handleElementMessage(GstMessage *gstMessage)
 #endif // GST_VERSION
     }
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
-}
-
-gboolean MediaObject::cb_duration(GstBus *bus, GstMessage *msg, gpointer data)
-{
-    Q_UNUSED(bus)
-    MediaObject *that = static_cast<MediaObject*>(data);
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
-    QMetaObject::invokeMethod(that, "handleDurationMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
-    return true;
-}
-
-void MediaObject::handleDurationMessage(GstMessage *gstMessage)
-{
-    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
-    m_backend->logMessage("GST_MESSAGE_DURATION", Backend::Debug, this);
-    updateTotalTime();
 }
 
 void MediaObject::handleEndOfStream()
