@@ -27,6 +27,9 @@ namespace Phonon
 {
 namespace Gstreamer
 {
+
+class MediaObject;
+
 class Pipeline : public QObject
 {
     Q_OBJECT
@@ -36,6 +39,7 @@ class Pipeline : public QObject
         virtual ~Pipeline();
         GstElement *element() const;
         GstStateChangeReturn setState(GstState state);
+        void writeToDot(MediaObject *media, const QString &type);
 
     private:
         GstPipeline *m_pipeline;

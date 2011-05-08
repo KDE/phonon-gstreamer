@@ -16,6 +16,8 @@
 */
 
 #include "pipeline.h"
+#include "mediaobject.h"
+#include "backend.h"
 
 QT_BEGIN_NAMESPACE
 namespace Phonon
@@ -45,6 +47,13 @@ GstElement *Pipeline::element() const
 GstStateChangeReturn Pipeline::setState(GstState state)
 {
     return gst_element_set_state(GST_ELEMENT(m_pipeline), state);
+}
+
+void Pipeline::writeToDot(MediaObject *media, const QString &type)
+{
+    GstBin *bin = GST_BIN(m_pipeline);
+    media->backend()->logMessage(QString("Dumping %0.dot").arg(type), Backend::Debug, media);
+    GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS(bin, GST_DEBUG_GRAPH_SHOW_ALL, QString("phonon-%0").arg(type).toUtf8().constData());
 }
 
 }

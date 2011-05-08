@@ -133,9 +133,9 @@ public:
         return m_videoGraph;
     }
 
-    GstElement *pipeline()
+    Pipeline *pipeline()
     {
-        return m_pipeline->element();
+        return m_pipeline;
     };
 
     gulong capsHandler()

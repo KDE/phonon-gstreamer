@@ -136,7 +136,7 @@ bool AudioOutput::setOutputDevice(int newDevice)
 
     if (root()) {
         root()->saveState();
-        if (gst_element_set_state(root()->pipeline(), GST_STATE_READY) == GST_STATE_CHANGE_FAILURE)
+        if (root()->pipeline()->setState(GST_STATE_READY) == GST_STATE_CHANGE_FAILURE)
             return false;
     }
 
@@ -194,7 +194,7 @@ bool AudioOutput::setOutputDevice(const AudioOutputDevice &newDevice)
 
     if (root()) {
         root()->saveState();
-        if (gst_element_set_state(root()->pipeline(), GST_STATE_READY) == GST_STATE_CHANGE_FAILURE)
+        if (root()->pipeline()->setState(GST_STATE_READY) == GST_STATE_CHANGE_FAILURE)
             return false;
     }
 

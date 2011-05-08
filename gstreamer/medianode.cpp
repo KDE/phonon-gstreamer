@@ -199,7 +199,7 @@ bool MediaNode::disconnectNode(QObject *obj)
         // Disconnecting elements while playing or paused seems to cause
         // potential deadlock. Hence we force the pipeline into ready state
         // before any nodes are disconnected.
-        gst_element_set_state(root()->pipeline(), GST_STATE_READY);
+        root()->pipeline()->setState(GST_STATE_READY);
 
         Q_ASSERT(sink->root()); //sink has to have a root since it is connected
 
@@ -294,7 +294,7 @@ bool MediaNode::addOutput(MediaNode *output, GstElement *tee)
     if (!sinkElement)
         return false;
 
-    GstState state = GST_STATE (root()->pipeline());
+    GstState state = GST_STATE (root()->pipeline()->element());
     GstPad *srcPad = gst_element_get_request_pad (tee, "src%d");
     GstPad *sinkPad = gst_element_get_pad (sinkElement, "sink");
 
