@@ -55,6 +55,7 @@ Name[sr@latin]=GStreamer
 Name[sv]=Gstreamer
 Name[th]=GStreamer
 Name[tr]=GStreamer
+Name[ug]=GStreamer
 Name[uk]=GStreamer
 Name[x-test]=xxGStreamerxx
 Name[zh_CN]=GStreamer
