@@ -27,6 +27,7 @@ namespace Gstreamer
 
 Pipeline::Pipeline(QObject *parent)
     : QObject(parent)
+    , m_bufferPercent(0)
 {
     m_pipeline = GST_PIPELINE(gst_pipeline_new(NULL));
     gst_object_ref(m_pipeline);
@@ -124,6 +125,30 @@ void Pipeline::handleDurationMessage(GstMessage *gstMessage)
     emit durationChanged();
 }
 
+gboolean Pipeline::cb_buffering(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    Q_UNUSED(bus)
+    MediaObject *that = static_cast<MediaObject*>(data);
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
+    QMetaObject::invokeMethod(that, "handleBufferingMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
+    return true;
+}
+
+/**
+ * Handles GST_MESSAGE_BUFFERING messages
+ */
+void Pipeline::handleBufferingMessage(GstMessage *gstMessage)
+{
+    gint percent = 0;
+    gst_structure_get_int (gstMessage->structure, "buffer-percent", &percent); //gst_message_parse_buffering was introduced in 0.10.11
+
+    if (m_bufferPercent != percent) {
+        emit buffering(percent);
+        m_bufferPercent = percent;
+    }
+
+    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
+}
 
 }
 };

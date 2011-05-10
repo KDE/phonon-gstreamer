@@ -52,13 +52,19 @@ class Pipeline : public QObject
         static gboolean cb_duration(GstBus *bus, GstMessage *msg, gpointer data);
         Q_INVOKABLE void handleDurationMessage(GstMessage *msg);
 
+        static gboolean cb_buffering(GstBus *bus, GstMessage *msg, gpointer data);
+        Q_INVOKABLE void handleBufferingMessage(GstMessage *msg);
+
     signals:
         void eos();
         void warning(const QString &message);
         void durationChanged();
+        void buffering(int);
 
     private:
         GstPipeline *m_pipeline;
+        int m_bufferPercent;
+
 };
 
 }

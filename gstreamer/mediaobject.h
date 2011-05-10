@@ -151,13 +151,11 @@ public:
     Q_INVOKABLE void handleTagMessage(GstMessage *msg);
     Q_INVOKABLE void handleStateMessage(GstMessage *msg);
     Q_INVOKABLE void handleErrorMessage(GstMessage *msg);
-    Q_INVOKABLE void handleBufferingMessage(GstMessage *msg);
     Q_INVOKABLE void handleElementMessage(GstMessage *msg);
 
     static gboolean cb_tag(GstBus *bus, GstMessage *msg, gpointer data);
     static gboolean cb_state(GstBus *bus, GstMessage *msg, gpointer data);
     static gboolean cb_element(GstBus *bus, GstMessage *msg, gpointer data);
-    static gboolean cb_buffering(GstBus *bus, GstMessage *msg, gpointer data);
     static gboolean cb_error(GstBus *bus, GstMessage *msg, gpointer data);
 
     void invalidateGraph();
@@ -242,6 +240,7 @@ private Q_SLOTS:
     void handleEndOfStream();
     void logWarning(const QString &);
     bool updateTotalTime();
+    void handleBuffering(int);
 
 private:
     // GStreamer specific :
@@ -289,7 +288,6 @@ private:
     GstElement *m_videoPipe;
 
     qint64 m_totalTime;
-    int m_bufferPercent;
     bool m_hasVideo;
     bool m_videoStreamFound;
     bool m_hasAudio;

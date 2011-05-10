@@ -69,7 +69,6 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_audioPipe(0)
         , m_videoPipe(0)
         , m_totalTime(-1)
-        , m_bufferPercent(0)
         , m_hasVideo(false)
         , m_videoStreamFound(false)
         , m_hasAudio(false)
@@ -106,12 +105,12 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         connect(m_pipeline, SIGNAL(eos()), this, SLOT(handleEndOfStream()));
         connect(m_pipeline, SIGNAL(warning(const QString &)), this, SLOT(logWarning(const QString &)));
         connect(m_pipeline, SIGNAL(durationChanged()), this, SLOT(updateTotalTime()));
+        connect(m_pipeline, SIGNAL(buffering(int)), this, SLOT(handleBuffering(int)));
 
         GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_pipeline->element()));
         g_signal_connect(bus, "sync-message::tag", G_CALLBACK(cb_tag), this);
         g_signal_connect(bus, "sync-message::state-changed", G_CALLBACK(cb_state), this);
         g_signal_connect(bus, "sync-message::element", G_CALLBACK(cb_element), this);
-        g_signal_connect(bus, "sync-message::buffering", G_CALLBACK(cb_buffering), this);
         g_signal_connect(bus, "sync-message::error", G_CALLBACK(cb_error), this);
         connect(m_tickTimer, SIGNAL(timeout()), SLOT(emitTick()));
 
@@ -1066,7 +1065,6 @@ void MediaObject::setSource(const MediaSource &source)
     m_error = NoError;
     m_errorString.clear();
 
-    m_bufferPercent = 0;
     m_prefinishMarkReachedNotEmitted = true;
     m_aboutToFinishEmitted = false;
     m_hasAudio = false;
@@ -1479,36 +1477,6 @@ void MediaObject::handleErrorMessage(GstMessage *gstMessage)
         setError(err->message, Phonon::FatalError);
     }
     g_error_free (err);
-    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
-}
-
-gboolean MediaObject::cb_buffering(GstBus *bus, GstMessage *msg, gpointer data)
-{
-    Q_UNUSED(bus)
-    MediaObject *that = static_cast<MediaObject*>(data);
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
-    QMetaObject::invokeMethod(that, "handleBufferingMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
-    return true;
-}
-
-/**
- * Handles GST_MESSAGE_BUFFERING messages
- */
-void MediaObject::handleBufferingMessage(GstMessage *gstMessage)
-{
-    gint percent = 0;
-    gst_structure_get_int (gstMessage->structure, "buffer-percent", &percent); //gst_message_parse_buffering was introduced in 0.10.11
-
-    if (m_bufferPercent != percent) {
-        emit bufferStatus(percent);
-        m_backend->logMessage(QString("Stream buffering %0").arg(percent), Backend::Debug, this);
-        m_bufferPercent = percent;
-    }
-
-    if (m_state != Phonon::BufferingState)
-        emit stateChanged(m_state, Phonon::BufferingState);
-    else if (percent == 100)
-        emit stateChanged(Phonon::BufferingState, m_state);
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
 }
 
@@ -1971,6 +1939,15 @@ void MediaObject::pluginInstallFailure(const QString &msg)
 void MediaObject::logWarning(const QString &msg)
 {
     m_backend->logMessage(msg, Backend::Warning);
+}
+
+void MediaObject::handleBuffering(int percent)
+{
+    m_backend->logMessage(QString("Stream buffering %0").arg(percent), Backend::Debug, this);
+    if (m_state != Phonon::BufferingState)
+        emit stateChanged(m_state, Phonon::BufferingState);
+    else if (percent == 100)
+        emit stateChanged(Phonon::BufferingState, m_state);
 }
 
 } // ns Gstreamer
