@@ -261,20 +261,10 @@ void MediaObject::setVideoCaps(GstCaps *caps)
     gst_caps_unref(caps);
 }
 
-// Adds an element to the pipeline if not previously added
-bool MediaObject::addToPipeline(GstElement *elem)
-{
-    bool success = true;
-    if (!GST_ELEMENT_PARENT(elem)) { // If not already in pipeline
-        success = gst_bin_add(GST_BIN(m_pipeline->element()), elem);
-    }
-    return success;
-}
-
 void MediaObject::addSubtitle(GstPad *pad)
 {
     GstState currentState = m_pipeline->state();
-    if (addToPipeline(m_videoGraph)) {
+    if (m_pipeline->addElement(m_videoGraph)) {
         GstPad *subtitlepad = gst_element_get_pad(m_videoGraph, "subtitle_sink");
         if (!GST_PAD_IS_LINKED(subtitlepad) && (gst_pad_link(pad, subtitlepad) == GST_PAD_LINK_OK)) {
             gst_element_set_state(m_videoGraph, currentState == GST_STATE_PLAYING ? GST_STATE_PLAYING : GST_STATE_PAUSED);
@@ -291,7 +281,7 @@ void MediaObject::addSubtitle(GstPad *pad)
 void MediaObject::connectVideo(GstPad *pad)
 {
     GstState currentState = m_pipeline->state();
-    if (addToPipeline(m_videoGraph)) {
+    if (m_pipeline->addElement(m_videoGraph)) {
         GstPad *videopad = gst_element_get_pad (m_videoGraph, "sink");
         if (!GST_PAD_IS_LINKED (videopad) && (gst_pad_link (pad, videopad) == GST_PAD_LINK_OK)) {
             gst_element_set_state(m_videoGraph, currentState == GST_STATE_PLAYING ? GST_STATE_PLAYING : GST_STATE_PAUSED);
@@ -316,7 +306,7 @@ void MediaObject::connectVideo(GstPad *pad)
 void MediaObject::connectAudio(GstPad *pad)
 {
     GstState currentState = m_pipeline->state();
-    if (addToPipeline(m_audioGraph)) {
+    if (m_pipeline->addElement(m_audioGraph)) {
         GstPad *audiopad = gst_element_get_pad (m_audioGraph, "sink");
         if (!GST_PAD_IS_LINKED (audiopad) && (gst_pad_link (pad, audiopad)==GST_PAD_LINK_OK)) {
             gst_element_set_state(m_audioGraph, currentState == GST_STATE_PLAYING ? GST_STATE_PLAYING : GST_STATE_PAUSED);

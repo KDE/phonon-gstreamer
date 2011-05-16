@@ -43,6 +43,8 @@ class Pipeline : public QObject
         void writeToDot(MediaObject *media, const QString &type);
         bool queryDuration(GstFormat *format, gint64 *duration);
 
+        bool addElement(GstElement *elem);
+
         Q_INVOKABLE void handleEOSMessage(GstMessage *msg);
         static gboolean cb_eos(GstBus *bus, GstMessage *msg, gpointer data);
 

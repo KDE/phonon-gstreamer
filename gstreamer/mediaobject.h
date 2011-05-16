@@ -245,7 +245,6 @@ private Q_SLOTS:
 private:
     // GStreamer specific :
     void createPipeline();
-    bool addToPipeline(GstElement *elem);
     void setTotalTime(qint64 newTime);
     void getStreamsInfo();
     void updateSeekable();

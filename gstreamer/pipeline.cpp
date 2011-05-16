@@ -150,6 +150,13 @@ void Pipeline::handleBufferingMessage(GstMessage *gstMessage)
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
 }
 
+bool Pipeline::addElement(GstElement *elem)
+{
+    if (!GST_ELEMENT_PARENT(elem))
+        return gst_bin_add(GST_BIN(m_pipeline), elem);
+    return true;
+}
+
 }
 };
 
