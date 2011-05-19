@@ -11,6 +11,7 @@ InitialPreference=15
 
 Name=GStreamer
 Name[bg]=GStreamer
+Name[bs]=Gstreamer
 Name[ca]=GStreamer
 Name[ca@valencia]=GStreamer
 Name[cs]=GStreamer
