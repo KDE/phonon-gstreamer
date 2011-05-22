@@ -143,10 +143,6 @@ public:
         return m_capsHandler;
     };
 
-    void connectVideo(GstPad *videoPad);
-    void connectAudio(GstPad *audioPad);
-    void addSubtitle(GstPad *pad);
-
     // Bus sync-message signal handlers
     Q_INVOKABLE void handleTagMessage(GstMessage *msg);
     Q_INVOKABLE void handleStateMessage(GstMessage *msg);
@@ -160,9 +156,7 @@ public:
 
     void invalidateGraph();
 
-    static void cb_newpad (GstElement *decodebin, GstPad *pad, gboolean last, gpointer data);
     static void cb_pad_added (GstElement *decodebin, GstPad *pad, gpointer data);
-    static void cb_unknown_type (GstElement *decodebin, GstPad *pad, GstCaps *caps, gpointer data);
     void saveState();
     void resumeState();
 
@@ -203,7 +197,6 @@ Q_SIGNALS:
 protected:
     void beginLoad();
     void loadingComplete();
-    void newPadAvailable (GstPad *pad);
     void changeState(State);
     void setError(const QString &errorString, Phonon::ErrorType error = NormalError);
     /*
@@ -242,7 +235,6 @@ private Q_SLOTS:
 
 private:
     // GStreamer specific :
-    void createPipeline();
     void setTotalTime(qint64 newTime);
     void getStreamsInfo();
     void updateSeekable();

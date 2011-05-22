@@ -100,7 +100,8 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
                     "\nhave libgstreamer-plugins-base installed."), Phonon::FatalError);
     } else {
         m_root = this;
-        createPipeline();
+        m_pipeline = new Pipeline(this);
+        m_isValid = true;
 
         connect(m_pipeline, SIGNAL(eos()), this, SLOT(handleEndOfStream()));
         connect(m_pipeline, SIGNAL(warning(const QString &)), this, SLOT(logWarning(const QString &)));
@@ -177,68 +178,7 @@ void MediaObject::resumeState()
         QMetaObject::invokeMethod(this, "setState", Qt::QueuedConnection, Q_ARG(State, m_oldState));
 }
 
-void MediaObject::newPadAvailable (GstPad *pad)
-{
-    GstCaps *caps;
-    GstStructure *str;
-    caps = gst_pad_get_caps (pad);
-    if (caps) {
-        str = gst_caps_get_structure (caps, 0);
-        QString mediaString(gst_structure_get_name (str));
-
-        if (mediaString.startsWith("video")) {
-            connectVideo(pad);
-        } else if (mediaString.startsWith("audio")) {
-            connectAudio(pad);
-        } else if (mediaString.startsWith("text")) {
-            addSubtitle(pad);
-        } else {
-            m_backend->logMessage(QString("Could not connect %0 pad").arg(mediaString), Backend::Warning);
-        }
-        gst_caps_unref (caps);
-    }
-}
-
-void MediaObject::cb_newpad (GstElement *decodebin,
-                             GstPad     *pad,
-                             gboolean    last,
-                             gpointer    data)
-{
-    Q_UNUSED(decodebin);
-    Q_UNUSED(pad);
-    Q_UNUSED(last);
-    Q_UNUSED(data);
-
-    MediaObject *media = static_cast<MediaObject*>(data);
-    Q_ASSERT(media);
-    media->newPadAvailable(pad);
-}
-
-void MediaObject::cb_unknown_type (GstElement *decodebin, GstPad *pad, GstCaps *caps, gpointer data)
-{
-    Q_UNUSED(decodebin);
-    Q_UNUSED(pad);
-    MediaObject *media = static_cast<MediaObject*>(data);
-    Q_ASSERT(media);
-
-    media->m_installer->addPlugin(caps, PluginInstaller::Codec);
-}
-
-static void notifyVideoCaps(GObject *obj, GParamSpec *, gpointer data)
-{
-    GstPad *pad = GST_PAD(obj);
-    GstCaps *caps = gst_pad_get_caps (pad);
-    Q_ASSERT(caps);
-    MediaObject *media = static_cast<MediaObject*>(data);
-
-    // We do not want any more notifications until the source changes
-    g_signal_handler_disconnect(pad, media->capsHandler());
-
-    // setVideoCaps calls loadingComplete(), meaning we cannot call it from
-    // the streaming thread
-    QMetaObject::invokeMethod(media, "setVideoCaps", Qt::QueuedConnection, Q_ARG(GstCaps *, caps));
-}
-
+//TODO: Move into pipeline, use gst_video_parse_caps_pixel_aspect_ratio() and/or gst_video_get_size()
 void MediaObject::setVideoCaps(GstCaps *caps)
 {
     GstStructure *str;
@@ -259,64 +199,6 @@ void MediaObject::setVideoCaps(GstCaps *caps)
         }
     }
     gst_caps_unref(caps);
-}
-
-void MediaObject::addSubtitle(GstPad *pad)
-{
-    GstState currentState = m_pipeline->state();
-    if (m_pipeline->addElement(m_videoGraph)) {
-        GstPad *subtitlepad = gst_element_get_pad(m_videoGraph, "subtitle_sink");
-        if (!GST_PAD_IS_LINKED(subtitlepad) && (gst_pad_link(pad, subtitlepad) == GST_PAD_LINK_OK)) {
-            gst_element_set_state(m_videoGraph, currentState == GST_STATE_PLAYING ? GST_STATE_PLAYING : GST_STATE_PAUSED);
-            m_backend->logMessage("Subtitle track connected", Backend::Info, this);
-        } else {
-            m_backend->logMessage("Could not connect subtitle track");
-        }
-        gst_object_unref(subtitlepad);
-    } else {
-        m_backend->logMessage("The video stream could not be plugged.", Backend::Info, this);
-    }
-}
-
-void MediaObject::connectVideo(GstPad *pad)
-{
-    GstState currentState = m_pipeline->state();
-    if (m_pipeline->addElement(m_videoGraph)) {
-        GstPad *videopad = gst_element_get_pad (m_videoGraph, "sink");
-        if (!GST_PAD_IS_LINKED (videopad) && (gst_pad_link (pad, videopad) == GST_PAD_LINK_OK)) {
-            gst_element_set_state(m_videoGraph, currentState == GST_STATE_PLAYING ? GST_STATE_PLAYING : GST_STATE_PAUSED);
-            m_videoStreamFound = true;
-            m_backend->logMessage("Video track connected", Backend::Info, this);
-            // Note that the notify::caps _must_ be installed after linking to work with Dapper
-            m_capsHandler = g_signal_connect(pad, "notify::caps", G_CALLBACK(notifyVideoCaps), this);
-
-            if (!m_loading && !m_hasVideo) {
-                m_hasVideo = m_videoStreamFound;
-                emit hasVideoChanged(m_hasVideo);
-            }
-        } else {
-            m_backend->logMessage("Could not connect video track");
-        }
-        gst_object_unref (videopad);
-    } else {
-        m_backend->logMessage("The video stream could not be plugged.", Backend::Info, this);
-    }
-}
-
-void MediaObject::connectAudio(GstPad *pad)
-{
-    GstState currentState = m_pipeline->state();
-    if (m_pipeline->addElement(m_audioGraph)) {
-        GstPad *audiopad = gst_element_get_pad (m_audioGraph, "sink");
-        if (!GST_PAD_IS_LINKED (audiopad) && (gst_pad_link (pad, audiopad)==GST_PAD_LINK_OK)) {
-            gst_element_set_state(m_audioGraph, currentState == GST_STATE_PLAYING ? GST_STATE_PLAYING : GST_STATE_PAUSED);
-            m_hasAudio = true;
-            m_backend->logMessage("Audio track connected", Backend::Info, this);
-        }
-        gst_object_unref (audiopad);
-    } else {
-        m_backend->logMessage("The audio stream could not be plugged.", Backend::Info, this);
-    }
 }
 
 void MediaObject::cb_pad_added(GstElement *decodebin,
@@ -417,7 +299,7 @@ bool MediaObject::createPipefromDVD(const MediaSource &source)
     // We do this manually, since the decodebin can only accept one input. And
     // besides, rsndvdbin only sends audio/x-raw-*, which is supported by the
     // downstream elements
-    connectAudio(audioOutGhostPad);
+    //connectAudio(audioOutGhostPad);
     gst_object_unref(audioOutPad);
 
     GstPad *videoOutPad = gst_element_get_static_pad(spu, "src");
@@ -536,98 +418,6 @@ bool MediaObject::createPipefromStream(const MediaSource &source)
     Q_UNUSED(source);
     return false;
 #endif
-}
-
-void MediaObject::createPipeline()
-{
-    m_pipeline = new Pipeline(this);
-    m_isValid = true;
-    return;
-
-    m_decodebin = gst_element_factory_make ("decodebin2", NULL);
-    g_signal_connect (m_decodebin, "new-decoded-pad", G_CALLBACK (&cb_newpad), this);
-    g_signal_connect (m_decodebin, "unknown-type", G_CALLBACK (&cb_unknown_type), this);
-
-    gst_bin_add(GST_BIN(m_pipeline->element()), m_decodebin);
-
-    // Create a bin to contain the gst elements for this medianode
-
-    // Set up audio graph
-    m_audioGraph = gst_bin_new(NULL);
-    gst_object_ref (GST_OBJECT (m_audioGraph));
-    gst_object_sink (GST_OBJECT (m_audioGraph));
-
-    // Note that these queues are only required for streaming content
-    // And should ideally be created on demand as they will disable
-    // pull-mode access. Also note that the max-size-time are increased to
-    // reduce buffer overruns as these are not gracefully handled at the moment.
-    m_audioPipe = gst_element_factory_make("queue", NULL);
-    g_object_set(G_OBJECT(m_audioPipe), "max-size-time",  MAX_QUEUE_TIME, (const char*)NULL);
-
-    QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
-    if (!tegraEnv.isEmpty()) {
-        g_object_set(G_OBJECT(m_audioPipe), "max-size-time", 0, (const char*)NULL);
-        g_object_set(G_OBJECT(m_audioPipe), "max-size-buffers", 0, (const char*)NULL);
-        g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0, (const char*)NULL);
-    }
-
-    gst_bin_add(GST_BIN(m_audioGraph), m_audioPipe);
-    GstPad *audiopad = gst_element_get_pad (m_audioPipe, "sink");
-    gst_element_add_pad (m_audioGraph, gst_ghost_pad_new ("sink", audiopad));
-    gst_object_unref (audiopad);
-
-    // Set up video graph
-    m_videoGraph = gst_bin_new(NULL);
-    gst_object_ref (GST_OBJECT (m_videoGraph));
-    gst_object_sink (GST_OBJECT (m_videoGraph));
-
-    m_videoPipe = gst_bin_new(NULL);
-    gst_bin_add(GST_BIN(m_videoGraph), m_videoPipe);
-
-
-    GstElement *subtitles = gst_element_factory_make("subtitleoverlay", NULL);
-    GstElement *videoQueue = gst_element_factory_make("queue", NULL);
-    gst_bin_add_many(GST_BIN(m_videoPipe), subtitles, videoQueue, NULL);
-
-    gst_element_link_pads(videoQueue, "src", subtitles, "video_sink");
-
-    // Link subtitle overlay and queue to container bin
-    GstPad *videoPad = gst_element_get_pad(videoQueue, "sink");
-    gst_element_add_pad(m_videoPipe, gst_ghost_pad_new("sink", videoPad));
-    gst_object_unref(videoPad);
-
-    GstPad *subtitlePad = gst_element_get_pad(subtitles, "subtitle_sink");
-    gst_element_add_pad(m_videoPipe, gst_ghost_pad_new("subtitle_sink", subtitlePad));
-    gst_object_unref(subtitlePad);
-
-    GstPad *videoOutPad = gst_element_get_pad(subtitles, "src");
-    gst_element_add_pad(m_videoPipe, gst_ghost_pad_new("src", videoOutPad));
-    gst_object_unref(videoOutPad);
-
-    // Link container bin to video graph bin
-    videoPad = gst_element_get_pad(m_videoPipe, "sink");
-    gst_element_add_pad(m_videoGraph, gst_ghost_pad_new("sink", videoPad));
-    gst_object_unref(videoPad);
-
-    subtitlePad = gst_element_get_pad(m_videoPipe, "subtitle_sink");
-    gst_element_add_pad(m_videoGraph, gst_ghost_pad_new("subtitle_sink", subtitlePad));
-    gst_object_unref(subtitlePad);
-
-    g_object_set(G_OBJECT(videoQueue), "max-size-time", MAX_QUEUE_TIME, (const char*)NULL);
-
-    // Set some sensible default for the subs. 11pt is too tiny!
-    g_object_set(G_OBJECT(subtitles), "font-desc", "sans-serif 22px", NULL);
-
-    if (!tegraEnv.isEmpty()) {
-        g_object_set(G_OBJECT(videoQueue), "max-size-time", 33000, (const char*)NULL);
-        g_object_set(G_OBJECT(m_audioPipe), "max-size-buffers", 1, (const char*)NULL);
-        g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0, (const char*)NULL);
-    }
-
-    if (m_pipeline && m_decodebin && m_audioGraph && m_videoGraph && m_audioPipe && m_videoPipe)
-        m_isValid = true;
-    else
-        m_backend->logMessage("Could not create pipeline for media object", Backend::Warning);
 }
 
 /**
