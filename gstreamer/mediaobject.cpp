@@ -541,6 +541,8 @@ bool MediaObject::createPipefromStream(const MediaSource &source)
 void MediaObject::createPipeline()
 {
     m_pipeline = new Pipeline(this);
+    m_isValid = true;
+    return;
 
     m_decodebin = gst_element_factory_make ("decodebin2", NULL);
     g_signal_connect (m_decodebin, "new-decoded-pad", G_CALLBACK (&cb_newpad), this);
@@ -1045,10 +1047,10 @@ void MediaObject::setSource(const MediaSource &source)
     m_pendingState = Phonon::StoppedState;
 
      // Make sure we start out unconnected
-    if (GST_ELEMENT_PARENT(m_audioGraph))
+/*    if (GST_ELEMENT_PARENT(m_audioGraph))
         gst_bin_remove(GST_BIN(m_pipeline->element()), m_audioGraph);
     if (GST_ELEMENT_PARENT(m_videoGraph))
-        gst_bin_remove(GST_BIN(m_pipeline->element()), m_videoGraph);
+        gst_bin_remove(GST_BIN(m_pipeline->element()), m_videoGraph);*/
 
     // Clear any existing errors
     m_aboutToFinishEmitted = false;
@@ -1070,7 +1072,9 @@ void MediaObject::setSource(const MediaSource &source)
     m_metaData.clear();
     m_isStream = false;
 
-    switch (source.type()) {
+    m_pipeline->setSource(source);
+
+/*    switch (source.type()) {
     case MediaSource::Url:
     case MediaSource::LocalFile: {
         if (!createPipefromURL(source.mrl()))
@@ -1135,7 +1139,7 @@ void MediaObject::setSource(const MediaSource &source)
         m_backend->logMessage("Source type not currently supported", Backend::Warning, this);
         setError(tr("Could not open media source."), Phonon::NormalError);
         break;
-    }
+    }*/
 
     MediaNodeEvent event(MediaNodeEvent::SourceChanged);
     notify(&event);

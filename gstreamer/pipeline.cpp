@@ -29,13 +29,74 @@ Pipeline::Pipeline(QObject *parent)
     : QObject(parent)
     , m_bufferPercent(0)
 {
-    m_pipeline = GST_PIPELINE(gst_pipeline_new(NULL));
+    m_pipeline = GST_PIPELINE(gst_element_factory_make("playbin2", NULL));
     gst_object_ref(m_pipeline);
     gst_object_sink(m_pipeline);
 
     GstBus *bus = gst_pipeline_get_bus(m_pipeline);
     gst_bus_set_sync_handler(bus, gst_bus_sync_signal_handler, NULL);
     g_signal_connect(bus, "sync-message::eos", G_CALLBACK(cb_eos), this);
+    g_signal_connect(bus, "sync-message::warning", G_CALLBACK(cb_warning), this);
+    g_signal_connect(bus, "sync-message::duration", G_CALLBACK(cb_duration), this);
+    g_signal_connect(bus, "sync-message::buffering", G_CALLBACK(cb_buffering), this);
+
+    // Set up audio graph
+    m_audioGraph = gst_bin_new("audioGraph");
+    gst_object_ref (GST_OBJECT (m_audioGraph));
+    gst_object_sink (GST_OBJECT (m_audioGraph));
+
+    // Note that these queues are only required for streaming content
+    // And should ideally be created on demand as they will disable
+    // pull-mode access. Also note that the max-size-time are increased to
+    // reduce buffer overruns as these are not gracefully handled at the moment.
+    m_audioPipe = gst_element_factory_make("queue", "audioPipe");
+    //g_object_set(G_OBJECT(m_audioPipe), "max-size-time",  MAX_QUEUE_TIME, (const char*)NULL);
+
+    gst_bin_add(GST_BIN(m_audioGraph), m_audioPipe);
+    GstPad *audiopad = gst_element_get_pad (m_audioPipe, "sink");
+    gst_element_add_pad (m_audioGraph, gst_ghost_pad_new ("sink", audiopad));
+    gst_object_unref (audiopad);
+
+    g_object_set(m_pipeline, "audio-sink", m_audioGraph, NULL);
+
+    // Set up video graph
+    m_videoGraph = gst_bin_new("videoGraph");
+    gst_object_ref (GST_OBJECT (m_videoGraph));
+    gst_object_sink (GST_OBJECT (m_videoGraph));
+
+    m_videoPipe = gst_bin_new("videoPipe");
+    gst_bin_add(GST_BIN(m_videoGraph), m_videoPipe);
+    g_object_set(m_pipeline, "video-sink", m_videoGraph, NULL);
+}
+
+GstElement *Pipeline::audioPipe()
+{
+    return m_audioPipe;
+}
+
+GstElement *Pipeline::videoPipe()
+{
+    return m_videoPipe;
+}
+
+GstElement *Pipeline::audioGraph()
+{
+    return m_audioGraph;
+}
+
+GstElement *Pipeline::videoGraph()
+{
+    return m_videoGraph;
+}
+
+void Pipeline::setSource(const Phonon::MediaSource &source)
+{
+    qDebug() << source.mrl();
+    switch(source.type()) {
+        case MediaSource::Url:
+        case MediaSource::LocalFile:
+            g_object_set(m_pipeline, "uri", source.mrl().toEncoded().constData(), NULL);
+    }
 }
 
 Pipeline::~Pipeline()

@@ -125,12 +125,12 @@ public:
 
     GstElement *audioGraph()
     {
-        return m_audioGraph;
+        return m_pipeline->audioGraph();
     }
 
     GstElement *videoGraph()
     {
-        return m_videoGraph;
+        return m_pipeline->videoGraph();
     }
 
     Pipeline *pipeline()
@@ -217,14 +217,12 @@ protected:
 
     GstElement *audioElement()
     {
-        Q_ASSERT(m_audioPipe);
-        return m_audioPipe;
+        return m_pipeline->audioPipe();
     }
 
     GstElement *videoElement()
     {
-        Q_ASSERT(m_videoPipe);
-        return m_videoPipe;
+        return m_pipeline->videoPipe();
     }
 
 private Q_SLOTS:

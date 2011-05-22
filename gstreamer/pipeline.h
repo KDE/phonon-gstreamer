@@ -20,6 +20,7 @@
 
 #include "plugininstaller.h"
 #include <gst/gst.h>
+#include <phonon/MediaSource>
 
 QT_BEGIN_NAMESPACE
 
@@ -38,6 +39,10 @@ class Pipeline : public QObject
         Pipeline(QObject *parent = 0);
         virtual ~Pipeline();
         GstElement *element() const;
+        GstElement *videoGraph() const;
+        GstElement *audioGraph() const;
+        GstElement *videoElement() const;
+        GstElement *audioElement() const;
         GstStateChangeReturn setState(GstState state);
         GstState state() const;
         void writeToDot(MediaObject *media, const QString &type);
@@ -57,6 +62,13 @@ class Pipeline : public QObject
         static gboolean cb_buffering(GstBus *bus, GstMessage *msg, gpointer data);
         Q_INVOKABLE void handleBufferingMessage(GstMessage *msg);
 
+        void setSource(const Phonon::MediaSource &source);
+
+        GstElement *audioPipe();
+        GstElement *videoPipe();
+        GstElement *audioGraph();
+        GstElement *videoGraph();
+
     signals:
         void eos();
         void warning(const QString &message);
@@ -66,6 +78,10 @@ class Pipeline : public QObject
     private:
         GstPipeline *m_pipeline;
         int m_bufferPercent;
+        GstElement *m_audioGraph;
+        GstElement *m_videoGraph;
+        GstElement *m_audioPipe;
+        GstElement *m_videoPipe;
 
 };
 
