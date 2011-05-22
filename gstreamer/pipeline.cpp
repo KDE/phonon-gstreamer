@@ -18,6 +18,7 @@
 #include "pipeline.h"
 #include "mediaobject.h"
 #include "backend.h"
+#define MAX_QUEUE_TIME 20 * GST_SECOND
 
 QT_BEGIN_NAMESPACE
 namespace Phonon
@@ -50,7 +51,14 @@ Pipeline::Pipeline(QObject *parent)
     // pull-mode access. Also note that the max-size-time are increased to
     // reduce buffer overruns as these are not gracefully handled at the moment.
     m_audioPipe = gst_element_factory_make("queue", "audioPipe");
-    //g_object_set(G_OBJECT(m_audioPipe), "max-size-time",  MAX_QUEUE_TIME, (const char*)NULL);
+    g_object_set(G_OBJECT(m_audioPipe), "max-size-time",  MAX_QUEUE_TIME, (const char*)NULL);
+
+    QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
+    if (!tegraEnv.isEmpty()) {
+        g_object_set(G_OBJECT(m_audioPipe), "max-size-time", 0, (const char*)NULL);
+        g_object_set(G_OBJECT(m_audioPipe), "max-size-buffers", 0, (const char*)NULL);
+        g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0, (const char*)NULL);
+    }
 
     gst_bin_add(GST_BIN(m_audioGraph), m_audioPipe);
     GstPad *audiopad = gst_element_get_pad (m_audioPipe, "sink");
@@ -67,6 +75,14 @@ Pipeline::Pipeline(QObject *parent)
     m_videoPipe = gst_bin_new("videoPipe");
     gst_bin_add(GST_BIN(m_videoGraph), m_videoPipe);
     g_object_set(m_pipeline, "video-sink", m_videoGraph, NULL);
+
+    //FIXME: Put this stuff somewhere else, or at least document why its needed.
+    if (!tegraEnv.isEmpty()) {
+        //TODO: Move this line into the videooutput
+        //g_object_set(G_OBJECT(videoQueue), "max-size-time", 33000, (const char*)NULL);
+        g_object_set(G_OBJECT(m_audioPipe), "max-size-buffers", 1, (const char*)NULL);
+        g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0, (const char*)NULL);
+    }
 }
 
 GstElement *Pipeline::audioPipe()
