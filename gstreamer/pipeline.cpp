@@ -108,11 +108,45 @@ GstElement *Pipeline::videoGraph()
 void Pipeline::setSource(const Phonon::MediaSource &source)
 {
     qDebug() << source.mrl();
+    QByteArray gstUri;
     switch(source.type()) {
         case MediaSource::Url:
         case MediaSource::LocalFile:
-            g_object_set(m_pipeline, "uri", source.mrl().toEncoded().constData(), NULL);
+            gstUri = source.mrl().toEncoded();
+            break;
+        case MediaSource::Invalid:
+            //TODO: Raise error
+            return;
+        case MediaSource::Stream:
+            setStreamSource(source);
+            gstUri = "phonon:/";
+            return;
+        case MediaSource::Disc:
+            switch(source.discType()) {
+                case Phonon::Cd:
+                    gstUri = "cdda://";
+                    break;
+                case Phonon::Vcd:
+                    gstUri = "vcd://";
+                    break;
+                case Phonon::Dvd:
+                    gstUri = "dvd://";
+                    break;
+            }
+            break;
     }
+    g_object_set(m_pipeline, "uri", gstUri.constData(), NULL);
+}
+
+void Pipeline::setStreamSource(const Phonon::MediaSource &source)
+{
+    //FIXME: Implement GstUriHandler in phononsrc
+#if 0
+    GstElement *source;
+    g_object_get(m_pipeline, "source", source, NULL);
+    StreamReader *streamReader = new StreamReader(source, this);
+    g_object_set (G_OBJECT (source), "iodevice", streamReader, (const char*)NULL);
+#endif
 }
 
 Pipeline::~Pipeline()
@@ -225,13 +259,6 @@ void Pipeline::handleBufferingMessage(GstMessage *gstMessage)
     }
 
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
-}
-
-bool Pipeline::addElement(GstElement *elem)
-{
-    if (!GST_ELEMENT_PARENT(elem))
-        return gst_bin_add(GST_BIN(m_pipeline), elem);
-    return true;
 }
 
 }

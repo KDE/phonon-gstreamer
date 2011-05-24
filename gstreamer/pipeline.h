@@ -48,8 +48,6 @@ class Pipeline : public QObject
         void writeToDot(MediaObject *media, const QString &type);
         bool queryDuration(GstFormat *format, gint64 *duration);
 
-        bool addElement(GstElement *elem);
-
         Q_INVOKABLE void handleEOSMessage(GstMessage *msg);
         static gboolean cb_eos(GstBus *bus, GstMessage *msg, gpointer data);
 
@@ -63,6 +61,7 @@ class Pipeline : public QObject
         Q_INVOKABLE void handleBufferingMessage(GstMessage *msg);
 
         void setSource(const Phonon::MediaSource &source);
+        void setStreamSource(const Phonon::MediaSource &source);
 
         GstElement *audioPipe();
         GstElement *videoPipe();

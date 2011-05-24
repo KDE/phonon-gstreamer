@@ -199,14 +199,6 @@ protected:
     void loadingComplete();
     void changeState(State);
     void setError(const QString &errorString, Phonon::ErrorType error = NormalError);
-    /*
-     * @param encodedUrl percent-encoded QString for source compat reasons.  Should change to QUrl
-     */
-    bool createPipefromURL(const Mrl &mrl);
-    bool createPipefromStream(const MediaSource &);
-    bool createPipefromDevice(const MediaSource &);
-    bool createPipefromDVD(const MediaSource &);
-    bool createV4lPipe(const DeviceAccess &access, const MediaSource &);
 
     GstElement *audioElement()
     {
