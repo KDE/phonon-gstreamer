@@ -998,7 +998,7 @@ void MediaObject::handleStateMessage(GstMessage *gstMessage)
     gst_message_parse_state_changed (gstMessage, &oldState, &newState, &pendingState);
 
     if (gstMessage->src != GST_OBJECT(m_pipeline->element())) {
-        m_backend->logMessage("State changed from "+GstHelper::stateName(oldState)+" to "+GstHelper::stateName(newState), Backend::Debug, this);
+        m_backend->logMessage("State changed from "+GstHelper::stateName(oldState)+" to "+GstHelper::stateName(newState)+" for "+GstHelper::name(GST_OBJECT(gstMessage->src)), Backend::Debug, this);
         gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
         return;
     }
