@@ -30,8 +30,6 @@
 #include <QtCore/QStringList>
 #include <QtCore/QVariant>
 
-#include <gst/pbutils/install-plugins.h>
-
 #include "phonon-config-gstreamer.h"
 
 QT_BEGIN_NAMESPACE
@@ -214,9 +212,6 @@ private Q_SLOTS:
     void beginPlay();
     void setVideoCaps(GstCaps *caps);
     void notifyStateChange(Phonon::State newstate, Phonon::State oldstate);
-    void pluginInstallComplete();
-    void pluginInstallFailure(const QString &msg);
-    void pluginInstallStarted();
 
     void handleEndOfStream();
     void logWarning(const QString &);
@@ -279,7 +274,6 @@ private:
     int m_currentTitle;
     int m_pendingTitle;
     bool m_installingPlugin;
-    PluginInstaller *m_installer;
     QList<MediaController::NavigationMenu> m_menus;
 };
 }

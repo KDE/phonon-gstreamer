@@ -18,6 +18,8 @@
 #include "pipeline.h"
 #include "mediaobject.h"
 #include "backend.h"
+#include "plugininstaller.h"
+#include <gst/pbutils/missing-plugins.h>
 #define MAX_QUEUE_TIME 20 * GST_SECOND
 
 QT_BEGIN_NAMESPACE
@@ -29,6 +31,7 @@ namespace Gstreamer
 Pipeline::Pipeline(QObject *parent)
     : QObject(parent)
     , m_bufferPercent(0)
+    , m_installer(new PluginInstaller(this))
 {
     m_pipeline = GST_PIPELINE(gst_element_factory_make("playbin2", NULL));
     gst_object_ref(m_pipeline);
@@ -42,6 +45,8 @@ Pipeline::Pipeline(QObject *parent)
     g_signal_connect(bus, "sync-message::duration", G_CALLBACK(cb_duration), this);
     g_signal_connect(bus, "sync-message::buffering", G_CALLBACK(cb_buffering), this);
     g_signal_connect(bus, "sync-message::state-changed", G_CALLBACK(cb_state), this);
+    g_signal_connect(bus, "sync-message::element", G_CALLBACK(cb_element), this);
+    g_signal_connect(bus, "sync-message::error", G_CALLBACK(cb_error), this);
 
     // Set up audio graph
     m_audioGraph = gst_bin_new("audioGraph");
@@ -89,6 +94,10 @@ Pipeline::Pipeline(QObject *parent)
         g_object_set(G_OBJECT(m_audioPipe), "max-size-buffers", 1, (const char*)NULL);
         g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0, (const char*)NULL);
     }
+
+    connect(m_installer, SIGNAL(failure(const QString&)), this, SLOT(pluginInstallFailure(const QString&)));
+    connect(m_installer, SIGNAL(started()), this, SLOT(pluginInstallStarted()));
+    connect(m_installer, SIGNAL(success()), this, SLOT(pluginInstallComplete()));
 }
 
 GstElement *Pipeline::audioPipe()
@@ -113,6 +122,9 @@ GstElement *Pipeline::videoGraph()
 
 void Pipeline::setSource(const Phonon::MediaSource &source)
 {
+    m_installer->reset();
+    m_resumeAfterInstall = false;
+
     qDebug() << source.mrl();
     QByteArray gstUri;
     switch(source.type()) {
@@ -142,6 +154,10 @@ void Pipeline::setSource(const Phonon::MediaSource &source)
             break;
     }
     g_object_set(m_pipeline, "uri", gstUri.constData(), NULL);
+
+    //TODO: Test this to make sure that resuming playback after plugin installation
+    //when using an abstract stream source doesn't explode.
+    m_lastSource = source;
 }
 
 void Pipeline::setStreamSource(const Phonon::MediaSource &source)
@@ -168,6 +184,9 @@ GstElement *Pipeline::element() const
 
 GstStateChangeReturn Pipeline::setState(GstState state)
 {
+    if (state == GST_STATE_PLAYING)
+        m_resumeAfterInstall = true;
+
     return gst_element_set_state(GST_ELEMENT(m_pipeline), state);
 }
 
@@ -287,6 +306,10 @@ void Pipeline::handleStateMessage(GstMessage *gstMessage)
         return;
     }
 
+    if (newState == GST_STATE_READY) {
+        m_installer->checkInstalledPlugins();
+    }
+
     emit stateChanged(oldState, newState);
 }
 
@@ -307,6 +330,66 @@ bool Pipeline::videoIsAvailable() const
     gint videoCount;
     g_object_get(m_pipeline, "n-video", &videoCount, NULL);
     return videoCount > 0;
+}
+
+bool Pipeline::audioIsAvailable() const
+{
+    gint audioCount;
+    g_object_get(m_pipeline, "n-audio", &audioCount, NULL);
+    return audioCount > 0;
+}
+
+gboolean Pipeline::cb_element(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    Q_UNUSED(bus)
+    MediaObject *that = static_cast<MediaObject*>(data);
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
+    QMetaObject::invokeMethod(that, "handleElementMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
+    return true;
+}
+
+void Pipeline::handleElementMessage(GstMessage *gstMessage)
+{
+    if (gst_is_missing_plugin_message(gstMessage)) {
+        m_installer->addPlugin(gstMessage);
+    }
+    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
+}
+
+//TODO: implement state changes
+void Pipeline::pluginInstallFailure(const QString &msg)
+{
+    bool canPlay = audioIsAvailable() || videoIsAvailable();
+    Phonon::ErrorType error = canPlay ? Phonon::NormalError : Phonon::FatalError;
+    //setError(msg, error);
+}
+
+void Pipeline::pluginInstallStarted()
+{
+    //setState(Phonon::LoadingState);
+}
+
+void Pipeline::pluginInstallComplete()
+{
+    if (m_resumeAfterInstall) {
+        setSource(m_lastSource);
+        setState(GST_STATE_PLAYING);
+    }
+}
+
+gboolean Pipeline::cb_error(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    Q_UNUSED(bus)
+    Pipeline *that = static_cast<Pipeline*>(data);
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
+    QMetaObject::invokeMethod(that, "handleErrorMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
+    return true;
+}
+
+void Pipeline::handleErrorMessage(GstMessage *gstMessage)
+{
+    m_installer->checkInstalledPlugins();
+    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
 }
 
 }

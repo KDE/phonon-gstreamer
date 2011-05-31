@@ -25,7 +25,6 @@
 #include "streamreader.h"
 #include "phonon-config-gstreamer.h"
 #include "gsthelper.h"
-#include "plugininstaller.h"
 #include "pipeline.h"
 
 #include <QtCore/QByteRef>
@@ -79,7 +78,6 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_currentTitle(1)
         , m_pendingTitle(1)
         , m_installingPlugin(true)
-        , m_installer(new PluginInstaller(this))
 {
     qRegisterMetaType<GstCaps*>("GstCaps*");
     qRegisterMetaType<State>("State");
@@ -107,10 +105,6 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         g_signal_connect(bus, "sync-message::element", G_CALLBACK(cb_element), this);
         g_signal_connect(bus, "sync-message::error", G_CALLBACK(cb_error), this);
         connect(m_tickTimer, SIGNAL(timeout()), SLOT(emitTick()));
-
-        connect(m_installer, SIGNAL(failure(const QString&)), this, SLOT(pluginInstallFailure(const QString&)));
-        connect(m_installer, SIGNAL(started()), this, SLOT(pluginInstallStarted()));
-        connect(m_installer, SIGNAL(success()), this, SLOT(pluginInstallComplete()));
     }
     connect(this, SIGNAL(stateChanged(Phonon::State, Phonon::State)),
             this, SLOT(notifyStateChange(Phonon::State, Phonon::State)));
@@ -591,7 +585,6 @@ void MediaObject::setSource(const MediaSource &source)
     m_source = source;
     emit currentSourceChanged(m_source);
     m_previousTickTime = -1;
-    m_installer->reset();
 
     // Go into to loading state
     changeState(Phonon::LoadingState);
@@ -954,7 +947,6 @@ void MediaObject::handleErrorMessage(GstMessage *gstMessage)
         }
     } else if ((err->domain == GST_CORE_ERROR && err->code == GST_CORE_ERROR_MISSING_PLUGIN)
             || (err->domain == GST_STREAM_ERROR && err->code == GST_STREAM_ERROR_CODEC_NOT_FOUND)) {
-        m_installer->checkInstalledPlugins();
     } else if (!(err->domain == GST_STREAM_ERROR && m_installingPlugin)) {
         setError(err->message, Phonon::FatalError);
     }
@@ -1363,33 +1355,6 @@ void MediaObject::setTrack(int title)
         emit titleChanged(title);
         emit totalTimeChanged(totalTime());
     }
-}
-
-void MediaObject::pluginInstallComplete()
-{
-    if (!m_installingPlugin)
-        return;
-
-    bool wasInstalling = m_installingPlugin;
-    m_installingPlugin = false;
-    if (wasInstalling) {
-        setSource(source());
-        play();
-    }
-}
-
-void MediaObject::pluginInstallStarted()
-{
-    setState(Phonon::LoadingState);
-    m_installingPlugin = true;
-}
-
-void MediaObject::pluginInstallFailure(const QString &msg)
-{
-    m_installingPlugin = false;
-    bool canPlay = (m_hasAudio || m_pipeline->videoIsAvailable());
-    Phonon::ErrorType error = canPlay ? Phonon::NormalError : Phonon::FatalError;
-    setError(msg, error);
 }
 
 void MediaObject::logWarning(const QString &msg)

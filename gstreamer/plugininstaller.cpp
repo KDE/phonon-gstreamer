@@ -154,9 +154,11 @@ void PluginInstaller::addPlugin(const QString &name, PluginType type)
     m_pluginList.insert(name, type);
 }
 
-void PluginInstaller::addPlugin(const GstCaps *caps, PluginType type)
+void PluginInstaller::addPlugin(GstMessage *gstMessage)
 {
-    m_capList.insert(gst_caps_copy(caps), type);
+    gchar *details = gst_missing_plugin_message_get_installer_detail(gstMessage);
+    m_descList << details;
+    g_free(details);
 }
 
 #ifdef PLUGIN_INSTALL_API
@@ -167,14 +169,14 @@ void PluginInstaller::run()
     if (activeWindow) {
         gst_install_plugins_context_set_xid(ctx, static_cast<int>(activeWindow->winId()));
     }
-    gchar *details[m_pluginList.size()+m_capList.size()+1];
+    gchar *details[m_pluginList.size()+m_descList.size()+1];
     int i = 0;
     foreach (QString plugin, m_pluginList.keys()) {
         details[i] = strdup(buildInstallationString(plugin.toLocal8Bit().data(), m_pluginList[plugin]).toLocal8Bit().data());
         i++;
     }
-    foreach (GstCaps *caps, m_capList.keys()) {
-        details[i] = strdup(buildInstallationString(caps, m_capList[caps]).toLocal8Bit().data());
+    foreach (QString desc, m_descList) {
+        details[i] = strdup(desc.toLocal8Bit().data());
         i++;
     }
     details[i] = 0;
@@ -253,7 +255,7 @@ PluginInstaller::InstallStatus PluginInstaller::checkInstalledPlugins()
             break;
         }
     }
-    if (!allFound || m_capList.size() > 0) {
+    if (!allFound || m_descList.size() > 0) {
 #ifdef PLUGIN_INSTALL_API
         run();
         return Installing;
@@ -276,10 +278,7 @@ QString PluginInstaller::getCapType(const GstCaps *caps)
 
 void PluginInstaller::reset()
 {
-    foreach (GstCaps *caps, m_capList.keys()) {
-        gst_caps_unref(caps);
-    }
-    m_capList.clear();
+    m_descList.clear();
     m_pluginList.clear();
 }
 

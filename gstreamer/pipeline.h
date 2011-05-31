@@ -30,6 +30,7 @@ namespace Gstreamer
 {
 
 class MediaObject;
+class PluginInstaller;
 
 class Pipeline : public QObject
 {
@@ -63,6 +64,14 @@ class Pipeline : public QObject
         static gboolean cb_state(GstBus *bus, GstMessage *msg, gpointer data);
         Q_INVOKABLE void handleStateMessage(GstMessage *msg);
 
+        static gboolean cb_element(GstBus *bus, GstMessage *msg, gpointer data);
+        Q_INVOKABLE void handleElementMessage(GstMessage *msg);
+
+        static gboolean cb_error(GstBus *bus, GstMessage *msg, gpointer data);
+        Q_INVOKABLE void handleErrorMessage(GstMessage *msg);
+
+        static void cb_endOfPads(GstElement *playbin, gpointer data);
+
         void setSource(const Phonon::MediaSource &source);
         void setStreamSource(const Phonon::MediaSource &source);
 
@@ -74,6 +83,7 @@ class Pipeline : public QObject
         GstElement *videoGraph();
 
         bool videoIsAvailable() const;
+        bool audioIsAvailable() const;
 
     signals:
         void eos();
@@ -86,10 +96,22 @@ class Pipeline : public QObject
     private:
         GstPipeline *m_pipeline;
         int m_bufferPercent;
+
+        // Keeps track of wether or not we jump to GST_STATE_PLAYING after plugin installtion is finished.
+        // Otherwise, it is possible to jump to another track, play a few seconds, pause, then finish installation
+        // and spontaniously start playback without user action.
+        bool m_resumeAfterInstall;
+        Phonon::MediaSource m_lastSource;
+        PluginInstaller *m_installer;
         GstElement *m_audioGraph;
         GstElement *m_videoGraph;
         GstElement *m_audioPipe;
         GstElement *m_videoPipe;
+
+    private Q_SLOTS:
+        void pluginInstallFailure(const QString &msg);
+        void pluginInstallComplete();
+        void pluginInstallStarted();
 
 };
 
