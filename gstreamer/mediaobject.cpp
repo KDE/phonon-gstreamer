@@ -64,10 +64,6 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_aboutToFinishEmitted(false)
         , m_loading(false)
         , m_capsHandler(0)
-        , m_datasource(0)
-        , m_decodebin(0)
-        , m_audioPipe(0)
-        , m_videoPipe(0)
         , m_totalTime(-1)
         , m_hasVideo(false)
         , m_videoStreamFound(false)
@@ -77,8 +73,6 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_atStartOfStream(false)
         , m_error(Phonon::NoError)
         , m_pipeline(0)
-        , m_audioGraph(0)
-        , m_videoGraph(0)
         , m_previousTickTime(-1)
         , m_resetNeeded(false)
         , m_autoplayTitles(true)
@@ -129,14 +123,6 @@ MediaObject::~MediaObject()
         GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_pipeline->element()));
         g_signal_handlers_disconnect_matched(bus, G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, this);
         delete m_pipeline;
-    }
-    if (m_audioGraph) {
-        gst_element_set_state(m_audioGraph, GST_STATE_NULL);
-        gst_object_unref(m_audioGraph);
-    }
-    if (m_videoGraph) {
-        gst_element_set_state(m_videoGraph, GST_STATE_NULL);
-        gst_object_unref(m_videoGraph);
     }
 }
 

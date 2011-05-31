@@ -262,12 +262,6 @@ private:
     bool m_loading;
     gulong m_capsHandler;
 
-    GstElement *m_datasource;
-    GstElement *m_decodebin;
-
-    GstElement *m_audioPipe;
-    GstElement *m_videoPipe;
-
     qint64 m_totalTime;
     bool m_hasVideo;
     bool m_videoStreamFound;
@@ -279,8 +273,6 @@ private:
     QString m_errorString;
 
     Pipeline *m_pipeline;
-    GstElement *m_audioGraph;
-    GstElement *m_videoGraph;
     int m_previousTickTime;
     bool m_resetNeeded;
     QMultiMap<QString, QString> m_metaData;
