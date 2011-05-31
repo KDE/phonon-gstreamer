@@ -101,10 +101,10 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         connect(m_pipeline, SIGNAL(warning(const QString &)), this, SLOT(logWarning(const QString &)));
         connect(m_pipeline, SIGNAL(durationChanged()), this, SLOT(updateTotalTime()));
         connect(m_pipeline, SIGNAL(buffering(int)), this, SLOT(handleBuffering(int)));
+        connect(m_pipeline, SIGNAL(stateChanged(GstState, GstState)), this, SLOT(handleStateChange(GstState, GstState)));
 
         GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_pipeline->element()));
         g_signal_connect(bus, "sync-message::tag", G_CALLBACK(cb_tag), this);
-        g_signal_connect(bus, "sync-message::state-changed", G_CALLBACK(cb_state), this);
         g_signal_connect(bus, "sync-message::element", G_CALLBACK(cb_element), this);
         g_signal_connect(bus, "sync-message::error", G_CALLBACK(cb_error), this);
         connect(m_tickTimer, SIGNAL(timeout()), SLOT(emitTick()));
@@ -964,34 +964,8 @@ void MediaObject::handleErrorMessage(GstMessage *gstMessage)
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
 }
 
-gboolean MediaObject::cb_state(GstBus *bus, GstMessage *msg, gpointer data)
+void MediaObject::handleStateChange(GstState oldState, GstState newState)
 {
-    Q_UNUSED(bus)
-    MediaObject *that = static_cast<MediaObject*>(data);
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
-    QMetaObject::invokeMethod(that, "handleStateMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
-    return true;
-}
-
-/**
- * Handle the GST_MESSAGE_STATE_CHANGED message
- */
-void MediaObject::handleStateMessage(GstMessage *gstMessage)
-{
-    GstState oldState;
-    GstState newState;
-    GstState pendingState;
-    gst_message_parse_state_changed (gstMessage, &oldState, &newState, &pendingState);
-
-    if (gstMessage->src != GST_OBJECT(m_pipeline->element())) {
-        m_backend->logMessage("State changed from "+GstHelper::stateName(oldState)+" to "+GstHelper::stateName(newState)+" for "+GstHelper::name(GST_OBJECT(gstMessage->src)), Backend::Debug, this);
-        gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
-        return;
-    }
-    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
-
-    if (newState == pendingState)
-        return;
 
     m_posAtSeek = -1;
 

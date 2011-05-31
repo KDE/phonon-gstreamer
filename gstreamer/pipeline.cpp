@@ -41,6 +41,7 @@ Pipeline::Pipeline(QObject *parent)
     g_signal_connect(bus, "sync-message::warning", G_CALLBACK(cb_warning), this);
     g_signal_connect(bus, "sync-message::duration", G_CALLBACK(cb_duration), this);
     g_signal_connect(bus, "sync-message::buffering", G_CALLBACK(cb_buffering), this);
+    g_signal_connect(bus, "sync-message::state-changed", G_CALLBACK(cb_state), this);
 
     // Set up audio graph
     m_audioGraph = gst_bin_new("audioGraph");
@@ -264,6 +265,29 @@ void Pipeline::handleBufferingMessage(GstMessage *gstMessage)
     }
 
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
+}
+
+gboolean Pipeline::cb_state(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    Q_UNUSED(bus)
+    Pipeline *that = static_cast<Pipeline*>(data);
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
+    QMetaObject::invokeMethod(that, "handleStateMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
+    return true;
+}
+
+void Pipeline::handleStateMessage(GstMessage *gstMessage)
+{
+    GstState oldState;
+    GstState newState;
+    GstState pendingState;
+    gst_message_parse_state_changed(gstMessage, &oldState, &newState, &pendingState);
+    if (gstMessage->src != GST_OBJECT(m_pipeline)) {
+        gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
+        return;
+    }
+
+    emit stateChanged(oldState, newState);
 }
 
 }

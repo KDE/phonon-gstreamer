@@ -145,12 +145,10 @@ public:
 
     // Bus sync-message signal handlers
     Q_INVOKABLE void handleTagMessage(GstMessage *msg);
-    Q_INVOKABLE void handleStateMessage(GstMessage *msg);
     Q_INVOKABLE void handleErrorMessage(GstMessage *msg);
     Q_INVOKABLE void handleElementMessage(GstMessage *msg);
 
     static gboolean cb_tag(GstBus *bus, GstMessage *msg, gpointer data);
-    static gboolean cb_state(GstBus *bus, GstMessage *msg, gpointer data);
     static gboolean cb_element(GstBus *bus, GstMessage *msg, gpointer data);
     static gboolean cb_error(GstBus *bus, GstMessage *msg, gpointer data);
 
@@ -224,6 +222,7 @@ private Q_SLOTS:
     void logWarning(const QString &);
     bool updateTotalTime();
     void handleBuffering(int);
+    void handleStateChange(GstState oldState, GstState newState);
 
 private:
     // GStreamer specific :

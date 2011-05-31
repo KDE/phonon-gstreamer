@@ -60,6 +60,9 @@ class Pipeline : public QObject
         static gboolean cb_buffering(GstBus *bus, GstMessage *msg, gpointer data);
         Q_INVOKABLE void handleBufferingMessage(GstMessage *msg);
 
+        static gboolean cb_state(GstBus *bus, GstMessage *msg, gpointer data);
+        Q_INVOKABLE void handleStateMessage(GstMessage *msg);
+
         void setSource(const Phonon::MediaSource &source);
         void setStreamSource(const Phonon::MediaSource &source);
 
@@ -73,6 +76,7 @@ class Pipeline : public QObject
         void warning(const QString &message);
         void durationChanged();
         void buffering(int);
+        void stateChanged(GstState oldState, GstState newState);
 
     private:
         GstPipeline *m_pipeline;
