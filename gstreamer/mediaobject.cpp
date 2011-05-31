@@ -66,7 +66,6 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_capsHandler(0)
         , m_totalTime(-1)
         , m_hasVideo(false)
-        , m_videoStreamFound(false)
         , m_hasAudio(false)
         , m_seekable(false)
         , m_atEndOfStream(false)
@@ -617,7 +616,6 @@ void MediaObject::setSource(const MediaSource &source)
     m_prefinishMarkReachedNotEmitted = true;
     m_aboutToFinishEmitted = false;
     m_hasAudio = false;
-    m_videoStreamFound = false;
     setTotalTime(-1);
     m_atEndOfStream = false;
 
@@ -656,7 +654,7 @@ void MediaObject::beginLoad()
 // Called when we are ready to leave the loading state
 void MediaObject::loadingComplete()
 {
-    if (m_videoStreamFound) {
+    if (m_pipeline->videoIsAvailable()) {
         MediaNodeEvent event(MediaNodeEvent::VideoAvailable);
         notify(&event);
     }
@@ -719,8 +717,8 @@ void MediaObject::getStreamInfo()
     updateTotalTime();
     updateNavigation();
 
-    if (m_videoStreamFound != m_hasVideo) {
-        m_hasVideo = m_videoStreamFound;
+    if (m_pipeline->videoIsAvailable() != m_hasVideo) {
+        m_hasVideo = m_pipeline->videoIsAvailable();
         emit hasVideoChanged(m_hasVideo);
     }
 
@@ -1389,7 +1387,7 @@ void MediaObject::pluginInstallStarted()
 void MediaObject::pluginInstallFailure(const QString &msg)
 {
     m_installingPlugin = false;
-    bool canPlay = (m_hasAudio || m_videoStreamFound);
+    bool canPlay = (m_hasAudio || m_pipeline->videoIsAvailable());
     Phonon::ErrorType error = canPlay ? Phonon::NormalError : Phonon::FatalError;
     setError(msg, error);
 }

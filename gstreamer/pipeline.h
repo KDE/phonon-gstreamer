@@ -66,10 +66,14 @@ class Pipeline : public QObject
         void setSource(const Phonon::MediaSource &source);
         void setStreamSource(const Phonon::MediaSource &source);
 
+        static void cb_videoChanged(GstElement *playbin, gpointer data);
+
         GstElement *audioPipe();
         GstElement *videoPipe();
         GstElement *audioGraph();
         GstElement *videoGraph();
+
+        bool videoIsAvailable() const;
 
     signals:
         void eos();
@@ -77,6 +81,7 @@ class Pipeline : public QObject
         void durationChanged();
         void buffering(int);
         void stateChanged(GstState oldState, GstState newState);
+        void videoAvailabilityChanged(bool);
 
     private:
         GstPipeline *m_pipeline;

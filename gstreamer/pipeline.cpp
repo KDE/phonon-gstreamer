@@ -33,7 +33,7 @@ Pipeline::Pipeline(QObject *parent)
     m_pipeline = GST_PIPELINE(gst_element_factory_make("playbin2", NULL));
     gst_object_ref(m_pipeline);
     gst_object_sink(m_pipeline);
-    g_object_set(G_OBJECT(m_pipeline), "flags",(1 << 0) | (1 << 1) | (1 << 4), NULL);
+    g_signal_connect(m_pipeline, "video-changed", G_CALLBACK(cb_videoChanged), this);
 
     GstBus *bus = gst_pipeline_get_bus(m_pipeline);
     gst_bus_set_sync_handler(bus, gst_bus_sync_signal_handler, NULL);
@@ -288,6 +288,25 @@ void Pipeline::handleStateMessage(GstMessage *gstMessage)
     }
 
     emit stateChanged(oldState, newState);
+}
+
+void Pipeline::cb_videoChanged(GstElement *playbin, gpointer data)
+{
+    gint videoCount;
+    bool videoAvailable;
+    Pipeline *that = static_cast<Pipeline*>(data);
+    g_object_get(playbin, "n-video", &videoCount, NULL);
+    // If there is at least one video stream, we've got video.
+    videoAvailable = videoCount > 0;
+
+    emit that->videoAvailabilityChanged(videoAvailable);
+}
+
+bool Pipeline::videoIsAvailable() const
+{
+    gint videoCount;
+    g_object_get(m_pipeline, "n-video", &videoCount, NULL);
+    return videoCount > 0;
 }
 
 }

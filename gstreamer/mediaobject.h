@@ -263,7 +263,6 @@ private:
 
     qint64 m_totalTime;
     bool m_hasVideo;
-    bool m_videoStreamFound;
     bool m_hasAudio;
     bool m_seekable;
     bool m_atEndOfStream;
