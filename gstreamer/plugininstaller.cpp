@@ -146,6 +146,7 @@ QString PluginInstaller::buildInstallationString(const gchar *name, PluginType t
 
 PluginInstaller::PluginInstaller(QObject *parent)
     : QObject(parent)
+    , m_state(Idle)
 {
 }
 
@@ -243,11 +244,14 @@ void PluginInstaller::pluginInstallationResult(GstInstallPluginsReturn result)
             }
             break;
     }
+    m_state = Idle;
 }
 #endif
 
 PluginInstaller::InstallStatus PluginInstaller::checkInstalledPlugins()
 {
+    if (m_state != Idle)
+        return m_state;
     bool allFound = true;
     foreach (QString plugin, m_pluginList.keys()) {
         if (!gst_default_registry_check_feature_version(plugin.toLocal8Bit().data(), 0, 10, 0)) {
@@ -258,6 +262,7 @@ PluginInstaller::InstallStatus PluginInstaller::checkInstalledPlugins()
     if (!allFound || m_descList.size() > 0) {
 #ifdef PLUGIN_INSTALL_API
         run();
+        m_state = Installing;
         return Installing;
 #else
         return Missing;

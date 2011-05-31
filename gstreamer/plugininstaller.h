@@ -91,6 +91,7 @@ class PluginInstaller : public QObject {
     private:
         QHash<QString, PluginType> m_pluginList;
         QList<QString> m_descList;
+        InstallStatus m_state;
         static bool init();
         static bool s_ready;
 };

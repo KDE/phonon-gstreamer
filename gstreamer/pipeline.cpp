@@ -184,8 +184,7 @@ GstElement *Pipeline::element() const
 
 GstStateChangeReturn Pipeline::setState(GstState state)
 {
-    if (state == GST_STATE_PLAYING)
-        m_resumeAfterInstall = true;
+    m_resumeAfterInstall = true;
 
     return gst_element_set_state(GST_ELEMENT(m_pipeline), state);
 }
@@ -361,7 +360,7 @@ void Pipeline::pluginInstallFailure(const QString &msg)
 {
     bool canPlay = audioIsAvailable() || videoIsAvailable();
     Phonon::ErrorType error = canPlay ? Phonon::NormalError : Phonon::FatalError;
-    //setError(msg, error);
+    emit errorMessage(msg, error);
 }
 
 void Pipeline::pluginInstallStarted()
@@ -371,6 +370,7 @@ void Pipeline::pluginInstallStarted()
 
 void Pipeline::pluginInstallComplete()
 {
+    qDebug() << "Install complete." << m_resumeAfterInstall;
     if (m_resumeAfterInstall) {
         setSource(m_lastSource);
         setState(GST_STATE_PLAYING);
@@ -388,7 +388,20 @@ gboolean Pipeline::cb_error(GstBus *bus, GstMessage *msg, gpointer data)
 
 void Pipeline::handleErrorMessage(GstMessage *gstMessage)
 {
-    m_installer->checkInstalledPlugins();
+    PluginInstaller::InstallStatus status = m_installer->checkInstalledPlugins();
+    qDebug() << status;
+
+    if (status == PluginInstaller::Missing) {
+        Phonon::ErrorType type = (audioIsAvailable() || videoIsAvailable()) ? Phonon::NormalError : Phonon::FatalError;
+        emit errorMessage(tr("One or more plugins are missing in your GStreamer installation."), type);
+    } else if (status == PluginInstaller::Installed) {
+        gchar *debug;
+        GError *err;
+        gst_message_parse_error (gstMessage, &err, &debug);
+        //TODO: Log the error
+        emit errorMessage(err->message, Phonon::FatalError);
+        g_error_free(err);
+    }
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
 }
 

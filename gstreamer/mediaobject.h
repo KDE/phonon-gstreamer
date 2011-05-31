@@ -143,12 +143,10 @@ public:
 
     // Bus sync-message signal handlers
     Q_INVOKABLE void handleTagMessage(GstMessage *msg);
-    Q_INVOKABLE void handleErrorMessage(GstMessage *msg);
     Q_INVOKABLE void handleElementMessage(GstMessage *msg);
 
     static gboolean cb_tag(GstBus *bus, GstMessage *msg, gpointer data);
     static gboolean cb_element(GstBus *bus, GstMessage *msg, gpointer data);
-    static gboolean cb_error(GstBus *bus, GstMessage *msg, gpointer data);
 
     void invalidateGraph();
 
@@ -194,7 +192,7 @@ protected:
     void beginLoad();
     void loadingComplete();
     void changeState(State);
-    void setError(const QString &errorString, Phonon::ErrorType error = NormalError);
+    Q_INVOKABLE void setError(const QString &errorString, Phonon::ErrorType error = NormalError);
 
     GstElement *audioElement()
     {
@@ -273,7 +271,6 @@ private:
     int m_availableTitles;
     int m_currentTitle;
     int m_pendingTitle;
-    bool m_installingPlugin;
     QList<MediaController::NavigationMenu> m_menus;
 };
 }

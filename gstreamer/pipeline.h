@@ -92,6 +92,7 @@ class Pipeline : public QObject
         void buffering(int);
         void stateChanged(GstState oldState, GstState newState);
         void videoAvailabilityChanged(bool);
+        void errorMessage(const QString &message, Phonon::ErrorType type);
 
     private:
         GstPipeline *m_pipeline;

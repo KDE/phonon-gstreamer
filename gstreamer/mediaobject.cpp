@@ -77,7 +77,6 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_availableTitles(0)
         , m_currentTitle(1)
         , m_pendingTitle(1)
-        , m_installingPlugin(true)
 {
     qRegisterMetaType<GstCaps*>("GstCaps*");
     qRegisterMetaType<State>("State");
@@ -99,11 +98,11 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         connect(m_pipeline, SIGNAL(durationChanged()), this, SLOT(updateTotalTime()));
         connect(m_pipeline, SIGNAL(buffering(int)), this, SLOT(handleBuffering(int)));
         connect(m_pipeline, SIGNAL(stateChanged(GstState, GstState)), this, SLOT(handleStateChange(GstState, GstState)));
+        connect(m_pipeline, SIGNAL(errorMessage(const QString &, Phonon::ErrorType)), this, SLOT(setError(const QString &, Phonon::ErrorType)));
 
         GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_pipeline->element()));
         g_signal_connect(bus, "sync-message::tag", G_CALLBACK(cb_tag), this);
         g_signal_connect(bus, "sync-message::element", G_CALLBACK(cb_element), this);
-        g_signal_connect(bus, "sync-message::error", G_CALLBACK(cb_error), this);
         connect(m_tickTimer, SIGNAL(timeout()), SLOT(emitTick()));
     }
     connect(this, SIGNAL(stateChanged(Phonon::State, Phonon::State)),
@@ -574,8 +573,6 @@ void MediaObject::setSource(const MediaSource &source)
     if (!isValid())
         return;
 
-    m_installingPlugin = false;
-
     // We have to reset the state completely here, otherwise
     // remnants of the old pipeline can result in strangenes
     // such as failing duration queries etc
@@ -906,52 +903,6 @@ void MediaObject::beginPlay()
     setSource(m_nextSource);
     m_nextSource = MediaSource();
     m_pendingState = Phonon::PlayingState;
-}
-
-gboolean MediaObject::cb_error(GstBus *bus, GstMessage *msg, gpointer data)
-{
-    Q_UNUSED(bus)
-    MediaObject *that = static_cast<MediaObject*>(data);
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
-    QMetaObject::invokeMethod(that, "handleErrorMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
-    return true;
-}
-
-/**
- * Handle the GST_MESSAGE_ERROR message
- */
-void MediaObject::handleErrorMessage(GstMessage *gstMessage)
-{
-    gchar *debug;
-    GError *err;
-    QString logMessage;
-    gst_message_parse_error (gstMessage, &err, &debug);
-    gchar *errorMessage = gst_error_get_message (err->domain, err->code);
-    logMessage.sprintf("Error: %s Message: %s (%s) Code:%d", debug, err->message, errorMessage, err->code);
-    m_backend->logMessage(logMessage, Backend::Warning);
-    g_free(errorMessage);
-    g_free (debug);
-
-    if (err->domain == GST_RESOURCE_ERROR && err->code == GST_RESOURCE_ERROR_BUSY) {
-       // We need to check if this comes from an audio device by looking at sink caps
-       GstPad* sinkPad = gst_element_get_static_pad(GST_ELEMENT(gstMessage->src), "sink");
-       if (sinkPad) {
-            GstCaps *caps = gst_pad_get_caps (sinkPad);
-            GstStructure *str = gst_caps_get_structure (caps, 0);
-            if (g_strrstr (gst_structure_get_name (str), "audio"))
-                setError(tr("Could not open audio device. The device is already in use."), Phonon::NormalError);
-            else
-                setError(err->message, Phonon::FatalError);
-            gst_caps_unref (caps);
-            gst_object_unref (sinkPad);
-        }
-    } else if ((err->domain == GST_CORE_ERROR && err->code == GST_CORE_ERROR_MISSING_PLUGIN)
-            || (err->domain == GST_STREAM_ERROR && err->code == GST_STREAM_ERROR_CODEC_NOT_FOUND)) {
-    } else if (!(err->domain == GST_STREAM_ERROR && m_installingPlugin)) {
-        setError(err->message, Phonon::FatalError);
-    }
-    g_error_free (err);
-    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
 }
 
 void MediaObject::handleStateChange(GstState oldState, GstState newState)
