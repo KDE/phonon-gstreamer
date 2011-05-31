@@ -33,6 +33,7 @@ Pipeline::Pipeline(QObject *parent)
     m_pipeline = GST_PIPELINE(gst_element_factory_make("playbin2", NULL));
     gst_object_ref(m_pipeline);
     gst_object_sink(m_pipeline);
+    g_object_set(G_OBJECT(m_pipeline), "flags",(1 << 0) | (1 << 1) | (1 << 4), NULL);
 
     GstBus *bus = gst_pipeline_get_bus(m_pipeline);
     gst_bus_set_sync_handler(bus, gst_bus_sync_signal_handler, NULL);
@@ -72,8 +73,12 @@ Pipeline::Pipeline(QObject *parent)
     gst_object_ref (GST_OBJECT (m_videoGraph));
     gst_object_sink (GST_OBJECT (m_videoGraph));
 
-    m_videoPipe = gst_bin_new("videoPipe");
+    m_videoPipe = gst_element_factory_make("queue", "videoPipe");
     gst_bin_add(GST_BIN(m_videoGraph), m_videoPipe);
+    GstPad *videopad = gst_element_get_pad(m_videoPipe, "sink");
+    gst_element_add_pad(m_videoGraph, gst_ghost_pad_new("sink", videopad));
+    gst_object_unref(audiopad);
+
     g_object_set(m_pipeline, "video-sink", m_videoGraph, NULL);
 
     //FIXME: Put this stuff somewhere else, or at least document why its needed.
