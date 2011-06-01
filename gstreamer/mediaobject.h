@@ -141,11 +141,6 @@ public:
         return m_capsHandler;
     };
 
-    // Bus sync-message signal handlers
-    Q_INVOKABLE void handleElementMessage(GstMessage *msg);
-
-    static gboolean cb_element(GstBus *bus, GstMessage *msg, gpointer data);
-
     void invalidateGraph();
 
     static void cb_pad_added (GstElement *decodebin, GstPad *pad, gpointer data);
@@ -215,6 +210,8 @@ private Q_SLOTS:
     void handleBuffering(int);
     void handleStateChange(GstState oldState, GstState newState);
 
+    void handleMouseOverChange(bool active);
+
 private:
     // GStreamer specific :
     void setTotalTime(qint64 newTime);
@@ -264,12 +261,10 @@ private:
     Pipeline *m_pipeline;
     int m_previousTickTime;
     bool m_resetNeeded;
-    QMultiMap<QString, QString> m_metaData;
     bool m_autoplayTitles;
     int m_availableTitles;
     int m_currentTitle;
     int m_pendingTitle;
-    QList<MediaController::NavigationMenu> m_menus;
 };
 }
 } //namespace Phonon::Gstreamer

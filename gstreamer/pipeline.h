@@ -21,6 +21,7 @@
 #include "plugininstaller.h"
 #include <gst/gst.h>
 #include <phonon/MediaSource>
+#include <phonon/MediaController>
 
 QT_BEGIN_NAMESPACE
 
@@ -94,6 +95,9 @@ class Pipeline : public QObject
         //FIXME: We should be able to specify merging of metadata a la gstreamer's API design
         void setMetaData(const QMultiMap<QString, QString> &newData);
 
+        QList<MediaController::NavigationMenu> availableMenus() const;
+        void updateNavigation();
+
     signals:
         void eos();
         void warning(const QString &message);
@@ -103,6 +107,8 @@ class Pipeline : public QObject
         void videoAvailabilityChanged(bool);
         void errorMessage(const QString &message, Phonon::ErrorType type);
         void metaDataChanged(QMultiMap<QString, QString>);
+        void mouseOverActive(bool isActive);
+        void availableMenusChanged(QList<MediaController::NavigationMenu>);
 
     private:
         GstPipeline *m_pipeline;
@@ -114,6 +120,7 @@ class Pipeline : public QObject
         bool m_resumeAfterInstall;
         bool m_isStream;
         QMultiMap<QString, QString> m_metaData;
+        QList<MediaController::NavigationMenu> m_menus;
         Phonon::MediaSource m_lastSource;
         PluginInstaller *m_installer;
         GstElement *m_audioGraph;

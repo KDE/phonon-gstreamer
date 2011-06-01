@@ -100,9 +100,8 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         connect(m_pipeline, SIGNAL(stateChanged(GstState, GstState)), this, SLOT(handleStateChange(GstState, GstState)));
         connect(m_pipeline, SIGNAL(errorMessage(const QString &, Phonon::ErrorType)), this, SLOT(setError(const QString &, Phonon::ErrorType)));
         connect(m_pipeline, SIGNAL(metaDataChanged(QMultiMap<QString, QString>)), this, SIGNAL(metaDataChanged(QMultiMap<QString, QString>)));
+        connect(m_pipeline, SIGNAL(availableMenusChanged(QList<MediaController::NavigationMenu>)), this, SIGNAL(availableMenusChanged(QList<MediaController::NavigationMenu>)));
 
-        GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_pipeline->element()));
-        g_signal_connect(bus, "sync-message::element", G_CALLBACK(cb_element), this);
         connect(m_tickTimer, SIGNAL(timeout()), SLOT(emitTick()));
     }
     connect(this, SIGNAL(stateChanged(Phonon::State, Phonon::State)),
@@ -656,48 +655,7 @@ void MediaObject::loadingComplete()
 
 void MediaObject::updateNavigation()
 {
-    QList<MediaController::NavigationMenu> ret;
-#if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
-    GstElement *target = gst_bin_get_by_interface(GST_BIN(m_pipeline->element()), GST_TYPE_NAVIGATION);
-    if (target) {
-        GstQuery *query = gst_navigation_query_new_commands();
-        gboolean res = gst_element_query(target, query);
-        guint count;
-        if (res && gst_navigation_query_parse_commands_length(query, &count)) {
-            for(guint i = 0; i < count; ++i) {
-                GstNavigationCommand cmd;
-                if (!gst_navigation_query_parse_commands_nth(query, i, &cmd))
-                    break;
-                switch (cmd) {
-                case GST_NAVIGATION_COMMAND_DVD_ROOT_MENU:
-                    ret << MediaController::RootMenu;
-                    break;
-                case GST_NAVIGATION_COMMAND_DVD_TITLE_MENU:
-                    ret << MediaController::TitleMenu;
-                    break;
-                case GST_NAVIGATION_COMMAND_DVD_AUDIO_MENU:
-                    ret << MediaController::AudioMenu;
-                    break;
-                case GST_NAVIGATION_COMMAND_DVD_SUBPICTURE_MENU:
-                    ret << MediaController::SubtitleMenu;
-                    break;
-                case GST_NAVIGATION_COMMAND_DVD_CHAPTER_MENU:
-                    ret << MediaController::ChapterMenu;
-                    break;
-                case GST_NAVIGATION_COMMAND_DVD_ANGLE_MENU:
-                    ret << MediaController::AngleMenu;
-                    break;
-                default:
-                    break;
-                }
-            }
-        }
-    }
-#endif
-    if (ret != m_menus) {
-        m_menus = ret;
-        emit availableMenusChanged(m_menus);
-    }
+    m_pipeline->updateNavigation();
 }
 
 void MediaObject::getStreamInfo()
@@ -901,47 +859,6 @@ void MediaObject::handleStateChange(GstState oldState, GstState newState)
     }
 }
 
-gboolean MediaObject::cb_element(GstBus *bus, GstMessage *msg, gpointer data)
-{
-    Q_UNUSED(bus)
-    MediaObject *that = static_cast<MediaObject*>(data);
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
-    QMetaObject::invokeMethod(that, "handleElementMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
-    return true;
-}
-
-/**
- * Handle element messages
- */
-void MediaObject::handleElementMessage(GstMessage *gstMessage)
-{
-    const GstStructure *gstStruct = gst_message_get_structure(gstMessage); //do not free this
-    if (g_strrstr (gst_structure_get_name (gstStruct), "prepare-xwindow-id")) {
-        MediaNodeEvent videoHandleEvent(MediaNodeEvent::VideoHandleRequest);
-        notify(&videoHandleEvent);
-    } else {
-#if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
-        switch (gst_navigation_message_get_type(gstMessage)) {
-        case GST_NAVIGATION_MESSAGE_MOUSE_OVER: {
-            gboolean active;
-            if (!gst_navigation_message_parse_mouse_over(gstMessage, &active)) {
-                break;
-            }
-            MediaNodeEvent mouseOverEvent(MediaNodeEvent::VideoMouseOver, &active);
-            notify(&mouseOverEvent);
-            break;
-        }
-        case GST_NAVIGATION_MESSAGE_COMMANDS_CHANGED:
-            updateNavigation();
-            break;
-        default:
-            break;
-        }
-#endif // GST_VERSION
-    }
-    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
-}
-
 void MediaObject::handleEndOfStream()
 {
     m_backend->logMessage("EOS received", Backend::Info, this);
@@ -1048,7 +965,7 @@ QVariant MediaObject::interfaceCall(Interface iface, int command, const QList<QV
 
 QList<MediaController::NavigationMenu> MediaObject::_iface_availableMenus() const
 {
-    return m_menus;
+    return m_pipeline->availableMenus();
 }
 
 void MediaObject::_iface_jumpToMenu(MediaController::NavigationMenu menu)
@@ -1148,6 +1065,12 @@ QMultiMap<QString, QString> MediaObject::metaData()
 void MediaObject::setMetaData(QMultiMap<QString, QString> newData)
 {
     m_pipeline->setMetaData(newData);
+}
+
+void MediaObject::handleMouseOverChange(bool active)
+{
+    MediaNodeEvent mouseOverEvent(MediaNodeEvent::VideoMouseOver, &active);
+    notify(&mouseOverEvent);
 }
 
 } // ns Gstreamer

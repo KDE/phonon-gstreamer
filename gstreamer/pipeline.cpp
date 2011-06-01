@@ -20,6 +20,7 @@
 #include "backend.h"
 #include "plugininstaller.h"
 #include <gst/pbutils/missing-plugins.h>
+#include <gst/interfaces/navigation.h>
 #define MAX_QUEUE_TIME 20 * GST_SECOND
 
 QT_BEGIN_NAMESPACE
@@ -344,7 +345,7 @@ bool Pipeline::audioIsAvailable() const
 gboolean Pipeline::cb_element(GstBus *bus, GstMessage *msg, gpointer data)
 {
     Q_UNUSED(bus)
-    MediaObject *that = static_cast<MediaObject*>(data);
+    Pipeline *that = static_cast<Pipeline*>(data);
     gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
     QMetaObject::invokeMethod(that, "handleElementMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
     return true;
@@ -354,6 +355,24 @@ void Pipeline::handleElementMessage(GstMessage *gstMessage)
 {
     if (gst_is_missing_plugin_message(gstMessage)) {
         m_installer->addPlugin(gstMessage);
+    } else {
+#if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
+        switch (gst_navigation_message_get_type(gstMessage)) {
+        case GST_NAVIGATION_MESSAGE_MOUSE_OVER: {
+            gboolean active;
+            if (!gst_navigation_message_parse_mouse_over(gstMessage, &active)) {
+                break;
+            }
+            emit mouseOverActive(active);
+            break;
+        }
+        case GST_NAVIGATION_MESSAGE_COMMANDS_CHANGED:
+            updateNavigation();
+            break;
+        default:
+            break;
+        }
+#endif // GST_VERSION
     }
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
 }
@@ -597,6 +616,57 @@ QMultiMap<QString, QString> Pipeline::metaData() const
 void Pipeline::setMetaData(const QMultiMap<QString, QString> &newData)
 {
     m_metaData = newData;
+}
+
+void Pipeline::updateNavigation()
+{
+    QList<MediaController::NavigationMenu> ret;
+#if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
+    GstElement *target = gst_bin_get_by_interface(GST_BIN(m_pipeline), GST_TYPE_NAVIGATION);
+    if (target) {
+        GstQuery *query = gst_navigation_query_new_commands();
+        gboolean res = gst_element_query(target, query);
+        guint count;
+        if (res && gst_navigation_query_parse_commands_length(query, &count)) {
+            for(guint i = 0; i < count; ++i) {
+                GstNavigationCommand cmd;
+                if (!gst_navigation_query_parse_commands_nth(query, i, &cmd))
+                    break;
+                switch (cmd) {
+                case GST_NAVIGATION_COMMAND_DVD_ROOT_MENU:
+                    ret << MediaController::RootMenu;
+                    break;
+                case GST_NAVIGATION_COMMAND_DVD_TITLE_MENU:
+                    ret << MediaController::TitleMenu;
+                    break;
+                case GST_NAVIGATION_COMMAND_DVD_AUDIO_MENU:
+                    ret << MediaController::AudioMenu;
+                    break;
+                case GST_NAVIGATION_COMMAND_DVD_SUBPICTURE_MENU:
+                    ret << MediaController::SubtitleMenu;
+                    break;
+                case GST_NAVIGATION_COMMAND_DVD_CHAPTER_MENU:
+                    ret << MediaController::ChapterMenu;
+                    break;
+                case GST_NAVIGATION_COMMAND_DVD_ANGLE_MENU:
+                    ret << MediaController::AngleMenu;
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+    }
+#endif
+    if (ret != m_menus) {
+        m_menus = ret;
+        emit availableMenusChanged(m_menus);
+    }
+}
+
+QList<MediaController::NavigationMenu> Pipeline::availableMenus() const
+{
+    return m_menus;
 }
 
 }
