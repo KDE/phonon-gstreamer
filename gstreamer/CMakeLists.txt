@@ -72,16 +72,7 @@ if (BUILD_PHONON_GSTREAMER)
           ${phonon_gstreamer_SRCS}
           x11renderer.cpp)
       macro_optional_find_package(Alsa)
-      macro_ensure_version("0.10.22" ${GSTREAMER_VERSION} GSTREAMER_HAS_NONBLOCKING_ALSASINK)
    endif(NOT WIN32)
-   if(ALSA_FOUND AND NOT GSTREAMER_HAS_NONBLOCKING_ALSASINK)
-      add_definitions(-DUSE_ALSASINK2)
-      include_directories(${ALSA_INCLUDES})
-      set(phonon_gstreamer_SRCS
-         ${phonon_gstreamer_SRCS}
-         alsasink2.c
-         )
-   endif(ALSA_FOUND AND NOT GSTREAMER_HAS_NONBLOCKING_ALSASINK)
 
    automoc4_add_library(phonon_gstreamer MODULE ${phonon_gstreamer_SRCS})
    set_target_properties(phonon_gstreamer PROPERTIES PREFIX "")

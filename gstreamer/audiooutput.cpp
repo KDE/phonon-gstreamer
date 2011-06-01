@@ -203,7 +203,7 @@ bool AudioOutput::setOutputDevice(const AudioOutputDevice &newDevice)
     const QByteArray oldDeviceValue = GstHelper::property(m_audioSink, "device");
 
     const QByteArray sinkName = GstHelper::property(m_audioSink, "name");
-    if (sinkName == "alsasink" || sinkName == "alsasink2") {
+    if (sinkName == "alsasink") {
         if (driver.toByteArray() != "alsa") {
             return false;
         }
