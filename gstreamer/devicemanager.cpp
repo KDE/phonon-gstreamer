@@ -27,10 +27,6 @@
 #include "x11renderer.h"
 #include <phonon/pulsesupport.h>
 
-#ifdef USE_ALSASINK2
-#include "alsasink2.h"
-#endif
-
 #include <QtCore/QSettings>
 
 /*
@@ -223,18 +219,6 @@ GstElement *DeviceManager::createAudioSink(Category category)
                     sink = 0;
                 }
             }
-
-#ifdef USE_ALSASINK2
-            if (!sink) {
-                sink = gst_element_factory_make ("_k_alsasink", NULL);
-                if (canOpenDevice(sink))
-                    m_backend->logMessage("AudioOutput using alsa2 audio sink");
-                else if (sink) {
-                    gst_object_unref(sink);
-                    sink = 0;
-                }
-            }
-#endif
 
             if (!sink) {
                 sink = gst_element_factory_make ("alsasink", NULL);
