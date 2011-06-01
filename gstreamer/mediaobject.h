@@ -142,10 +142,8 @@ public:
     };
 
     // Bus sync-message signal handlers
-    Q_INVOKABLE void handleTagMessage(GstMessage *msg);
     Q_INVOKABLE void handleElementMessage(GstMessage *msg);
 
-    static gboolean cb_tag(GstBus *bus, GstMessage *msg, gpointer data);
     static gboolean cb_element(GstBus *bus, GstMessage *msg, gpointer data);
 
     void invalidateGraph();
@@ -153,6 +151,9 @@ public:
     static void cb_pad_added (GstElement *decodebin, GstPad *pad, gpointer data);
     void saveState();
     void resumeState();
+
+    QMultiMap<QString, QString> metaData();
+    void setMetaData(QMultiMap<QString, QString> newData);
 
 public Q_SLOTS:
     void setState(State);
@@ -170,9 +171,6 @@ Q_SIGNALS:
     void aboutToFinish();
     void totalTimeChanged(qint64 length);
     void bufferStatus(int percentFilled);
-
-    QMultiMap<QString, QString> metaData();
-    void setMetaData(QMultiMap<QString, QString> newData);
 
     // AddonInterface:
     void titleChanged(int);

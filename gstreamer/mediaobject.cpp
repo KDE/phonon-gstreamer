@@ -99,9 +99,9 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         connect(m_pipeline, SIGNAL(buffering(int)), this, SLOT(handleBuffering(int)));
         connect(m_pipeline, SIGNAL(stateChanged(GstState, GstState)), this, SLOT(handleStateChange(GstState, GstState)));
         connect(m_pipeline, SIGNAL(errorMessage(const QString &, Phonon::ErrorType)), this, SLOT(setError(const QString &, Phonon::ErrorType)));
+        connect(m_pipeline, SIGNAL(metaDataChanged(QMultiMap<QString, QString>)), this, SIGNAL(metaDataChanged(QMultiMap<QString, QString>)));
 
         GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_pipeline->element()));
-        g_signal_connect(bus, "sync-message::tag", G_CALLBACK(cb_tag), this);
         g_signal_connect(bus, "sync-message::element", G_CALLBACK(cb_element), this);
         connect(m_tickTimer, SIGNAL(timeout()), SLOT(emitTick()));
     }
@@ -614,7 +614,6 @@ void MediaObject::setSource(const MediaSource &source)
     m_currentTitle = 1;
 
     // Clear existing meta tags
-    m_metaData.clear();
     m_isStream = false;
 
     m_pipeline->setSource(source);
@@ -652,7 +651,7 @@ void MediaObject::loadingComplete()
     m_loading = false;
 
     setState(m_pendingState);
-    emit metaDataChanged(m_metaData);
+    emit metaDataChanged(metaData());
 }
 
 void MediaObject::updateNavigation()
@@ -832,69 +831,6 @@ void MediaObject::emitTick()
     }
 }
 
-/*
- * Used to iterate through the gst_tag_list and extract values
- */
-void foreach_tag_function(const GstTagList *list, const gchar *tag, gpointer user_data)
-{
-    TagMap *newData = static_cast<TagMap *>(user_data);
-    QString value;
-    GType type = gst_tag_get_type(tag);
-    switch (type) {
-    case G_TYPE_STRING: {
-            char *str = 0;
-            gst_tag_list_get_string(list, tag, &str);
-            value = QString::fromUtf8(str);
-            g_free(str);
-        }
-        break;
-
-    case G_TYPE_BOOLEAN: {
-            int bval;
-            gst_tag_list_get_boolean(list, tag, &bval);
-            value = QString::number(bval);
-        }
-        break;
-
-    case G_TYPE_INT: {
-            int ival;
-            gst_tag_list_get_int(list, tag, &ival);
-            value = QString::number(ival);
-        }
-        break;
-
-    case G_TYPE_UINT: {
-            unsigned int uival;
-            gst_tag_list_get_uint(list, tag, &uival);
-            value = QString::number(uival);
-        }
-        break;
-
-    case G_TYPE_FLOAT: {
-            float fval;
-            gst_tag_list_get_float(list, tag, &fval);
-            value = QString::number(fval);
-        }
-        break;
-
-    case G_TYPE_DOUBLE: {
-            double dval;
-            gst_tag_list_get_double(list, tag, &dval);
-            value = QString::number(dval);
-        }
-        break;
-
-    default:
-        //qDebug("Unsupported tag type: %s", g_type_name(type));
-        break;
-    }
-
-    QString key = QString(tag).toUpper();
-    QString currVal = newData->value(key);
-    if (!value.isEmpty() && !(newData->contains(key) && currVal == value))
-        newData->insert(key, value);
-}
-
 /**
  * Triggers playback after a song has completed in the current media queue
  */
@@ -963,124 +899,6 @@ void MediaObject::handleStateChange(GstState oldState, GstState newState)
         m_tickTimer->stop();
         break;
     }
-}
-
-gboolean MediaObject::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
-{
-    Q_UNUSED(bus)
-    MediaObject *that = static_cast<MediaObject*>(data);
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
-    QMetaObject::invokeMethod(that, "handleTagMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
-    return true;
-}
-
-/**
- * Handle the GST_MESSAGE_TAG message type
- */
-void MediaObject::handleTagMessage(GstMessage *msg)
-{
-    GstTagList* tag_list = 0;
-    gst_message_parse_tag(msg, &tag_list);
-    if (tag_list) {
-        TagMap newTags;
-        gst_tag_list_foreach (tag_list, &foreach_tag_function, &newTags);
-        gst_tag_list_free(tag_list);
-
-        // Determine if we should no fake the album/artist tags.
-        // This is a little confusing as we want to fake it on initial
-        // connection where title, album and artist are all missing.
-        // There are however times when we get just other information,
-        // e.g. codec, and so we want to only do clever stuff if we
-        // have a commonly available tag (ORGANIZATION) or we have a
-        // change in title
-        bool fake_it =
-           (m_isStream
-            && ((!newTags.contains("TITLE")
-                 && newTags.contains("ORGANIZATION"))
-                || (newTags.contains("TITLE")
-                    && m_metaData.value("TITLE") != newTags.value("TITLE")))
-            && !newTags.contains("ALBUM")
-            && !newTags.contains("ARTIST"));
-
-        TagMap oldMap = m_metaData; // Keep a copy of the old one for reference
-
-        // Now we've checked the new data, append any new meta tags to the existing tag list
-        // We cannot use TagMap::iterator as this is a multimap and when streaming data
-        // could in theory be lost.
-        QList<QString> keys = newTags.keys();
-        for (QList<QString>::iterator i = keys.begin(); i != keys.end(); ++i) {
-            QString key = *i;
-            if (m_isStream) {
-                // If we're streaming, we need to remove data in m_metaData
-                // in order to stop it filling up indefinitely (as it's a multimap)
-                m_metaData.remove(key);
-            }
-            QList<QString> values = newTags.values(key);
-            for (QList<QString>::iterator j = values.begin(); j != values.end(); ++j) {
-                QString value = *j;
-                QString currVal = m_metaData.value(key);
-                if (!m_metaData.contains(key) || currVal != value) {
-                    m_metaData.insert(key, value);
-                }
-            }
-        }
-
-        // For radio streams, if we get a metadata update where the title changes, we assume everything else is invalid.
-        // If we don't already have a title, we don't do anything since we're actually just appending new data into that.
-        if (m_isStream && oldMap.contains("TITLE") && m_metaData.value("TITLE") != oldMap.value("TITLE")) {
-            m_metaData.clear();
-        }
-
-        m_backend->logMessage("Meta tags found", Backend::Info, this);
-        if (oldMap != m_metaData) {
-            // This is a bit of a hack to ensure that stream metadata is
-            // returned. We get as much as we can from the Shoutcast server's
-            // StreamTitle= header. If further info is decoded from the stream
-            // itself later, then it will overwrite this info.
-            if (m_isStream && fake_it) {
-                m_metaData.remove("ALBUM");
-                m_metaData.remove("ARTIST");
-
-                // Detect whether we want to "fill in the blanks"
-                QString str;
-                if (m_metaData.contains("TITLE"))
-                {
-                    str = m_metaData.value("TITLE");
-                    int splitpoint;
-                    // Check to see if our title matches "%s - %s"
-                    // Where neither %s are empty...
-                    if ((splitpoint = str.indexOf(" - ")) > 0
-                        && str.size() > (splitpoint+3)) {
-                        m_metaData.insert("ARTIST", str.left(splitpoint));
-                        m_metaData.replace("TITLE", str.mid(splitpoint+3));
-                    }
-                } else {
-                    str = m_metaData.value("GENRE");
-                    if (!str.isEmpty())
-                        m_metaData.insert("TITLE", str);
-                    else
-                        m_metaData.insert("TITLE", "Streaming Data");
-                }
-                if (!m_metaData.contains("ARTIST")) {
-                    str = m_metaData.value("LOCATION");
-                    if (!str.isEmpty())
-                        m_metaData.insert("ARTIST", str);
-                    else
-                        m_metaData.insert("ARTIST", "Streaming Data");
-                }
-                str = m_metaData.value("ORGANIZATION");
-                if (!str.isEmpty())
-                    m_metaData.insert("ALBUM", str);
-                else
-                    m_metaData.insert("ALBUM", "Streaming Data");
-            }
-            // As we manipulate the title, we need to recompare
-            // oldMap and m_metaData here...
-            if (oldMap != m_metaData && !m_loading)
-                emit metaDataChanged(m_metaData);
-        }
-    }
-    gst_mini_object_unref(GST_MINI_OBJECT_CAST(msg));
 }
 
 gboolean MediaObject::cb_element(GstBus *bus, GstMessage *msg, gpointer data)
@@ -1320,6 +1138,16 @@ void MediaObject::handleBuffering(int percent)
         emit stateChanged(m_state, Phonon::BufferingState);
     else if (percent == 100)
         emit stateChanged(Phonon::BufferingState, m_state);
+}
+
+QMultiMap<QString, QString> MediaObject::metaData()
+{
+    return m_pipeline->metaData();
+}
+
+void MediaObject::setMetaData(QMultiMap<QString, QString> newData)
+{
+    m_pipeline->setMetaData(newData);
 }
 
 } // ns Gstreamer

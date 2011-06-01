@@ -24,6 +24,8 @@
 
 QT_BEGIN_NAMESPACE
 
+typedef QMultiMap<QString, QString> TagMap;
+
 namespace Phonon
 {
 namespace Gstreamer
@@ -70,6 +72,9 @@ class Pipeline : public QObject
         static gboolean cb_error(GstBus *bus, GstMessage *msg, gpointer data);
         Q_INVOKABLE void handleErrorMessage(GstMessage *msg);
 
+        static gboolean cb_tag(GstBus *bus, GstMessage *msg, gpointer data);
+        Q_INVOKABLE void handleTagMessage(GstMessage *msg);
+
         static void cb_endOfPads(GstElement *playbin, gpointer data);
 
         void setSource(const Phonon::MediaSource &source);
@@ -85,6 +90,10 @@ class Pipeline : public QObject
         bool videoIsAvailable() const;
         bool audioIsAvailable() const;
 
+        QMultiMap<QString, QString> metaData() const;
+        //FIXME: We should be able to specify merging of metadata a la gstreamer's API design
+        void setMetaData(const QMultiMap<QString, QString> &newData);
+
     signals:
         void eos();
         void warning(const QString &message);
@@ -93,6 +102,7 @@ class Pipeline : public QObject
         void stateChanged(GstState oldState, GstState newState);
         void videoAvailabilityChanged(bool);
         void errorMessage(const QString &message, Phonon::ErrorType type);
+        void metaDataChanged(QMultiMap<QString, QString>);
 
     private:
         GstPipeline *m_pipeline;
@@ -102,6 +112,8 @@ class Pipeline : public QObject
         // Otherwise, it is possible to jump to another track, play a few seconds, pause, then finish installation
         // and spontaniously start playback without user action.
         bool m_resumeAfterInstall;
+        bool m_isStream;
+        QMultiMap<QString, QString> m_metaData;
         Phonon::MediaSource m_lastSource;
         PluginInstaller *m_installer;
         GstElement *m_audioGraph;
