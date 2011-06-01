@@ -327,6 +327,7 @@ void Pipeline::cb_videoChanged(GstElement *playbin, gpointer data)
     // If there is at least one video stream, we've got video.
     videoAvailable = videoCount > 0;
 
+    // FIXME: Only emit this if n-video goes between 0 and non zero.
     emit that->videoAvailabilityChanged(videoAvailable);
 }
 

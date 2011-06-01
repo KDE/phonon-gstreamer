@@ -63,8 +63,6 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_aboutToFinishEmitted(false)
         , m_loading(false)
         , m_totalTime(-1)
-        , m_hasVideo(false)
-        , m_hasAudio(false)
         , m_seekable(false)
         , m_atEndOfStream(false)
         , m_atStartOfStream(false)
@@ -100,6 +98,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         connect(m_pipeline, SIGNAL(errorMessage(const QString &, Phonon::ErrorType)), this, SLOT(setError(const QString &, Phonon::ErrorType)));
         connect(m_pipeline, SIGNAL(metaDataChanged(QMultiMap<QString, QString>)), this, SIGNAL(metaDataChanged(QMultiMap<QString, QString>)));
         connect(m_pipeline, SIGNAL(availableMenusChanged(QList<MediaController::NavigationMenu>)), this, SIGNAL(availableMenusChanged(QList<MediaController::NavigationMenu>)));
+        connect(m_pipeline, SIGNAL(videoAvailabilityChanged(bool)), this, SIGNAL(hasVideoChanged(bool)));
 
         connect(m_tickTimer, SIGNAL(timeout()), SLOT(emitTick()));
     }
@@ -148,7 +147,7 @@ State MediaObject::state() const
  */
 bool MediaObject::hasVideo() const
 {
-    return m_hasVideo;
+    return m_pipeline->videoIsAvailable();
 }
 
 /**
@@ -387,7 +386,6 @@ void MediaObject::setError(const QString &errorString, Phonon::ErrorType error)
     m_tickTimer->stop();
 
     if (error == Phonon::FatalError) {
-        m_hasVideo = false;
         emit hasVideoChanged(false);
         m_pipeline->setState(GST_STATE_READY);
         changeState(Phonon::ErrorState);
@@ -561,7 +559,6 @@ void MediaObject::setSource(const MediaSource &source)
 
     m_prefinishMarkReachedNotEmitted = true;
     m_aboutToFinishEmitted = false;
-    m_hasAudio = false;
     setTotalTime(-1);
     m_atEndOfStream = false;
 
@@ -620,11 +617,6 @@ void MediaObject::getStreamInfo()
     updateSeekable();
     updateTotalTime();
     updateNavigation();
-
-    if (m_pipeline->videoIsAvailable() != m_hasVideo) {
-        m_hasVideo = m_pipeline->videoIsAvailable();
-        emit hasVideoChanged(m_hasVideo);
-    }
 
     if (m_source.discType() == Phonon::Cd) {
         gint64 titleCount;

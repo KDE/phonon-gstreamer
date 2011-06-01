@@ -113,12 +113,12 @@ public:
 
     bool audioAvailable()
     {
-        return m_hasAudio;
+        return m_pipeline->audioIsAvailable();
     }
 
     bool videoAvailable()
     {
-        return m_hasVideo;
+        return m_pipeline->videoIsAvailable();
     }
 
     GstElement *audioGraph()
@@ -242,8 +242,6 @@ private:
     bool m_loading;
 
     qint64 m_totalTime;
-    bool m_hasVideo;
-    bool m_hasAudio;
     bool m_seekable;
     bool m_atEndOfStream;
     bool m_atStartOfStream;
