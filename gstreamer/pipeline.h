@@ -98,6 +98,9 @@ class Pipeline : public QObject
         QList<MediaController::NavigationMenu> availableMenus() const;
         void updateNavigation();
 
+        bool seekToMSec(qint64 time);
+        bool isSeekable() const;
+
     signals:
         void eos();
         void warning(const QString &message);
@@ -109,6 +112,7 @@ class Pipeline : public QObject
         void metaDataChanged(QMultiMap<QString, QString>);
         void mouseOverActive(bool isActive);
         void availableMenusChanged(QList<MediaController::NavigationMenu>);
+        void seekableChanged(bool isSeekable);
 
     private:
         GstPipeline *m_pipeline;

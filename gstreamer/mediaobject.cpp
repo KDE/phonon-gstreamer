@@ -63,7 +63,6 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_aboutToFinishEmitted(false)
         , m_loading(false)
         , m_totalTime(-1)
-        , m_seekable(false)
         , m_atEndOfStream(false)
         , m_atStartOfStream(false)
         , m_error(Phonon::NoError)
@@ -99,6 +98,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         connect(m_pipeline, SIGNAL(metaDataChanged(QMultiMap<QString, QString>)), this, SIGNAL(metaDataChanged(QMultiMap<QString, QString>)));
         connect(m_pipeline, SIGNAL(availableMenusChanged(QList<MediaController::NavigationMenu>)), this, SIGNAL(availableMenusChanged(QList<MediaController::NavigationMenu>)));
         connect(m_pipeline, SIGNAL(videoAvailabilityChanged(bool)), this, SIGNAL(hasVideoChanged(bool)));
+        connect(m_pipeline, SIGNAL(seekableChanged(bool)), this, SIGNAL(seekableChanged(bool)));
 
         connect(m_tickTimer, SIGNAL(timeout()), SLOT(emitTick()));
     }
@@ -155,7 +155,7 @@ bool MediaObject::hasVideo() const
  */
 bool MediaObject::isSeekable() const
 {
-    return m_seekable;
+    return m_pipeline->isSeekable();
 }
 
 /**
@@ -449,43 +449,6 @@ bool MediaObject::updateTotalTime()
     return false;
 }
 
-/**
- * Checks if the current source is seekable
- */
-void MediaObject::updateSeekable()
-{
-    if (!isValid())
-        return;
-
-    GstQuery *query;
-    gboolean result;
-    gint64 start, stop;
-    query = gst_query_new_seeking(GST_FORMAT_TIME);
-    result = gst_element_query (m_pipeline->element(), query);
-    if (result) {
-        gboolean seekable;
-        GstFormat format;
-        gst_query_parse_seeking (query, &format, &seekable, &start, &stop);
-
-        if (m_seekable != seekable) {
-            m_seekable = seekable;
-            emit seekableChanged(m_seekable);
-        }
-
-        if (m_seekable) {
-            m_backend->logMessage("Stream is seekable", Backend::Info, this);
-            m_pipeline->writeToDot(this, "updateSeekable-true");
-        } else {
-            m_backend->logMessage("Stream is non-seekable", Backend::Info, this);
-            m_pipeline->writeToDot(this, "updateSeekable-false");
-        }
-    } else {
-        m_backend->logMessage("updateSeekable query failed", Backend::Info, this);
-        m_pipeline->writeToDot(this, "updateSeekable-failed");
-    }
-    gst_query_unref (query);
-}
-
 qint64 MediaObject::getPipelinePos() const
 {
     Q_ASSERT(m_pipeline);
@@ -614,7 +577,6 @@ void MediaObject::updateNavigation()
 
 void MediaObject::getStreamInfo()
 {
-    updateSeekable();
     updateTotalTime();
     updateNavigation();
 
@@ -681,9 +643,8 @@ void MediaObject::seek(qint64 time)
             m_posAtSeek = getPipelinePos();
             m_tickTimer->stop();
 
-            if (gst_element_seek(m_pipeline->element(), 1.0, GST_FORMAT_TIME,
-                                 GST_SEEK_FLAG_FLUSH, GST_SEEK_TYPE_SET,
-                                 time * GST_MSECOND, GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE))
+            //FIXME: If...what?
+            if (m_pipeline->seekToMSec(time))
             break;
         case Phonon::LoadingState:
         case Phonon::ErrorState:
@@ -817,7 +778,7 @@ void MediaObject::handleEndOfStream()
     if (m_atEndOfStream)
         return;
 
-    if (!m_seekable)
+    if (!m_pipeline->isSeekable())
         m_atEndOfStream = true;
 
     if (m_source.type() == MediaSource::Disc &&
@@ -834,7 +795,7 @@ void MediaObject::handleEndOfStream()
     } else {
         m_pendingState = Phonon::PausedState;
         emit finished();
-        if (!m_seekable) {
+        if (!m_pipeline->isSeekable()) {
             setState(Phonon::StoppedState);
             // Note the behavior for live streams is not properly defined
             // But since we cant seek to 0, we don't have much choice other than stopping

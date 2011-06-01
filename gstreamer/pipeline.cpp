@@ -315,6 +315,13 @@ void Pipeline::handleStateMessage(GstMessage *gstMessage)
         m_installer->checkInstalledPlugins();
     }
 
+    //FIXME: This is a hack until proper state engine is implemented in the pipeline
+    if (newState >= GST_STATE_PAUSED)
+        emit seekableChanged(isSeekable());
+
+    if (newState == GST_STATE_READY)
+        emit seekableChanged(false);
+
     emit stateChanged(oldState, newState);
 }
 
@@ -670,6 +677,31 @@ void Pipeline::updateNavigation()
 QList<MediaController::NavigationMenu> Pipeline::availableMenus() const
 {
     return m_menus;
+}
+
+bool Pipeline::seekToMSec(qint64 time)
+{
+    return gst_element_seek(GST_ELEMENT(m_pipeline), 1.0, GST_FORMAT_TIME,
+                     GST_SEEK_FLAG_FLUSH, GST_SEEK_TYPE_SET,
+                     time * GST_MSECOND, GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE);
+}
+
+bool Pipeline::isSeekable() const
+{
+    GstQuery *query;
+    gboolean result;
+    gint64 start, stop;
+    query = gst_query_new_seeking(GST_FORMAT_TIME);
+    result = gst_element_query (GST_ELEMENT(m_pipeline), query);
+    if (result) {
+        gboolean seekable;
+        GstFormat format;
+        gst_query_parse_seeking(query, &format, &seekable, &start, &stop);
+        return seekable;
+    } else {
+        //TODO: Log failure
+    }
+    return false;
 }
 
 }

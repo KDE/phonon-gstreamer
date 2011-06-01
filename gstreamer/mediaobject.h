@@ -242,7 +242,6 @@ private:
     bool m_loading;
 
     qint64 m_totalTime;
-    bool m_seekable;
     bool m_atEndOfStream;
     bool m_atStartOfStream;
     Phonon::ErrorType m_error;
