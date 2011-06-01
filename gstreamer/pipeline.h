@@ -50,7 +50,8 @@ class Pipeline : public QObject
         GstStateChangeReturn setState(GstState state);
         GstState state() const;
         void writeToDot(MediaObject *media, const QString &type);
-        bool queryDuration(GstFormat *format, gint64 *duration);
+        bool queryDuration(GstFormat *format, gint64 *duration) const;
+        qint64 totalDuration() const;
 
         Q_INVOKABLE void handleEOSMessage(GstMessage *msg);
         static gboolean cb_eos(GstBus *bus, GstMessage *msg, gpointer data);
@@ -104,7 +105,7 @@ class Pipeline : public QObject
     signals:
         void eos();
         void warning(const QString &message);
-        void durationChanged();
+        void durationChanged(qint64 totalDuration);
         void buffering(int);
         void stateChanged(GstState oldState, GstState newState);
         void videoAvailabilityChanged(bool);

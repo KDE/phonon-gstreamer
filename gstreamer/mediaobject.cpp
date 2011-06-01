@@ -91,7 +91,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
 
         connect(m_pipeline, SIGNAL(eos()), this, SLOT(handleEndOfStream()));
         connect(m_pipeline, SIGNAL(warning(const QString &)), this, SLOT(logWarning(const QString &)));
-        connect(m_pipeline, SIGNAL(durationChanged()), this, SLOT(updateTotalTime()));
+        connect(m_pipeline, SIGNAL(durationChanged(qint64)), this, SIGNAL(totalTimeChanged(qint64)));
         connect(m_pipeline, SIGNAL(buffering(int)), this, SLOT(handleBuffering(int)));
         connect(m_pipeline, SIGNAL(stateChanged(GstState, GstState)), this, SLOT(handleStateChange(GstState, GstState)));
         connect(m_pipeline, SIGNAL(errorMessage(const QString &, Phonon::ErrorType)), this, SLOT(setError(const QString &, Phonon::ErrorType)));
@@ -435,20 +435,6 @@ void MediaObject::setNextSource(const MediaSource &source)
     m_nextSource = source;
 }
 
-/**
- * Update total time value from the pipeline
- */
-bool MediaObject::updateTotalTime()
-{
-    GstFormat   format = GST_FORMAT_TIME;
-    gint64 duration = 0;
-    if (m_pipeline->queryDuration(&format, &duration)) {
-        setTotalTime(duration / GST_MSECOND);
-        return true;
-    }
-    return false;
-}
-
 qint64 MediaObject::getPipelinePos() const
 {
     Q_ASSERT(m_pipeline);
@@ -466,20 +452,6 @@ qint64 MediaObject::getPipelinePos() const
     GstFormat format = GST_FORMAT_TIME;
     gst_element_query_position (GST_ELEMENT(m_pipeline->element()), &format, &pos);
     return (pos / GST_MSECOND);
-}
-
-/*
- * Internal method to set a new total time for the media object
- */
-void MediaObject::setTotalTime(qint64 newTime)
-{
-
-    if (newTime == m_totalTime)
-        return;
-
-    m_totalTime = newTime;
-
-    emit totalTimeChanged(m_totalTime);
 }
 
 /*
@@ -522,7 +494,10 @@ void MediaObject::setSource(const MediaSource &source)
 
     m_prefinishMarkReachedNotEmitted = true;
     m_aboutToFinishEmitted = false;
-    setTotalTime(-1);
+
+    //FIXME: Is this expected behavior, emitting a -1?
+    //TODO: If it is, pipeline.cpp handles it already, right?
+    emit totalTimeChanged(-1);
     m_atEndOfStream = false;
 
     m_availableTitles = 0;
@@ -577,7 +552,6 @@ void MediaObject::updateNavigation()
 
 void MediaObject::getStreamInfo()
 {
-    updateTotalTime();
     updateNavigation();
 
     if (m_source.discType() == Phonon::Cd) {
@@ -643,8 +617,7 @@ void MediaObject::seek(qint64 time)
             m_posAtSeek = getPipelinePos();
             m_tickTimer->stop();
 
-            //FIXME: If...what?
-            if (m_pipeline->seekToMSec(time))
+            m_pipeline->seekToMSec(time);
             break;
         case Phonon::LoadingState:
         case Phonon::ErrorState:
@@ -671,7 +644,9 @@ void MediaObject::emitTick()
     qint64 currentTime = getPipelinePos();
     qint64 totalTime = m_totalTime;
     // We don't get any other kind of notification when we change DVD chapters, so here's the best place...
-    updateTotalTime();
+    // TODO: Verify that this is fixed with playbin2 and that we don't need to manually update the
+    // time when playing a DVD.
+    //updateTotalTime();
 
     if (m_tickInterval > 0 && currentTime != m_previousTickTime) {
         emit tick(currentTime);
@@ -946,7 +921,6 @@ void MediaObject::setTrack(int title)
     m_backend->logMessage(QString("setTrack %0").arg(title), Backend::Info, this);
     if (gst_element_seek_simple(m_pipeline->element(), trackFormat, GST_SEEK_FLAG_FLUSH, title - 1)) {
         m_currentTitle = title;
-        updateTotalTime();
         m_atEndOfStream = false;
         emit titleChanged(title);
         emit totalTimeChanged(totalTime());

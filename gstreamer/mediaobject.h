@@ -199,7 +199,6 @@ private Q_SLOTS:
 
     void handleEndOfStream();
     void logWarning(const QString &);
-    bool updateTotalTime();
     void handleBuffering(int);
     void handleStateChange(GstState oldState, GstState newState);
 

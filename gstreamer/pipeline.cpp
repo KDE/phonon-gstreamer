@@ -46,7 +46,10 @@ Pipeline::Pipeline(QObject *parent)
     gst_bus_set_sync_handler(bus, gst_bus_sync_signal_handler, NULL);
     g_signal_connect(bus, "sync-message::eos", G_CALLBACK(cb_eos), this);
     g_signal_connect(bus, "sync-message::warning", G_CALLBACK(cb_warning), this);
+
+    //FIXME: This never gets called..?
     g_signal_connect(bus, "sync-message::duration", G_CALLBACK(cb_duration), this);
+
     g_signal_connect(bus, "sync-message::buffering", G_CALLBACK(cb_buffering), this);
     g_signal_connect(bus, "sync-message::state-changed", G_CALLBACK(cb_state), this);
     g_signal_connect(bus, "sync-message::element", G_CALLBACK(cb_element), this);
@@ -198,11 +201,15 @@ GstStateChangeReturn Pipeline::setState(GstState state)
 void Pipeline::writeToDot(MediaObject *media, const QString &type)
 {
     GstBin *bin = GST_BIN(m_pipeline);
-    media->backend()->logMessage(QString("Dumping %0.dot").arg(type), Backend::Debug, media);
+    if (media)
+        media->backend()->logMessage(QString("Dumping %0.dot").arg(type), Backend::Debug, media);
+    else {
+        qDebug() << type;
+    }
     GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS(bin, GST_DEBUG_GRAPH_SHOW_ALL, QString("phonon-%0").arg(type).toUtf8().constData());
 }
 
-bool Pipeline::queryDuration(GstFormat *format, gint64 *duration)
+bool Pipeline::queryDuration(GstFormat *format, gint64 *duration) const
 {
     return gst_element_query_duration(GST_ELEMENT(m_pipeline), format, duration);
 }
@@ -254,7 +261,8 @@ void Pipeline::handleWarningMessage(GstMessage *gstMessage)
 gboolean Pipeline::cb_duration(GstBus *bus, GstMessage *msg, gpointer data)
 {
     Q_UNUSED(bus)
-    MediaObject *that = static_cast<MediaObject*>(data);
+    Pipeline *that = static_cast<Pipeline*>(data);
+    qDebug() << "Duration message";
     gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
     QMetaObject::invokeMethod(that, "handleDurationMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
     return true;
@@ -262,8 +270,22 @@ gboolean Pipeline::cb_duration(GstBus *bus, GstMessage *msg, gpointer data)
 
 void Pipeline::handleDurationMessage(GstMessage *gstMessage)
 {
+    gint64 duration;
+    GstFormat format;
+    gst_message_parse_duration(gstMessage, &format, &duration);
+    if (format == GST_FORMAT_TIME)
+        emit durationChanged(duration/GST_MSECOND);
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
-    emit durationChanged();
+}
+
+qint64 Pipeline::totalDuration() const
+{
+    GstFormat format = GST_FORMAT_TIME;
+    gint64 duration = 0;
+    if (queryDuration(&format, &duration)) {
+        return duration/GST_MSECOND;
+    }
+    return -1;
 }
 
 gboolean Pipeline::cb_buffering(GstBus *bus, GstMessage *msg, gpointer data)
@@ -316,11 +338,11 @@ void Pipeline::handleStateMessage(GstMessage *gstMessage)
     }
 
     //FIXME: This is a hack until proper state engine is implemented in the pipeline
-    if (newState >= GST_STATE_PAUSED)
+    // Wait to update stuff until we're at the final requested state
+    if (pendingState == GST_STATE_VOID_PENDING) {
+        emit durationChanged(totalDuration());
         emit seekableChanged(isSeekable());
-
-    if (newState == GST_STATE_READY)
-        emit seekableChanged(false);
+    }
 
     emit stateChanged(oldState, newState);
 }
