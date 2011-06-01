@@ -136,14 +136,8 @@ public:
         return m_pipeline;
     };
 
-    gulong capsHandler()
-    {
-        return m_capsHandler;
-    };
-
     void invalidateGraph();
 
-    static void cb_pad_added (GstElement *decodebin, GstPad *pad, gpointer data);
     void saveState();
     void resumeState();
 
@@ -201,7 +195,6 @@ private Q_SLOTS:
     void getStreamInfo();
     void emitTick();
     void beginPlay();
-    void setVideoCaps(GstCaps *caps);
     void notifyStateChange(Phonon::State newstate, Phonon::State oldstate);
 
     void handleEndOfStream();
@@ -247,7 +240,6 @@ private:
     bool m_prefinishMarkReachedNotEmitted;
     bool m_aboutToFinishEmitted;
     bool m_loading;
-    gulong m_capsHandler;
 
     qint64 m_totalTime;
     bool m_hasVideo;

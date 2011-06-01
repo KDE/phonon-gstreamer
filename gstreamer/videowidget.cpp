@@ -26,6 +26,7 @@
 #include <gst/gst.h>
 #include <gst/interfaces/navigation.h>
 #include <gst/interfaces/propertyprobe.h>
+#include <gst/video/video.h>
 #include "abstractrenderer.h"
 #include "backend.h"
 #include "devicemanager.h"
@@ -77,6 +78,8 @@ void VideoWidget::setupVideoBin()
 
     m_renderer = m_backend->deviceManager()->createVideoRenderer(this);
     GstElement *videoSink = m_renderer->videoSink();
+    GstPad *videoPad = gst_element_get_pad(videoSink, "sink");
+    g_signal_connect(videoPad, "notify::caps", G_CALLBACK(cb_capsChanged), this);
 
     m_videoBin = gst_bin_new (NULL);
     Q_ASSERT(m_videoBin);
@@ -403,11 +406,6 @@ void VideoWidget::setMovieSize(const QSize &size)
 void VideoWidget::mediaNodeEvent(const MediaNodeEvent *event)
 {
     switch (event->type()) {
-    case MediaNodeEvent::VideoSizeChanged: {
-        const QSize *size = static_cast<const QSize*>(event->data());
-        setMovieSize(*size);
-        break;
-    }
     case MediaNodeEvent::VideoMouseOver: {
         const gboolean active = *static_cast<const gboolean*>(event->data());
         if (active) {
@@ -500,6 +498,27 @@ void VideoWidget::mouseReleaseEvent(QMouseEvent *event)
         }
     }
     QWidget::mouseReleaseEvent(event);
+}
+
+void VideoWidget::cb_capsChanged(GstPad *pad, GParamSpec *spec, gpointer data)
+{
+    Q_UNUSED(spec)
+    //TODO: Original code disconnected the signal until source was changed again. Is that needed?
+    //Also, it used a signal ID, which isn't needed since we can just disconnect based on the data
+    //value (see Pipeline destructor for example)
+    //g_signal_handler_disconnect(pad, media->capsHandler());
+    VideoWidget *that = static_cast<VideoWidget*>(data);
+    if (!GST_PAD_IS_LINKED(pad))
+        return;
+    GstState videoState;
+    gst_element_get_state(that->videoElement(), &videoState, NULL, 1000);
+
+    gint width;
+    gint height;
+    //FIXME: This sometimes gives a gstreamer warning. Feels like GStreamer shouldn't, and instead
+    //just quietly return false, probably a bug.
+    if (gst_video_get_size(pad, &width, &height))
+        that->setMovieSize(QSize(width, height));
 }
 
 }

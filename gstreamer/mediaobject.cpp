@@ -62,7 +62,6 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_prefinishMarkReachedNotEmitted(true)
         , m_aboutToFinishEmitted(false)
         , m_loading(false)
-        , m_capsHandler(0)
         , m_totalTime(-1)
         , m_hasVideo(false)
         , m_hasAudio(false)
@@ -117,25 +116,6 @@ MediaObject::~MediaObject()
     }
 }
 
-QString stateString(const Phonon::State &state)
-{
-    switch (state) {
-    case Phonon::LoadingState:
-        return QString("LoadingState");
-    case Phonon::StoppedState:
-        return QString("StoppedState");
-    case Phonon::PlayingState:
-        return QString("PlayingState");
-    case Phonon::BufferingState:
-        return QString("BufferingState");
-    case Phonon::PausedState:
-        return QString("PausedState");
-    case Phonon::ErrorState:
-        return QString("ErrorState");
-    }
-    return QString();
-}
-
 void MediaObject::saveState()
 {
     //Only first resumeState is respected
@@ -153,29 +133,6 @@ void MediaObject::resumeState()
 {
     if (m_resumeState)
         QMetaObject::invokeMethod(this, "setState", Qt::QueuedConnection, Q_ARG(State, m_oldState));
-}
-
-//TODO: Move into pipeline, use gst_video_parse_caps_pixel_aspect_ratio() and/or gst_video_get_size()
-void MediaObject::setVideoCaps(GstCaps *caps)
-{
-    GstStructure *str;
-    gint width, height;
-
-    if ((str = gst_caps_get_structure (caps, 0))) {
-        if (gst_structure_get_int (str, "width", &width) && gst_structure_get_int (str, "height", &height)) {
-            gint aspectNum = 0;
-            gint aspectDenum = 0;
-            if (gst_structure_get_fraction(str, "pixel-aspect-ratio", &aspectNum, &aspectDenum)) {
-                if (aspectDenum > 0)
-                    width = width*aspectNum/aspectDenum;
-            }
-            // Let child nodes know about our new video size
-            QSize size(width, height);
-            MediaNodeEvent event(MediaNodeEvent::VideoSizeChanged, &size);
-            notify(&event);
-        }
-    }
-    gst_caps_unref(caps);
 }
 
 /**
