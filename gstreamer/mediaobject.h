@@ -49,7 +49,6 @@ class VideoWidget;
 class AudioPath;
 class VideoPath;
 class AudioOutput;
-class PluginInstaller;
 
 class MediaObject : public QObject, public MediaObjectInterface
 #ifndef QT_NO_PHONON_MEDIACONTROLLER
@@ -207,9 +206,6 @@ private Q_SLOTS:
 private:
     // GStreamer specific :
     void setTotalTime(qint64 newTime);
-    void getStreamsInfo();
-    void updateSeekable();
-    void updateNavigation();
     qint64 getPipelinePos() const;
 
     int _iface_availableTitles() const;

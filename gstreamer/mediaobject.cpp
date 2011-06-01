@@ -545,14 +545,9 @@ void MediaObject::loadingComplete()
     emit metaDataChanged(metaData());
 }
 
-void MediaObject::updateNavigation()
-{
-    m_pipeline->updateNavigation();
-}
-
 void MediaObject::getStreamInfo()
 {
-    updateNavigation();
+    m_pipeline->updateNavigation();
 
     if (m_source.discType() == Phonon::Cd) {
         gint64 titleCount;
