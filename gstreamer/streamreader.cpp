@@ -27,13 +27,13 @@ namespace Phonon
 namespace Gstreamer
 {
 
-StreamReader::StreamReader(const Phonon::MediaSource &source, MediaObject *parent)
+StreamReader::StreamReader(const Phonon::MediaSource &source, Pipeline *parent)
     : m_pos(0)
     , m_size(0)
     , m_eos(false)
     , m_locked(false)
     , m_seekable(false)
-    , m_mediaObject(parent)
+    , m_pipeline(parent)
 {
     connectToSource(source);
 }
@@ -83,6 +83,7 @@ void StreamReader::setCurrentPos(qint64 pos)
 void StreamReader::writeData(const QByteArray &data)
 {
     QMutexLocker locker(&m_mutex);
+    Debug::Block block(__PRETTY_FUNCTION__);
     m_buffer.append(data);
     m_waitingForData.wakeAll();
 }
@@ -90,6 +91,7 @@ void StreamReader::writeData(const QByteArray &data)
 GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
 {
     QMutexLocker locker(&m_mutex);
+    Debug::Block block(__PRETTY_FUNCTION__);
 
     if (currentPos() != pos) {
         if (!streamSeekable()) {
@@ -120,8 +122,8 @@ GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
             }
         }
     }
-    if (m_mediaObject->state() != Phonon::BufferingState &&
-        m_mediaObject->state() != Phonon::LoadingState) {
+    if (m_pipeline->phononState() != Phonon::BufferingState &&
+        m_pipeline->phononState() != Phonon::LoadingState) {
         enoughData();
     }
 
@@ -188,3 +190,5 @@ void StreamReader::setStreamSeekable(bool seekable)
 #endif //QT_NO_PHONON_ABSTRACTMEDIASTREAM
 
 QT_END_NAMESPACE
+
+#include "moc_streamreader.cpp"

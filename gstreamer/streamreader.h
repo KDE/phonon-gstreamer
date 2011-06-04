@@ -40,8 +40,10 @@ namespace Gstreamer
 
 class StreamReader : public QObject, Phonon::StreamInterface
 {
+    Q_INTERFACES(Phonon::StreamInterface);
+    Q_OBJECT
 public:
-    StreamReader(const Phonon::MediaSource &source, MediaObject *parent);
+    StreamReader(const Phonon::MediaSource &source, Pipeline *parent);
     ~StreamReader();
 
     /*
@@ -71,7 +73,7 @@ private:
     bool m_eos;
     bool m_locked;
     bool m_seekable;
-    MediaObject *m_mediaObject;
+    Pipeline *m_pipeline;
     QByteArray m_buffer;
     QMutex m_mutex;
     QWaitCondition m_waitingForData;
