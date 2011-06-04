@@ -16,6 +16,8 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#define GST_CAT_DEFAULT phononsrc
+
 #include "phononsrc.h"
 
 #include "streamreader.h"
@@ -33,7 +35,7 @@ static GstStaticPadTemplate srctemplate =
                                 GST_PAD_ALWAYS,
                                 GST_STATIC_CAPS_ANY);
 
-GST_DEBUG_CATEGORY_STATIC (phonon_src_debug);
+GST_DEBUG_CATEGORY_STATIC (phononsrc);
 
 // PhononSrc args
 enum
@@ -82,14 +84,6 @@ gboolean register_phonon_elements()
         "http://phonon.kde.org");
     return TRUE;
 }
-
-static void _do_init(GType filesrc_type)
-{
-    Q_UNUSED(filesrc_type);
-    GST_DEBUG_CATEGORY_INIT (phonon_src_debug, "phononsrc", 0, "QIODevice element");
-}
-
-GST_BOILERPLATE_FULL(PhononSrc, phonon_src, GstBaseSrc, GST_TYPE_BASE_SRC, _do_init)
 
 // Register element details
 static void phonon_src_base_init(gpointer g_class) {
@@ -142,41 +136,110 @@ static void phonon_src_init(PhononSrc *src, PhononSrcClass *g_class)
 #endif
 }
 
+GstURIType phonon_src_uri_type()
+{
+    return GST_URI_SRC;
+}
+
+gchar** phonon_src_uri_protocols()
+{
+    static gchar* protocols[] = {
+        "phonon",
+        0
+    };
+    return protocols;
+}
+
+G_CONST_RETURN gchar* phonon_src_get_uri(GstURIHandler *handler)
+{
+    Q_UNUSED(handler);
+    return "phonon:/";
+}
+
+gboolean phonon_src_set_uri(GstURIHandler *handler, const gchar *uri)
+{
+    Q_UNUSED(uri);
+    Q_UNUSED(handler);
+    GST_DEBUG("Setting URI");
+    return true;
+}
+
+static void phonon_src_urihandler_init(GstURIHandlerInterface *iface)
+{
+    GST_DEBUG("urihandler init");
+    iface->get_type = phonon_src_uri_type;
+    iface->get_protocols = phonon_src_uri_protocols;
+    iface->get_uri = phonon_src_get_uri;
+    iface->set_uri = phonon_src_set_uri;
+}
+
+//G_DEFINE_TYPE_WITH_CODE(PhononSrc, phonon_src, GST_TYPE_BASE_SRC,
+//        G_IMPLEMENT_INTERFACE(GST_TYPE_URI_HANDLER, phonon_src_urihandler_init));
+
+GType phonon_src_get_type()
+{
+    static GType phonon_src_type = 0;
+    if (!phonon_src_type) {
+        static const GTypeInfo phonon_src_info = {
+            sizeof(PhononSrcClass),
+            (GBaseInitFunc) phonon_src_base_init,
+            NULL,
+            (GClassInitFunc) phonon_src_class_init,
+            NULL,
+            NULL,
+            sizeof(PhononSrc),
+            0,
+            (GInstanceInitFunc) phonon_src_init
+        };
+        static const GInterfaceInfo phonon_iface_info = {
+            (GInterfaceInitFunc) phonon_src_urihandler_init,
+            NULL,
+            NULL
+        };
+        phonon_src_type = g_type_register_static(GST_TYPE_BASE_SRC,
+                "PhononSrc",
+                &phonon_src_info,
+                (GTypeFlags)0);
+        g_type_add_interface_static(phonon_src_type, GST_TYPE_URI_HANDLER,
+                &phonon_iface_info);
+        GST_DEBUG_CATEGORY_INIT (phononsrc, "phononsrc", 0, "QIODevice element");
+    }
+    return phonon_src_type;
+}
+
 static void phonon_src_finalize(GObject *object)
 {
 #ifndef QT_NO_PHONON_ABSTRACTMEDIASTREAM
+    GST_DEBUG("finalize");
     PhononSrc *src;
     src = GST_PHONON_SRC(object);
-    delete src->device;
+    if (src->device)
+        delete src->device;
     src->device = 0;
 #endif // QT_NO_PHONON_ABSTRACTMEDIASTREAM
-    G_OBJECT_CLASS (parent_class)->finalize(object);
 }
 
 #ifndef QT_NO_PHONON_ABSTRACTMEDIASTREAM
 static gboolean phonon_src_set_device(PhononSrc *src, StreamReader *device)
 {
     GstState state;
+    GST_DEBUG("Loading io device");
     // The element must be stopped in order to do this
     GST_OBJECT_LOCK(src);
     state = GST_STATE(src);
 
-    if (state != GST_STATE_READY && state != GST_STATE_NULL)
-        goto wrong_state;
+    if (src->device) {
+        GST_DEBUG("Stopping old device");
+        src->device->stop();
+    }
 
     GST_OBJECT_UNLOCK(src);
 
     src->device = device;
+    if (state >= GST_STATE_READY)
+        src->device->start();
     g_object_notify(G_OBJECT (src), "iodevice");
     return TRUE;
-
-    // Error
-wrong_state:
-    {
-        //GST_DEBUG_OBJECT (src, "setting location in wrong state");
-        GST_OBJECT_UNLOCK (src);
-        return FALSE;
-    }
 }
 #endif //QT_NO_PHONON_ABSTRACTMEDIASTREAM
 
@@ -192,8 +255,7 @@ static void phonon_src_set_property(GObject *object, guint prop_id, const GValue
     case ARG_PHONONSRC:
     {
         StreamReader *dev = (StreamReader*)(g_value_get_pointer(value));
-        if (dev)
-            phonon_src_set_device(src, dev);
+        phonon_src_set_device(src, dev);
         break;
     }
 #endif //QT_NO_PHONON_ABSTRACTMEDIASTREAM
@@ -226,7 +288,6 @@ static GstFlowReturn phonon_src_create_read(PhononSrc *src, guint64 offset, guin
                                             GstBuffer **buffer)
 {
 #ifndef QT_NO_PHONON_ABSTRACTMEDIASTREAM
-    Q_ASSERT(src->device);
     if (!src->device)
         return GST_FLOW_ERROR;
 
@@ -236,7 +297,7 @@ static GstFlowReturn phonon_src_create_read(PhononSrc *src, guint64 offset, guin
     GST_BUFFER_OFFSET_END (buf) = offset + length;
 
     GstFlowReturn ret = src->device->read(offset, length, (char*)GST_BUFFER_DATA (buf));
-//    GST_LOG_OBJECT (src, "Reading %d bytes", length);
+    GST_LOG_OBJECT (src, "Reading %d bytes", length);
 
     if (ret == GST_FLOW_OK) {
         *buffer = buf;
@@ -259,6 +320,7 @@ static GstFlowReturn phonon_src_create(GstBaseSrc *basesrc, guint64 offset, guin
 
 static gboolean phonon_src_is_seekable(GstBaseSrc *basesrc)
 {
+    return false;
     PhononSrc *src = GST_PHONON_SRC(basesrc);
 #ifndef QT_NO_PHONON_ABSTRACTMEDIASTREAM
     if (src->device)
@@ -269,10 +331,12 @@ static gboolean phonon_src_is_seekable(GstBaseSrc *basesrc)
 
 static gboolean phonon_src_get_size(GstBaseSrc *basesrc, guint64 *size)
 {
+    GST_DEBUG("get_size");
 #ifndef QT_NO_PHONON_ABSTRACTMEDIASTREAM
     PhononSrc *src = GST_PHONON_SRC(basesrc);
     if (src->device && src->device->streamSeekable()) {
         *size = src->device->streamSize();
+        GST_DEBUG("Size: %d", *size);
         return true;
     }
 #endif // QT_NO_PHONON_ABSTRACTMEDIASTREAM
@@ -282,6 +346,7 @@ static gboolean phonon_src_get_size(GstBaseSrc *basesrc, guint64 *size)
 
 static gboolean phonon_src_unlock(GstBaseSrc *basesrc)
 {
+    GST_DEBUG("unlock");
 #ifndef QT_NO_PHONON_ABSTRACTMEDIASTREAM
     PhononSrc *src = GST_PHONON_SRC(basesrc);
     src->device->unlock();
@@ -292,6 +357,7 @@ static gboolean phonon_src_unlock(GstBaseSrc *basesrc)
 
 static gboolean phonon_src_unlock_stop(GstBaseSrc *basesrc)
 {
+    GST_DEBUG("unlock stop");
     Q_UNUSED(basesrc);
 #ifndef QT_NO_PHONON_ABSTRACTMEDIASTREAM
     // Resource locking and unlocking happens onthefly, unlock just wakes our
@@ -305,6 +371,7 @@ static gboolean phonon_src_unlock_stop(GstBaseSrc *basesrc)
 static gboolean phonon_src_start(GstBaseSrc *basesrc)
 {
 #ifndef QT_NO_PHONON_ABSTRACTMEDIASTREAM
+    GST_DEBUG("Stream start");
     // Opening the device is handled by the frontend, still we need to make sure
     // that the streamer is in initial state WRT member variables etc.
     PhononSrc *src = GST_PHONON_SRC(basesrc);
@@ -317,6 +384,7 @@ static gboolean phonon_src_start(GstBaseSrc *basesrc)
 static gboolean phonon_src_stop(GstBaseSrc *basesrc)
 {
 #ifndef QT_NO_PHONON_ABSTRACTMEDIASTREAM
+    GST_DEBUG("stop");
     // Closing the device is handled by the frontend, we just need to ensure
     // the reader is unlocked and send a final enoughData.
     PhononSrc *src = GST_PHONON_SRC(basesrc);
