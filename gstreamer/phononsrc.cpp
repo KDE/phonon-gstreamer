@@ -153,7 +153,7 @@ gchar** phonon_src_uri_protocols()
 G_CONST_RETURN gchar* phonon_src_get_uri(GstURIHandler *handler)
 {
     Q_UNUSED(handler);
-    return "phonon:/";
+    return "phonon://";
 }
 
 gboolean phonon_src_set_uri(GstURIHandler *handler, const gchar *uri)
@@ -236,8 +236,11 @@ static gboolean phonon_src_set_device(PhononSrc *src, StreamReader *device)
     GST_OBJECT_UNLOCK(src);
 
     src->device = device;
-    if (state >= GST_STATE_READY)
+    if (state >= GST_STATE_READY) {
+        GST_DEBUG("Restarting device");
         src->device->start();
+    }
+
     g_object_notify(G_OBJECT (src), "iodevice");
     return TRUE;
 }
@@ -334,7 +337,7 @@ static gboolean phonon_src_get_size(GstBaseSrc *basesrc, guint64 *size)
     GST_DEBUG("get_size");
 #ifndef QT_NO_PHONON_ABSTRACTMEDIASTREAM
     PhononSrc *src = GST_PHONON_SRC(basesrc);
-    if (src->device && src->device->streamSeekable()) {
+    if (src->device->streamSeekable()) {
         *size = src->device->streamSize();
         GST_DEBUG("Size: %d", *size);
         return true;
@@ -349,7 +352,8 @@ static gboolean phonon_src_unlock(GstBaseSrc *basesrc)
     GST_DEBUG("unlock");
 #ifndef QT_NO_PHONON_ABSTRACTMEDIASTREAM
     PhononSrc *src = GST_PHONON_SRC(basesrc);
-    src->device->unlock();
+    if (src->device)
+        src->device->unlock();
     return true;
 #endif // QT_NO_PHONON_ABSTRACTMEDIASTREAM
     return false;
@@ -375,7 +379,8 @@ static gboolean phonon_src_start(GstBaseSrc *basesrc)
     // Opening the device is handled by the frontend, still we need to make sure
     // that the streamer is in initial state WRT member variables etc.
     PhononSrc *src = GST_PHONON_SRC(basesrc);
-    src->device->start();
+    if (src->device)
+        src->device->start();
     return true;
 #endif // QT_NO_PHONON_ABSTRACTMEDIASTREAM
     return false;
@@ -388,7 +393,8 @@ static gboolean phonon_src_stop(GstBaseSrc *basesrc)
     // Closing the device is handled by the frontend, we just need to ensure
     // the reader is unlocked and send a final enoughData.
     PhononSrc *src = GST_PHONON_SRC(basesrc);
-    src->device->stop();
+    if (src->device)
+        src->device->stop();
     return TRUE;
 #endif // QT_NO_PHONON_ABSTRACTMEDIASTREAM
     return false;
