@@ -80,7 +80,6 @@ class Pipeline : public QObject
         static void cb_endOfPads(GstElement *playbin, gpointer data);
 
         void setSource(const Phonon::MediaSource &source);
-        void setStreamSource(const Phonon::MediaSource &source);
 
         static void cb_videoChanged(GstElement *playbin, gpointer data);
 
@@ -101,6 +100,9 @@ class Pipeline : public QObject
 
         bool seekToMSec(qint64 time);
         bool isSeekable() const;
+
+        Phonon::State phononState() const;
+        static void cb_setupSource(GstElement *playbin, GParamSpec *spec, gpointer data);
 
     signals:
         void eos();

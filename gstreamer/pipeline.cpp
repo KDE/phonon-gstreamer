@@ -21,6 +21,7 @@
 #include "mediaobject.h"
 #include "backend.h"
 #include "plugininstaller.h"
+#include "streamreader.h"
 #include <gst/pbutils/missing-plugins.h>
 #include <gst/interfaces/navigation.h>
 #define MAX_QUEUE_TIME 20 * GST_SECOND
@@ -41,6 +42,7 @@ Pipeline::Pipeline(QObject *parent)
     gst_object_ref(m_pipeline);
     gst_object_sink(m_pipeline);
     g_signal_connect(m_pipeline, "video-changed", G_CALLBACK(cb_videoChanged), this);
+    g_signal_connect(m_pipeline, "notify::source", G_CALLBACK(cb_setupSource), this);
 
     GstBus *bus = gst_pipeline_get_bus(m_pipeline);
     gst_bus_set_sync_handler(bus, gst_bus_sync_signal_handler, NULL);
@@ -145,9 +147,9 @@ void Pipeline::setSource(const Phonon::MediaSource &source)
             //TODO: Raise error
             return;
         case MediaSource::Stream:
-            setStreamSource(source);
-            gstUri = "phonon:/";
-            return;
+            gstUri = "phonon://";
+            m_isStream = true;
+            break;
         case MediaSource::Disc:
             switch(source.discType()) {
                 case Phonon::Cd:
@@ -162,22 +164,11 @@ void Pipeline::setSource(const Phonon::MediaSource &source)
             }
             break;
     }
-    g_object_set(m_pipeline, "uri", gstUri.constData(), NULL);
 
     //TODO: Test this to make sure that resuming playback after plugin installation
     //when using an abstract stream source doesn't explode.
     m_lastSource = source;
-}
-
-void Pipeline::setStreamSource(const Phonon::MediaSource &source)
-{
-    //FIXME: Implement GstUriHandler in phononsrc
-#if 0
-    GstElement *source;
-    g_object_get(m_pipeline, "source", source, NULL);
-    StreamReader *streamReader = new StreamReader(source, this);
-    g_object_set (G_OBJECT (source), "iodevice", streamReader, (const char*)NULL);
-#endif
+    g_object_set(m_pipeline, "uri", gstUri.constData(), NULL);
 }
 
 Pipeline::~Pipeline()
@@ -724,6 +715,34 @@ bool Pipeline::isSeekable() const
         //TODO: Log failure
     }
     return false;
+}
+
+Phonon::State Pipeline::phononState() const
+{
+    return Phonon::PlayingState;
+    switch (state()) {
+        case GST_STATE_PLAYING:
+            return Phonon::PlayingState;
+        case GST_STATE_READY:
+            return Phonon::StoppedState;
+        case GST_STATE_NULL:
+            return Phonon::LoadingState;
+        case GST_STATE_PAUSED:
+            return Phonon::PausedState;
+    }
+    return Phonon::ErrorState;
+}
+
+void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer data)
+{
+    Pipeline *that = static_cast<Pipeline*>(data);
+    if (that->m_isStream) {
+        GstElement *phononSrc;
+        g_object_get(that->m_pipeline, "source", &phononSrc, NULL);
+        StreamReader *reader = new StreamReader(that->m_lastSource, that);
+        g_object_set(phononSrc, "iodevice", reader, NULL);
+        gst_element_set_state(phononSrc, that->state());
+    }
 }
 
 }
