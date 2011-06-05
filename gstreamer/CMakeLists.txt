@@ -53,7 +53,6 @@ if (BUILD_PHONON_GSTREAMER)
       medianode.cpp
       medianodeevent.cpp
       mediaobject.cpp
-      phononsrc.cpp
       pipeline.cpp
       plugininstaller.cpp
       qwidgetvideosink.cpp
