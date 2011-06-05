@@ -24,6 +24,7 @@
 #include "streamreader.h"
 #include <gst/pbutils/missing-plugins.h>
 #include <gst/interfaces/navigation.h>
+#include <gst/app/gstappsrc.h>
 #define MAX_QUEUE_TIME 20 * GST_SECOND
 
 QT_BEGIN_NAMESPACE
@@ -147,7 +148,7 @@ void Pipeline::setSource(const Phonon::MediaSource &source)
             //TODO: Raise error
             return;
         case MediaSource::Stream:
-            gstUri = "phonon://";
+            gstUri = "appsrc://";
             m_isStream = true;
             break;
         case MediaSource::Disc:
@@ -733,6 +734,20 @@ Phonon::State Pipeline::phononState() const
     return Phonon::ErrorState;
 }
 
+static void cb_feedAppSrc(GstAppSrc *appSrc, guint buffsize, gpointer data)
+{
+    StreamReader *reader = static_cast<StreamReader*>(data);
+    GstBuffer *buf = gst_buffer_new_and_alloc(buffsize);
+    reader->read(reader->currentPos(), buffsize, (char*)GST_BUFFER_DATA(buf));
+    gst_app_src_push_buffer(appSrc, buf);
+}
+
+static void cb_seekAppSrc(GstAppSrc *appSrc, guint64 pos, gpointer data)
+{
+    StreamReader *reader = static_cast<StreamReader*>(data);
+    reader->setCurrentPos(pos);
+}
+
 void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer data)
 {
     Pipeline *that = static_cast<Pipeline*>(data);
@@ -740,8 +755,17 @@ void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer d
         GstElement *phononSrc;
         g_object_get(that->m_pipeline, "source", &phononSrc, NULL);
         StreamReader *reader = new StreamReader(that->m_lastSource, that);
-        g_object_set(phononSrc, "iodevice", reader, NULL);
-        gst_element_set_state(phononSrc, that->state());
+        if (reader->streamSize() > 0)
+            g_object_set(phononSrc, "size", reader->streamSize(), NULL);
+        int streamType = 0;
+        if (reader->streamSeekable())
+            streamType = GST_APP_STREAM_TYPE_SEEKABLE;
+        else
+            streamType = GST_APP_STREAM_TYPE_STREAM;
+        g_object_set(phononSrc, "stream-type", streamType, NULL);
+        g_object_set(phononSrc, "block", TRUE, NULL);
+        g_signal_connect(phononSrc, "need-data", G_CALLBACK(cb_feedAppSrc), reader);
+        g_signal_connect(phononSrc, "seek-data", G_CALLBACK(cb_seekAppSrc), reader);
     }
 }
 
