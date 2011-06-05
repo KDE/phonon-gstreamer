@@ -199,7 +199,7 @@ private Q_SLOTS:
     void beginPlay();
     void notifyStateChange(Phonon::State newstate, Phonon::State oldstate);
 
-    //void handleEndOfStream();
+    void handleEndOfStream();
     void logWarning(const QString &);
     void handleBuffering(int);
     void handleStateChange(GstState oldState, GstState newState);

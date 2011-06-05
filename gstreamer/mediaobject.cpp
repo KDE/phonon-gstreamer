@@ -701,6 +701,10 @@ void MediaObject::handleStateChange(GstState oldState, GstState newState)
         m_tickTimer->start();
     else
         m_tickTimer->stop();
+
+    if (newState == GST_STATE_READY)
+        emit tick(0);
+
     emit stateChanged(m_state, prevPhononState);
 
     /*m_posAtSeek = -1;
@@ -758,6 +762,12 @@ void MediaObject::handleStateChange(GstState oldState, GstState newState)
         m_tickTimer->stop();
         break;
     }*/
+}
+
+void MediaObject::handleEndOfStream()
+{
+    emit finished();
+    m_pipeline->setState(GST_STATE_READY);
 }
 
 /*void MediaObject::handleEndOfStream()
