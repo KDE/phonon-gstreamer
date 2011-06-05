@@ -169,7 +169,7 @@ void VideoWidget::setVisible(bool val) {
 
         // Request return to current state
         root()->invalidateGraph();
-        root()->setState(root()->state());
+        //root()->setState(root()->state());
     }
     QWidget::setVisible(val);
 }

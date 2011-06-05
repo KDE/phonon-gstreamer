@@ -84,6 +84,8 @@ public:
     void stop();
     void seek(qint64 time);
 
+    Phonon::State translateState(GstState state) const;
+
     QString errorString() const;
     Phonon::ErrorType errorType() const;
 
@@ -144,7 +146,8 @@ public:
     void setMetaData(QMultiMap<QString, QString> newData);
 
 public Q_SLOTS:
-    void setState(State);
+    //void setState(State);
+    void requestState(Phonon::State);
 
 Q_SIGNALS:
     void currentSourceChanged(const MediaSource &newSource);
@@ -175,9 +178,9 @@ Q_SIGNALS:
     void availableAudioChannelsChanged();
 
 protected:
-    void beginLoad();
+    //void beginLoad();
     void loadingComplete();
-    void changeState(State);
+    //void changeState(State);
     Q_INVOKABLE void setError(const QString &errorString, Phonon::ErrorType error = NormalError);
 
     GstElement *audioElement()
@@ -196,7 +199,7 @@ private Q_SLOTS:
     void beginPlay();
     void notifyStateChange(Phonon::State newstate, Phonon::State oldstate);
 
-    void handleEndOfStream();
+    //void handleEndOfStream();
     void logWarning(const QString &);
     void handleBuffering(int);
     void handleStateChange(GstState oldState, GstState newState);

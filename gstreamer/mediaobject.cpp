@@ -52,7 +52,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_resumeState(false)
         , m_oldState(Phonon::LoadingState)
         , m_oldPos(0)
-        , m_state(Phonon::LoadingState)
+        , m_state(Phonon::StoppedState)
         , m_pendingState(Phonon::LoadingState)
         , m_tickTimer(new QTimer(this))
         , m_prefinishMark(0)
@@ -92,7 +92,8 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         connect(m_pipeline, SIGNAL(eos()), this, SLOT(handleEndOfStream()));
         connect(m_pipeline, SIGNAL(warning(const QString &)), this, SLOT(logWarning(const QString &)));
         connect(m_pipeline, SIGNAL(durationChanged(qint64)), this, SIGNAL(totalTimeChanged(qint64)));
-        connect(m_pipeline, SIGNAL(buffering(int)), this, SLOT(handleBuffering(int)));
+        connect(m_pipeline, SIGNAL(buffering(int)), this, SIGNAL(bufferStatus(int)));
+        //connect(m_pipeline, SIGNAL(buffering(int)), this, SLOT(handleBuffering(int)));
         connect(m_pipeline, SIGNAL(stateChanged(GstState, GstState)), this, SLOT(handleStateChange(GstState, GstState)));
         connect(m_pipeline, SIGNAL(errorMessage(const QString &, Phonon::ErrorType)), this, SLOT(setError(const QString &, Phonon::ErrorType)));
         connect(m_pipeline, SIGNAL(metaDataChanged(QMultiMap<QString, QString>)), this, SIGNAL(metaDataChanged(QMultiMap<QString, QString>)));
@@ -205,8 +206,9 @@ void MediaObject::setTickInterval(qint32 newTickInterval)
  */
 void MediaObject::play()
 {
-    setState(Phonon::PlayingState);
-    m_resumeState = false;
+    requestState(Phonon::PlayingState);
+    /*setState(Phonon::PlayingState);
+    m_resumeState = false;*/
 }
 
 /**
@@ -231,7 +233,7 @@ Phonon::ErrorType MediaObject::errorType() const
  * !### Note that both Playing and Paused states are set immediately
  *     This should obviously be done in response to actual gstreamer state changes
  */
-void MediaObject::setState(State newstate)
+/*void MediaObject::setState(State newstate)
 {
     if (!isValid())
         return;
@@ -328,13 +330,13 @@ void MediaObject::setState(State newstate)
         changeState(Phonon::LoadingState);
         break;
     }
-}
+}*/
 
 /*
  * Signals that the requested state has completed
  * by emitting stateChanged and updates the internal state.
  */
-void MediaObject::changeState(State newstate)
+/*void MediaObject::changeState(State newstate)
 {
     if (newstate == m_state)
         return;
@@ -376,11 +378,14 @@ void MediaObject::changeState(State newstate)
     }
 
     emit stateChanged(newstate, oldState);
-}
+}*/
 
 void MediaObject::setError(const QString &errorString, Phonon::ErrorType error)
 {
-    m_backend->logMessage(QString("Phonon error: %1 (code %2)").arg(errorString).arg(error), Backend::Warning);
+    m_errorString = errorString;
+    m_error = error;
+    requestState(Phonon::ErrorState);
+    /*m_backend->logMessage(QString("Phonon error: %1 (code %2)").arg(errorString).arg(error), Backend::Warning);
     m_errorString = errorString;
     m_error = error;
     m_tickTimer->stop();
@@ -394,7 +399,7 @@ void MediaObject::setError(const QString &errorString, Phonon::ErrorType error)
             m_pendingState = Phonon::ErrorState;
         else
             changeState(Phonon::ErrorState);
-    }
+    }*/
 }
 
 qint64 MediaObject::totalTime() const
@@ -462,7 +467,10 @@ void MediaObject::setSource(const MediaSource &source)
     if (!isValid())
         return;
 
-    // We have to reset the state completely here, otherwise
+    m_pipeline->setSource(source);
+    emit currentSourceChanged(m_source);
+
+/*    // We have to reset the state completely here, otherwise
     // remnants of the old pipeline can result in strangenes
     // such as failing duration queries etc
     m_pipeline->setState(GST_STATE_NULL);
@@ -480,12 +488,6 @@ void MediaObject::setSource(const MediaSource &source)
     //m_resetNeeded = false;
     m_resumeState = false;
     m_pendingState = Phonon::StoppedState;
-
-     // Make sure we start out unconnected
-/*    if (GST_ELEMENT_PARENT(m_audioGraph))
-        gst_bin_remove(GST_BIN(m_pipeline->element()), m_audioGraph);
-    if (GST_ELEMENT_PARENT(m_videoGraph))
-        gst_bin_remove(GST_BIN(m_pipeline->element()), m_videoGraph);*/
 
     // Clear any existing errors
     m_aboutToFinishEmitted = false;
@@ -519,17 +521,17 @@ void MediaObject::setSource(const MediaSource &source)
     // We need to link this node to ensure that fake sinks are connected
     // before loading, otherwise the stream will be blocked
     link();
-    beginLoad();
+    beginLoad();*/
 }
 
-void MediaObject::beginLoad()
+/*void MediaObject::beginLoad()
 {
     if (m_pipeline->setState(GST_STATE_PAUSED) != GST_STATE_CHANGE_FAILURE) {
         m_backend->logMessage("Begin source load", Backend::Info, this);
     } else {
         setError(tr("Could not open media source."));
     }
-}
+}*/
 
 // Called when we are ready to leave the loading state
 void MediaObject::loadingComplete()
@@ -538,11 +540,7 @@ void MediaObject::loadingComplete()
         MediaNodeEvent event(MediaNodeEvent::VideoAvailable);
         notify(&event);
     }
-    getStreamInfo();
-    m_loading = false;
-
-    setState(m_pendingState);
-    emit metaDataChanged(metaData());
+    link();
 }
 
 void MediaObject::getStreamInfo()
@@ -576,19 +574,21 @@ void MediaObject::setPrefinishMark(qint32 newPrefinishMark)
 
 void MediaObject::pause()
 {
-    m_backend->logMessage("pause()", Backend::Info, this);
+    requestState(Phonon::PausedState);
+/*    m_backend->logMessage("pause()", Backend::Info, this);
     if (state() != Phonon::PausedState)
         setState(Phonon::PausedState);
-    m_resumeState = false;
+    m_resumeState = false;*/
 }
 
 void MediaObject::stop()
 {
-    if (state() != Phonon::StoppedState) {
+    requestState(Phonon::StoppedState);
+/*    if (state() != Phonon::StoppedState) {
         setState(Phonon::StoppedState);
         m_prefinishMarkReachedNotEmitted = true;
     }
-    m_resumeState = false;
+    m_resumeState = false;*/
 }
 
 void MediaObject::seek(qint64 time)
@@ -596,7 +596,9 @@ void MediaObject::seek(qint64 time)
     if (!isValid())
         return;
 
-    if (isSeekable()) {
+    m_pipeline->seekToMSec(time);
+
+/*    if (isSeekable()) {
         switch (state()) {
         case Phonon::PlayingState:
         case Phonon::StoppedState:
@@ -627,7 +629,7 @@ void MediaObject::seek(qint64 time)
         if (current < total - ABOUT_TO_FINNISH_TIME)
             m_aboutToFinishEmitted = false;
         m_atEndOfStream = false;
-    }
+    }*/
 }
 
 void MediaObject::emitTick()
@@ -679,10 +681,32 @@ void MediaObject::beginPlay()
     m_pendingState = Phonon::PlayingState;
 }
 
+Phonon::State MediaObject::translateState(GstState state) const
+{
+    switch (state) {
+        case GST_STATE_PLAYING:
+            return Phonon::PlayingState;
+        case GST_STATE_PAUSED:
+            return Phonon::PausedState;
+        case GST_STATE_READY:
+            return Phonon::StoppedState;
+        case GST_STATE_NULL:
+            return Phonon::LoadingState;
+    }
+    return Phonon::ErrorState;
+}
+
 void MediaObject::handleStateChange(GstState oldState, GstState newState)
 {
+    Phonon::State prevPhononState = m_state;
+    prevPhononState = translateState(oldState);
+    m_state = translateState(newState);
+    qDebug() << "Moving from" << GstHelper::stateName(oldState) << prevPhononState << "to" << GstHelper::stateName(newState) << m_state;
+    if (GST_STATE_TRANSITION(oldState, newState) == GST_STATE_CHANGE_NULL_TO_READY)
+        loadingComplete();
+    emit stateChanged(m_state, prevPhononState);
 
-    m_posAtSeek = -1;
+    /*m_posAtSeek = -1;
 
     switch (newState) {
 
@@ -736,10 +760,10 @@ void MediaObject::handleStateChange(GstState oldState, GstState newState)
         m_backend->logMessage("gstreamer: pipeline state set to pending (void)", Backend::Debug, this);
         m_tickTimer->stop();
         break;
-    }
+    }*/
 }
 
-void MediaObject::handleEndOfStream()
+/*void MediaObject::handleEndOfStream()
 {
     m_backend->logMessage("EOS received", Backend::Info, this);
     // If the stream is not seekable ignore
@@ -777,14 +801,16 @@ void MediaObject::handleEndOfStream()
                 setState(m_pendingState);
         }
     }
-}
+}*/
 
 void MediaObject::invalidateGraph()
 {
+#if 0
     m_resetNeeded = true;
     if (m_state == Phonon::PlayingState || m_state == Phonon::PausedState) {
         changeState(Phonon::StoppedState);
     }
+#endif
 }
 
 // Notifes the pipeline about state changes in the media object
@@ -893,7 +919,7 @@ int MediaObject::_iface_currentTitle() const
 
 void MediaObject::_iface_setCurrentTitle(int title)
 {
-    m_backend->logMessage(QString("setCurrentTitle %0").arg(title), Backend::Info, this);
+    /*m_backend->logMessage(QString("setCurrentTitle %0").arg(title), Backend::Info, this);
     if ((title == m_currentTitle) || (title == m_pendingTitle))
         return;
 
@@ -903,7 +929,7 @@ void MediaObject::_iface_setCurrentTitle(int title)
         setTrack(m_pendingTitle);
     } else {
         setState(Phonon::StoppedState);
-    }
+    }*/
 }
 
 void MediaObject::setTrack(int title)
@@ -929,6 +955,7 @@ void MediaObject::logWarning(const QString &msg)
 
 void MediaObject::handleBuffering(int percent)
 {
+    Q_ASSERT(0);
     m_backend->logMessage(QString("Stream buffering %0").arg(percent), Backend::Debug, this);
     if (m_state != Phonon::BufferingState)
         emit stateChanged(m_state, Phonon::BufferingState);
@@ -950,6 +977,25 @@ void MediaObject::handleMouseOverChange(bool active)
 {
     MediaNodeEvent mouseOverEvent(MediaNodeEvent::VideoMouseOver, &active);
     notify(&mouseOverEvent);
+}
+
+void MediaObject::requestState(Phonon::State state)
+{
+    switch (state) {
+        case Phonon::PlayingState:
+            m_pipeline->setState(GST_STATE_PLAYING);
+            break;
+        case Phonon::PausedState:
+            m_pipeline->setState(GST_STATE_PAUSED);
+            break;
+        case Phonon::StoppedState:
+            m_pipeline->setState(GST_STATE_READY);
+            break;
+        case Phonon::ErrorState:
+            // Use ErrorState to represent a fatal error
+            m_pipeline->setState(GST_STATE_NULL);
+            break;
+    }
 }
 
 } // ns Gstreamer

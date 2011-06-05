@@ -135,6 +135,8 @@ class Pipeline : public QObject
         GstElement *m_audioPipe;
         GstElement *m_videoPipe;
 
+        bool m_seeking;
+
     private Q_SLOTS:
         void pluginInstallFailure(const QString &msg);
         void pluginInstallComplete();

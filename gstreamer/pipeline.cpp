@@ -22,6 +22,7 @@
 #include "backend.h"
 #include "plugininstaller.h"
 #include "streamreader.h"
+#include "gsthelper.h"
 #include <gst/pbutils/missing-plugins.h>
 #include <gst/interfaces/navigation.h>
 #include <gst/app/gstappsrc.h>
@@ -133,6 +134,7 @@ GstElement *Pipeline::videoGraph()
 
 void Pipeline::setSource(const Phonon::MediaSource &source)
 {
+    m_seeking = false;
     m_installer->reset();
     m_resumeAfterInstall = false;
     m_metaData.clear();
@@ -168,8 +170,11 @@ void Pipeline::setSource(const Phonon::MediaSource &source)
 
     //TODO: Test this to make sure that resuming playback after plugin installation
     //when using an abstract stream source doesn't explode.
+    setState(GST_STATE_NULL);
     m_lastSource = source;
+
     g_object_set(m_pipeline, "uri", gstUri.constData(), NULL);
+    setState(GST_STATE_READY);
 }
 
 Pipeline::~Pipeline()
@@ -186,6 +191,7 @@ GstElement *Pipeline::element() const
 GstStateChangeReturn Pipeline::setState(GstState state)
 {
     m_resumeAfterInstall = true;
+    qDebug() << "Transitioning to state" << GstHelper::stateName(state);
 
     return gst_element_set_state(GST_ELEMENT(m_pipeline), state);
 }
@@ -320,6 +326,20 @@ void Pipeline::handleStateMessage(GstMessage *gstMessage)
     GstState newState;
     GstState pendingState;
     gst_message_parse_state_changed(gstMessage, &oldState, &newState, &pendingState);
+
+    if (oldState == newState) {
+        return;
+    }
+
+    // Apparently gstreamer sometimes enters the same state twice.
+    // FIXME: Sometimes we enter the same state twice. currently not disallowed by the state machine
+    qDebug() << m_seeking << oldState << newState;
+    if (m_seeking) {
+        if (GST_STATE_TRANSITION(oldState, newState) == GST_STATE_CHANGE_PAUSED_TO_PLAYING)
+            m_seeking = false;
+        return;
+    }
+
     if (gstMessage->src != GST_OBJECT(m_pipeline)) {
         gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
         return;
@@ -695,6 +715,7 @@ QList<MediaController::NavigationMenu> Pipeline::availableMenus() const
 
 bool Pipeline::seekToMSec(qint64 time)
 {
+    m_seeking = true;
     return gst_element_seek(GST_ELEMENT(m_pipeline), 1.0, GST_FORMAT_TIME,
                      GST_SEEK_FLAG_FLUSH, GST_SEEK_TYPE_SET,
                      time * GST_MSECOND, GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE);
