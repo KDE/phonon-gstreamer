@@ -89,18 +89,28 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         m_pipeline = new Pipeline(this);
         m_isValid = true;
 
-        connect(m_pipeline, SIGNAL(eos()), this, SLOT(handleEndOfStream()));
-        connect(m_pipeline, SIGNAL(aboutToFinish()), this, SLOT(handleAboutToFinish()));
-        connect(m_pipeline, SIGNAL(warning(const QString &)), this, SLOT(logWarning(const QString &)));
-        connect(m_pipeline, SIGNAL(durationChanged(qint64)), this, SLOT(handleDurationChange(qint64)));
-        connect(m_pipeline, SIGNAL(buffering(int)), this, SIGNAL(bufferStatus(int)));
-        //connect(m_pipeline, SIGNAL(buffering(int)), this, SLOT(handleBuffering(int)));
-        connect(m_pipeline, SIGNAL(stateChanged(GstState, GstState)), this, SLOT(handleStateChange(GstState, GstState)));
-        connect(m_pipeline, SIGNAL(errorMessage(const QString &, Phonon::ErrorType)), this, SLOT(setError(const QString &, Phonon::ErrorType)));
-        connect(m_pipeline, SIGNAL(metaDataChanged(QMultiMap<QString, QString>)), this, SIGNAL(metaDataChanged(QMultiMap<QString, QString>)));
-        connect(m_pipeline, SIGNAL(availableMenusChanged(QList<MediaController::NavigationMenu>)), this, SIGNAL(availableMenusChanged(QList<MediaController::NavigationMenu>)));
-        connect(m_pipeline, SIGNAL(videoAvailabilityChanged(bool)), this, SIGNAL(hasVideoChanged(bool)));
-        connect(m_pipeline, SIGNAL(seekableChanged(bool)), this, SIGNAL(seekableChanged(bool)));
+        connect(m_pipeline, SIGNAL(aboutToFinish()),
+                this, SLOT(handleAboutToFinish()));
+        connect(m_pipeline, SIGNAL(eos()),
+                this, SLOT(handleEndOfStream()));
+        connect(m_pipeline, SIGNAL(warning(QString)),
+                this, SLOT(logWarning(QString)));
+        connect(m_pipeline, SIGNAL(durationChanged(qint64)),
+                this, SLOT(handleDurationChange(qint64)));
+        connect(m_pipeline, SIGNAL(buffering(int)),
+                this, SIGNAL(bufferStatus(int)));
+        connect(m_pipeline, SIGNAL(stateChanged(GstState,GstState)),
+                this, SLOT(handleStateChange(GstState,GstState)));
+        connect(m_pipeline, SIGNAL(errorMessage(QString,Phonon::ErrorType)),
+                this, SLOT(setError(QString,Phonon::ErrorType)));
+        connect(m_pipeline, SIGNAL(metaDataChanged(QMultiMap<QString,QString>)),
+                this, SIGNAL(metaDataChanged(QMultiMap<QString,QString>)));
+        connect(m_pipeline, SIGNAL(availableMenusChanged(QList<MediaController::NavigationMenu>)),
+                this, SIGNAL(availableMenusChanged(QList<MediaController::NavigationMenu>)));
+        connect(m_pipeline, SIGNAL(videoAvailabilityChanged(bool)),
+                this, SIGNAL(hasVideoChanged(bool)));
+        connect(m_pipeline, SIGNAL(seekableChanged(bool)),
+                this, SIGNAL(seekableChanged(bool)));
 
         connect(m_tickTimer, SIGNAL(timeout()), SLOT(emitTick()));
     }
