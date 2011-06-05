@@ -91,7 +91,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
 
         connect(m_pipeline, SIGNAL(eos()), this, SLOT(handleEndOfStream()));
         connect(m_pipeline, SIGNAL(warning(const QString &)), this, SLOT(logWarning(const QString &)));
-        connect(m_pipeline, SIGNAL(durationChanged(qint64)), this, SIGNAL(totalTimeChanged(qint64)));
+        connect(m_pipeline, SIGNAL(durationChanged(qint64)), this, SLOT(handleDurationChange(qint64)));
         connect(m_pipeline, SIGNAL(buffering(int)), this, SIGNAL(bufferStatus(int)));
         //connect(m_pipeline, SIGNAL(buffering(int)), this, SLOT(handleBuffering(int)));
         connect(m_pipeline, SIGNAL(stateChanged(GstState, GstState)), this, SLOT(handleStateChange(GstState, GstState)));
@@ -632,6 +632,12 @@ void MediaObject::seek(qint64 time)
     }*/
 }
 
+void MediaObject::handleDurationChange(qint64 duration)
+{
+    m_totalTime = duration;
+    emit totalTimeChanged(duration);
+}
+
 void MediaObject::emitTick()
 {
     if (m_resumeState) {
@@ -704,6 +710,10 @@ void MediaObject::handleStateChange(GstState oldState, GstState newState)
     qDebug() << "Moving from" << GstHelper::stateName(oldState) << prevPhononState << "to" << GstHelper::stateName(newState) << m_state;
     if (GST_STATE_TRANSITION(oldState, newState) == GST_STATE_CHANGE_NULL_TO_READY)
         loadingComplete();
+    if (newState == GST_STATE_PLAYING)
+        m_tickTimer->start();
+    else
+        m_tickTimer->stop();
     emit stateChanged(m_state, prevPhononState);
 
     /*m_posAtSeek = -1;
