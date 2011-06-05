@@ -77,6 +77,8 @@ class Pipeline : public QObject
         static gboolean cb_tag(GstBus *bus, GstMessage *msg, gpointer data);
         Q_INVOKABLE void handleTagMessage(GstMessage *msg);
 
+        static void cb_aboutToFinish(GstElement *appSrc, gpointer data);
+
         static void cb_endOfPads(GstElement *playbin, gpointer data);
 
         void setSource(const Phonon::MediaSource &source);
@@ -116,6 +118,7 @@ class Pipeline : public QObject
         void mouseOverActive(bool isActive);
         void availableMenusChanged(QList<MediaController::NavigationMenu>);
         void seekableChanged(bool isSeekable);
+        void aboutToFinish();
 
     private:
         GstPipeline *m_pipeline;

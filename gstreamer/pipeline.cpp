@@ -45,6 +45,7 @@ Pipeline::Pipeline(QObject *parent)
     gst_object_sink(m_pipeline);
     g_signal_connect(m_pipeline, "video-changed", G_CALLBACK(cb_videoChanged), this);
     g_signal_connect(m_pipeline, "notify::source", G_CALLBACK(cb_setupSource), this);
+    g_signal_connect(m_pipeline, "about-to-finish", G_CALLBACK(cb_aboutToFinish), this);
 
     GstBus *bus = gst_pipeline_get_bus(m_pipeline);
     gst_bus_set_sync_handler(bus, gst_bus_sync_signal_handler, NULL);
@@ -170,11 +171,9 @@ void Pipeline::setSource(const Phonon::MediaSource &source)
 
     //TODO: Test this to make sure that resuming playback after plugin installation
     //when using an abstract stream source doesn't explode.
-    setState(GST_STATE_NULL);
     m_lastSource = source;
 
     g_object_set(m_pipeline, "uri", gstUri.constData(), NULL);
-    setState(GST_STATE_READY);
 }
 
 Pipeline::~Pipeline()
@@ -333,7 +332,6 @@ void Pipeline::handleStateMessage(GstMessage *gstMessage)
 
     // Apparently gstreamer sometimes enters the same state twice.
     // FIXME: Sometimes we enter the same state twice. currently not disallowed by the state machine
-    qDebug() << m_seeking << oldState << newState;
     if (m_seeking) {
         if (GST_STATE_TRANSITION(oldState, newState) == GST_STATE_CHANGE_PAUSED_TO_PLAYING)
             m_seeking = false;
@@ -788,6 +786,12 @@ void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer d
         g_signal_connect(phononSrc, "need-data", G_CALLBACK(cb_feedAppSrc), reader);
         g_signal_connect(phononSrc, "seek-data", G_CALLBACK(cb_seekAppSrc), reader);
     }
+}
+
+void Pipeline::cb_aboutToFinish(GstElement *appSrc, gpointer data)
+{
+    Pipeline *that = static_cast<Pipeline*>(data);
+    emit that->aboutToFinish();
 }
 
 }

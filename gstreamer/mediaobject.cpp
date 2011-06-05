@@ -90,6 +90,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         m_isValid = true;
 
         connect(m_pipeline, SIGNAL(eos()), this, SLOT(handleEndOfStream()));
+        connect(m_pipeline, SIGNAL(aboutToFinish()), this, SLOT(handleAboutToFinish()));
         connect(m_pipeline, SIGNAL(warning(const QString &)), this, SLOT(logWarning(const QString &)));
         connect(m_pipeline, SIGNAL(durationChanged(qint64)), this, SLOT(handleDurationChange(qint64)));
         connect(m_pipeline, SIGNAL(buffering(int)), this, SIGNAL(bufferStatus(int)));
@@ -434,10 +435,8 @@ MediaSource MediaObject::source() const
 
 void MediaObject::setNextSource(const MediaSource &source)
 {
-    if (source.type() == MediaSource::Invalid &&
-        source.type() == MediaSource::Empty)
-        return;
-    m_nextSource = source;
+    qDebug() << "Got next source";
+    setSource(source);
 }
 
 qint64 MediaObject::getPipelinePos() const
@@ -660,18 +659,6 @@ void MediaObject::emitTick()
             if (m_prefinishMarkReachedNotEmitted) {
                 m_prefinishMarkReachedNotEmitted = false;
                 emit prefinishMarkReached(totalTime - currentTime);
-            }
-        }
-        // Prepare load of next source
-        if (currentTime >= totalTime - ABOUT_TO_FINNISH_TIME) {
-            if (m_source.type() == MediaSource::Disc &&
-                m_autoplayTitles &&
-                m_availableTitles > 1 &&
-                m_currentTitle < m_availableTitles) {
-                m_aboutToFinishEmitted = false;
-            } else if (!m_aboutToFinishEmitted) {
-                m_aboutToFinishEmitted = true; // track is about to finish
-                emit aboutToFinish();
             }
         }
     }
@@ -1006,6 +993,12 @@ void MediaObject::requestState(Phonon::State state)
             m_pipeline->setState(GST_STATE_NULL);
             break;
     }
+}
+
+void MediaObject::handleAboutToFinish()
+{
+    qDebug() << "About to finish";
+    emit aboutToFinish();
 }
 
 } // ns Gstreamer

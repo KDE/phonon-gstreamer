@@ -206,6 +206,7 @@ private Q_SLOTS:
     void handleDurationChange(qint64);
 
     void handleMouseOverChange(bool active);
+    void handleAboutToFinish();
 
 private:
     // GStreamer specific :
