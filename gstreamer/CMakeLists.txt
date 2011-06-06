@@ -71,7 +71,6 @@ if (BUILD_PHONON_GSTREAMER)
       set(phonon_gstreamer_SRCS
           ${phonon_gstreamer_SRCS}
           x11renderer.cpp)
-      macro_optional_find_package(Alsa)
    endif(NOT WIN32)
 
    automoc4_add_library(phonon_gstreamer MODULE ${phonon_gstreamer_SRCS})
@@ -81,9 +80,6 @@ if (BUILD_PHONON_GSTREAMER)
       ${GSTREAMER_LIBRARIES} ${GSTREAMER_BASE_LIBRARY} ${GSTREAMER_INTERFACE_LIBRARY}
       ${GSTREAMER_PLUGIN_VIDEO_LIBRARY} ${GSTREAMER_PLUGIN_AUDIO_LIBRARY} ${GSTREAMER_PLUGIN_PBUTILS_LIBRARY}
       ${GLIB2_LIBRARIES} ${GOBJECT_LIBRARIES})
-   if(ALSA_FOUND)
-      target_link_libraries(phonon_gstreamer ${ASOUND_LIBRARY})
-   endif(ALSA_FOUND)
    if(USE_INSTALL_PLUGIN)
        target_link_libraries(phonon_gstreamer ${GSTREAMER_PLUGIN_PBUTILS_LIBRARIES})
    endif(USE_INSTALL_PLUGIN)
