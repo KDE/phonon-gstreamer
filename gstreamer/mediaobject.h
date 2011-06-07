@@ -146,7 +146,6 @@ public:
     void setMetaData(QMultiMap<QString, QString> newData);
 
 public Q_SLOTS:
-    //void setState(State);
     void requestState(Phonon::State);
 
 Q_SIGNALS:
@@ -178,9 +177,7 @@ Q_SIGNALS:
     void availableAudioChannelsChanged();
 
 protected:
-    //void beginLoad();
     void loadingComplete();
-    //void changeState(State);
     Q_INVOKABLE void setError(const QString &errorString, Phonon::ErrorType error = NormalError);
 
     GstElement *audioElement()
@@ -242,14 +239,12 @@ private:
     bool m_loading;
 
     qint64 m_totalTime;
-    bool m_atEndOfStream;
     bool m_atStartOfStream;
     Phonon::ErrorType m_error;
     QString m_errorString;
 
     Pipeline *m_pipeline;
     int m_previousTickTime;
-    bool m_resetNeeded;
     bool m_autoplayTitles;
     int m_availableTitles;
     int m_currentTitle;
