@@ -297,7 +297,7 @@ void MediaObject::setSource(const MediaSource &source)
         return;
 
     m_pipeline->setSource(source);
-    emit currentSourceChanged(m_source);
+    emit currentSourceChanged(source);
 }
 
 // Called when we are ready to leave the loading state
