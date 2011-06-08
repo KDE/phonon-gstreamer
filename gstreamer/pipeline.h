@@ -49,6 +49,7 @@ class Pipeline : public QObject
         GstElement *audioElement() const;
         GstStateChangeReturn setState(GstState state);
         GstState state() const;
+        Phonon::MediaSource currentSource() const;
         void writeToDot(MediaObject *media, const QString &type);
         bool queryDuration(GstFormat *format, gint64 *duration) const;
         qint64 totalDuration() const;
@@ -131,7 +132,7 @@ class Pipeline : public QObject
         bool m_isStream;
         QMultiMap<QString, QString> m_metaData;
         QList<MediaController::NavigationMenu> m_menus;
-        Phonon::MediaSource m_lastSource;
+        Phonon::MediaSource m_currentSource;
         PluginInstaller *m_installer;
         GstElement *m_audioGraph;
         GstElement *m_videoGraph;
