@@ -64,11 +64,11 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_totalTime(-1)
         , m_error(Phonon::NoError)
         , m_pipeline(0)
-        , m_previousTickTime(-1)
         , m_autoplayTitles(true)
         , m_availableTitles(0)
         , m_currentTitle(1)
         , m_pendingTitle(1)
+        , m_waitingForNextSource(false)
 {
     qRegisterMetaType<GstCaps*>("GstCaps*");
     qRegisterMetaType<State>("State");
@@ -272,6 +272,7 @@ MediaSource MediaObject::source() const
 void MediaObject::setNextSource(const MediaSource &source)
 {
     qDebug() << "Got next source";
+    m_waitingForNextSource = true;
     setSource(source);
 }
 
@@ -297,7 +298,10 @@ void MediaObject::setSource(const MediaSource &source)
         return;
 
     m_pipeline->setSource(source);
-    emit currentSourceChanged(source);
+    if (!m_waitingForNextSource) {
+        m_source = source;
+        emit currentSourceChanged(source);
+    }
 }
 
 // Called when we are ready to leave the loading state
@@ -354,12 +358,21 @@ void MediaObject::seek(qint64 time)
     if (!isValid())
         return;
 
+    if (m_waitingForNextSource) {
+        m_waitingForNextSource = false;
+        setSource(m_source);
+    }
     m_pipeline->seekToMSec(time);
 }
 
 void MediaObject::handleDurationChange(qint64 duration)
 {
     m_totalTime = duration;
+    if (m_waitingForNextSource) {
+        m_source = m_pipeline->currentSource();
+        emit currentSourceChanged(m_pipeline->currentSource());
+        m_waitingForNextSource = false;
+    }
     emit totalTimeChanged(duration);
 }
 
@@ -370,21 +383,17 @@ void MediaObject::emitTick()
     }
 
     qint64 currentTime = getPipelinePos();
-    qint64 totalTime = m_totalTime;
     // We don't get any other kind of notification when we change DVD chapters, so here's the best place...
     // TODO: Verify that this is fixed with playbin2 and that we don't need to manually update the
     // time when playing a DVD.
     //updateTotalTime();
+    emit tick(currentTime);
 
-    if (m_tickInterval > 0 && currentTime != m_previousTickTime) {
-        emit tick(currentTime);
-        m_previousTickTime = currentTime;
-    }
     if (m_state == Phonon::PlayingState) {
-        if (currentTime >= totalTime - m_prefinishMark) {
+        if (currentTime >= totalTime() - m_prefinishMark) {
             if (m_prefinishMarkReachedNotEmitted) {
                 m_prefinishMarkReachedNotEmitted = false;
-                emit prefinishMarkReached(totalTime - currentTime);
+                emit prefinishMarkReached(totalTime() - currentTime);
             }
         }
     }
