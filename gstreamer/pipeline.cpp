@@ -171,7 +171,7 @@ void Pipeline::setSource(const Phonon::MediaSource &source)
 
     //TODO: Test this to make sure that resuming playback after plugin installation
     //when using an abstract stream source doesn't explode.
-    m_lastSource = source;
+    m_currentSource = source;
 
     g_object_set(m_pipeline, "uri", gstUri.constData(), NULL);
 }
@@ -436,7 +436,7 @@ void Pipeline::pluginInstallComplete()
 {
     qDebug() << "Install complete." << m_resumeAfterInstall;
     if (m_resumeAfterInstall) {
-        setSource(m_lastSource);
+        setSource(m_currentSource);
         setState(GST_STATE_PLAYING);
     }
 }
@@ -773,7 +773,7 @@ void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer d
     if (that->m_isStream) {
         GstElement *phononSrc;
         g_object_get(that->m_pipeline, "source", &phononSrc, NULL);
-        StreamReader *reader = new StreamReader(that->m_lastSource, that);
+        StreamReader *reader = new StreamReader(that->m_currentSource, that);
         if (reader->streamSize() > 0)
             g_object_set(phononSrc, "size", reader->streamSize(), NULL);
         int streamType = 0;
@@ -792,6 +792,11 @@ void Pipeline::cb_aboutToFinish(GstElement *appSrc, gpointer data)
 {
     Pipeline *that = static_cast<Pipeline*>(data);
     emit that->aboutToFinish();
+}
+
+Phonon::MediaSource Pipeline::currentSource() const
+{
+    return m_currentSource;
 }
 
 }

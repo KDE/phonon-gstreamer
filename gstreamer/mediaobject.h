@@ -146,7 +146,6 @@ public:
     void setMetaData(QMultiMap<QString, QString> newData);
 
 public Q_SLOTS:
-    //void setState(State);
     void requestState(Phonon::State);
 
 Q_SIGNALS:
@@ -178,9 +177,7 @@ Q_SIGNALS:
     void availableAudioChannelsChanged();
 
 protected:
-    //void beginLoad();
     void loadingComplete();
-    //void changeState(State);
     Q_INVOKABLE void setError(const QString &errorString, Phonon::ErrorType error = NormalError);
 
     GstElement *audioElement()
@@ -229,7 +226,6 @@ private:
     QTimer *m_tickTimer;
     qint32 m_tickInterval;
 
-    MediaSource m_source;
     MediaSource m_nextSource;
     qint32 m_prefinishMark;
     qint32 m_transitionTime;
@@ -242,18 +238,32 @@ private:
     bool m_loading;
 
     qint64 m_totalTime;
-    bool m_atEndOfStream;
     bool m_atStartOfStream;
     Phonon::ErrorType m_error;
     QString m_errorString;
 
     Pipeline *m_pipeline;
-    int m_previousTickTime;
-    bool m_resetNeeded;
     bool m_autoplayTitles;
     int m_availableTitles;
     int m_currentTitle;
     int m_pendingTitle;
+
+    // When we emit aboutToFinish(), libphonon calls setNextSource. To achive gapless playback,
+    // the pipeline is immediately told to start using that new source. This can break seeking
+    // since the aboutToFinish signal tends to be emitted around 15 seconds or so prior to actually
+    // ending the current track.
+    // If we seek backwards in time, we'd still have the 'next' source but now be a different
+    // position than the start. This flag tells us to reset the pipeline's source to the 'previous'
+    // one prior to seeking.
+    //
+    // It also causes currentSourceChanged() to be emitted once the duration changes, which happens
+    // when we actually *do* start hearing the new source.
+    bool m_waitingForNextSource;
+
+    // This keeps track of the source currently heard over the speakers.
+    // It can be different from the pipeline's current source due to how the
+    // almost-at-end gapless playback code works.
+    Phonon::MediaSource m_source;
 };
 }
 } //namespace Phonon::Gstreamer
