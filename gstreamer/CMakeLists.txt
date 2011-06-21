@@ -58,7 +58,7 @@ if (BUILD_PHONON_GSTREAMER)
       qwidgetvideosink.cpp
       streamreader.cpp
       videodataoutput.cpp
-      videosink.cpp
+      videosink.c
       videowidget.cpp
       volumefadereffect.cpp
       widgetrenderer.cpp
