@@ -63,8 +63,8 @@ static GstFlowReturn phonon_src_create(GstBaseSrc *src, guint64 offset,
 static gboolean register_elements(GstPlugin *plugin)
 {
     if (!gst_element_register(plugin, "phononsrc", GST_RANK_NONE, GST_TYPE_PHONON_SRC))
-        return FALSE;
-    return TRUE;
+        return false;
+    return true;
 }
 
 gboolean register_phonon_elements()
@@ -80,7 +80,7 @@ gboolean register_phonon_elements()
         "phonon",
         "phonon",
         "http://phonon.kde.org");
-    return TRUE;
+    return true;
 }
 
 static void _do_init(GType filesrc_type)
@@ -168,14 +168,14 @@ static gboolean phonon_src_set_device(PhononSrc *src, StreamReader *device)
 
     src->device = device;
     g_object_notify(G_OBJECT (src), "iodevice");
-    return TRUE;
+    return true;
 
     // Error
 wrong_state:
     {
         //GST_DEBUG_OBJECT (src, "setting location in wrong state");
         GST_OBJECT_UNLOCK (src);
-        return FALSE;
+        return false;
     }
 }
 #endif //QT_NO_PHONON_ABSTRACTMEDIASTREAM
@@ -321,7 +321,7 @@ static gboolean phonon_src_stop(GstBaseSrc *basesrc)
     // the reader is unlocked and send a final enoughData.
     PhononSrc *src = GST_PHONON_SRC(basesrc);
     src->device->stop();
-    return TRUE;
+    return true;
 #endif // QT_NO_PHONON_ABSTRACTMEDIASTREAM
     return false;
 }
