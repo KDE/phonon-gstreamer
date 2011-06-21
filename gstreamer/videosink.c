@@ -38,8 +38,10 @@ static GstFlowReturn p_gst_video_sink_render(GstBaseSink *baseSink, GstBuffer *b
     return GST_FLOW_OK;
 }
 
-
 static void p_gst_video_sink_class_init(PGstVideoSinkClass *klass)
 {
-    assert(0);
+    GstBaseSinkClass *baseSinkClass;
+    baseSinkClass = (GstBaseSinkClass *)klass;
+    baseSinkClass->render = p_gst_video_sink_render;
+#warning TODO: caps? preroll?
 }
