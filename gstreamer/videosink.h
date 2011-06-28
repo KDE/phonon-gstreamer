@@ -26,12 +26,12 @@
 
 G_BEGIN_DECLS
 
-#define P_GST_TYPE_VIDEO_SINK video_sink_get_type()
-#define P_GST_VIDEO_SINK(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), P_GST_TYPE_VIDEO_SINK, VideoSink))
-#define P_GST_VIDEO_SINK_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), P_GST_TYPE_VIDEO_SINK, VideoSinkClass))
+#define P_GST_TYPE_VIDEO_SINK p_gst_video_sink_get_type()
+#define P_GST_VIDEO_SINK(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), P_GST_TYPE_VIDEO_SINK, PGstVideoSink))
+#define P_GST_VIDEO_SINK_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), P_GST_TYPE_VIDEO_SINK, PGstVideoSinkClass))
 #define P_GST_IS_VIDEO_SINK(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), P_GST_TYPE_VIDEO_SINK))
 #define P_GST_IS_VIDEO_SINK_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), P_GST_TYPE_VIDEO_SINK))
-#define P_GST_VIDEO_SINK_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), P_GST_TYPE_VIDEO_SINK, VideoSinkClass))
+#define P_GST_VIDEO_SINK_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), P_GST_TYPE_VIDEO_SINK, PGstVideoSinkClass))
 
 typedef struct _PGstVideoSink PGstVideoSink;
 typedef struct _PGstVideoSinkClass PGstVideoSinkClass;

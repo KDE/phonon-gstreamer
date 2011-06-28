@@ -20,21 +20,49 @@
 */
 
 #include <gst/gst.h>
+#include <gst/video/video.h>
 
 #include <assert.h>
 
 #include "videosink.h"
 
-G_DEFINE_TYPE(VideoSink, p_gst_video_sink, GST_TYPE_BASE_SINK)
+#define UNUSED(x) (void)x
+
+static GstStaticPadTemplate s_rgbPadTemplate =
+        GST_STATIC_PAD_TEMPLATE("sink",
+                                GST_PAD_SINK,
+                                GST_PAD_ALWAYS,
+                                GST_STATIC_CAPS(GST_VIDEO_CAPS_xRGB_HOST_ENDIAN));
+
+G_DEFINE_TYPE(PGstVideoSink, p_gst_video_sink, GST_TYPE_BASE_SINK)
+
 
 static void p_gst_video_sink_init(PGstVideoSink *sink)
 {
     assert(0);
 }
 
-static GstFlowReturn p_gst_video_sink_render(GstBaseSink *baseSink, GstBuffer *buffer)
+static GstCaps *p_gst_video_sink_get_caps(GstBaseSink *baseSink)
+{
+    UNUSED(baseSink);
+    return gst_static_pad_template_get_caps(&s_rgbPadTemplate);
+}
+
+static GstFlowReturn p_gst_video_sink_render(GstBaseSink *baseSink,
+                                             GstBuffer *buffer)
 {
     assert(0);
+
+    PGstVideoSink *sink = P_GST_VIDEO_SINK(baseSink);
+    if (buffer == NULL || G_UNLIKELY(!GST_IS_BUFFER (buffer))) {
+#warning sounds bogus?
+        return GST_FLOW_RESEND;
+    }
+
+    gst_buffer_ref(buffer);
+
+#warning TODO: do something with the frame
+
     return GST_FLOW_OK;
 }
 
