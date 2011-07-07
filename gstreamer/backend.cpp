@@ -21,6 +21,7 @@
 #include "videodataoutput.h"
 #include "audioeffect.h"
 #include "mediaobject.h"
+#include "videographicsobject.h"
 #include "videowidget.h"
 #include "devicemanager.h"
 #include "effectmanager.h"
@@ -152,6 +153,8 @@ QObject *Backend::createObject(BackendInterface::Class c, QObject *parent, const
             QWidget *widget =  qobject_cast<QWidget*>(parent);
             return new VideoWidget(this, widget);
         }
+    case VideoGraphicsObjectClass:
+        return new VideoGraphicsObject(this, parent);
 #endif //QT_NO_PHONON_VIDEO
 #ifndef QT_NO_PHONON_VOLUMEFADEREFFECT
     case VolumeFaderEffectClass:
@@ -471,7 +474,7 @@ void Backend::logMessage(const QString &message, int priority, QObject *obj) con
     // Backend is a singleton, so this is just fine.
     static QString lastLogMessage = QString();
     static int logMessageSkipCount = 0;
-    
+
     if (debugLevel() > 0) {
         QString output;
         if (obj) {
@@ -487,7 +490,7 @@ void Backend::logMessage(const QString &message, int priority, QObject *obj) con
             output = message;
         }
         if (priority <= (int)debugLevel() && lastLogMessage != output) {
-            if (logMessageSkipCount != 0) 
+            if (logMessageSkipCount != 0)
                 qDebug() << "  PGST: Last message repeated" << logMessageSkipCount << "time(s)";
             qDebug() << QString("PGST(%1): %2").arg(priority).arg(output);
             lastLogMessage = output;

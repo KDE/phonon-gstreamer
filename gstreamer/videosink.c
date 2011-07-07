@@ -36,10 +36,9 @@ static GstStaticPadTemplate s_rgbPadTemplate =
 
 G_DEFINE_TYPE(PGstVideoSink, p_gst_video_sink, GST_TYPE_BASE_SINK)
 
-
 static void p_gst_video_sink_init(PGstVideoSink *sink)
 {
-    assert(0);
+/*    assert(0);*/
 }
 
 static GstCaps *p_gst_video_sink_get_caps(GstBaseSink *baseSink)
@@ -68,8 +67,11 @@ static GstFlowReturn p_gst_video_sink_render(GstBaseSink *baseSink,
 
 static void p_gst_video_sink_class_init(PGstVideoSinkClass *klass)
 {
-    GstBaseSinkClass *baseSinkClass;
-    baseSinkClass = (GstBaseSinkClass *)klass;
+    GstBaseSinkClass *baseSinkClass = GST_BASE_SINK_CLASS(klass);
     baseSinkClass->render = p_gst_video_sink_render;
+
+    GstElementClass *elementClass = GST_ELEMENT_CLASS(klass);
+    gst_element_class_add_pad_template(elementClass,
+                                       gst_static_pad_template_get(&s_rgbPadTemplate));
 #warning TODO: caps? preroll?
 }
