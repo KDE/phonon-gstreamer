@@ -56,13 +56,11 @@ G_DEFINE_TYPE(PGstVideoSink, p_gst_video_sink, GST_TYPE_VIDEO_SINK)
 static void p_gst_video_sink_init(PGstVideoSink *sink)
 {
     dbg("p_gst_video_sink_init");
-    /*    assert(0);*/
 }
 
 GstCaps *p_gst_video_sink_get_static_caps()
 {
     return gst_static_pad_template_get_caps(&s_rgbPadTemplate);
-
 }
 
 static GstCaps *p_gst_video_sink_get_caps(GstBaseSink *baseSink)
@@ -91,8 +89,6 @@ static GstFlowReturn p_gst_video_sink_render(GstBaseSink *baseSink,
 
     sink->renderCallback(buffer, sink->userData);
 
-#warning TODO: do something with the frame
-
     return GST_FLOW_OK;
 }
 
@@ -102,6 +98,7 @@ static void p_gst_video_sink_class_init(PGstVideoSinkClass *klass)
 
     GstBaseSinkClass *baseSinkClass = GST_BASE_SINK_CLASS(klass);
     baseSinkClass->render   = p_gst_video_sink_render;
+#warning yeah, right, ehm, needs improvements I guess?
     baseSinkClass->preroll  = p_gst_video_sink_render;
     baseSinkClass->get_caps = p_gst_video_sink_get_caps;
     baseSinkClass->set_caps = p_gst_video_sink_set_caps;
@@ -109,5 +106,4 @@ static void p_gst_video_sink_class_init(PGstVideoSinkClass *klass)
     GstElementClass *elementClass = GST_ELEMENT_CLASS(klass);
     gst_element_class_add_pad_template(elementClass,
                                        gst_static_pad_template_get(&s_sinktemplate));
-#warning TODO: caps? preroll?
 }
