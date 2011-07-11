@@ -26,9 +26,31 @@ public:
 
     static void renderCallback(GstBuffer *buffer, void *userData);
 
+    void lock();
+    bool tryLock();
+    void unlock();
+
+    const VideoFrame *frame() const;
+
+    GstElement *videoElement()
+    {
+        qDebug() << "fishy";
+        return m_bin;
+    }
+
+signals:
+    void frameReady();
+
 private:
+    Phonon::VideoFrame m_frame;
     Phonon::VideoGraphicsObject *m_frontendObject;
+
     PGstVideoSink *m_sink;
+
+    QMutex m_mutex;
+
+    GstElement *m_bin;
+    GstBuffer *m_buffer;
 };
 
 } // namespace Gstreamer

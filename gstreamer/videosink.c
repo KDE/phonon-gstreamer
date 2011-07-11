@@ -27,30 +27,61 @@
 #include "videosink.h"
 
 #define UNUSED(x) (void)x
+#define dbg(x) fprintf(stderr, "%s\n", x)
+
+static GstStaticPadTemplate s_sinktemplate =
+        GST_STATIC_PAD_TEMPLATE("sink",
+                                GST_PAD_SINK,
+                                GST_PAD_ALWAYS,
+                                GST_STATIC_CAPS (
+                                    GST_VIDEO_CAPS_xRGB_HOST_ENDIAN));
 
 static GstStaticPadTemplate s_rgbPadTemplate =
         GST_STATIC_PAD_TEMPLATE("sink",
                                 GST_PAD_SINK,
                                 GST_PAD_ALWAYS,
-                                GST_STATIC_CAPS(GST_VIDEO_CAPS_xRGB_HOST_ENDIAN));
+                                GST_STATIC_CAPS(
+                                    GST_VIDEO_CAPS_xRGB_HOST_ENDIAN));
 
-G_DEFINE_TYPE(PGstVideoSink, p_gst_video_sink, GST_TYPE_BASE_SINK)
+static GstStaticPadTemplate s_yuvPadTemplate =
+        GST_STATIC_PAD_TEMPLATE("sink",
+                                GST_PAD_SINK,
+                                GST_PAD_ALWAYS,
+                                GST_STATIC_CAPS(
+                                    GST_VIDEO_CAPS_YUV ("{ IYUV, I420, YV12 }")));
+
+
+G_DEFINE_TYPE(PGstVideoSink, p_gst_video_sink, GST_TYPE_VIDEO_SINK)
 
 static void p_gst_video_sink_init(PGstVideoSink *sink)
 {
-/*    assert(0);*/
+    dbg("p_gst_video_sink_init");
+    /*    assert(0);*/
+}
+
+GstCaps *p_gst_video_sink_get_static_caps()
+{
+    return gst_static_pad_template_get_caps(&s_rgbPadTemplate);
+
 }
 
 static GstCaps *p_gst_video_sink_get_caps(GstBaseSink *baseSink)
 {
+    dbg("p_gst_video_sink_get_caps");
+
     UNUSED(baseSink);
     return gst_static_pad_template_get_caps(&s_rgbPadTemplate);
+}
+
+static gboolean p_gst_video_sink_set_caps(GstBaseSink *baseSink, GstCaps *caps)
+{
+    dbg("p_gst_video_sink_set_caps");
 }
 
 static GstFlowReturn p_gst_video_sink_render(GstBaseSink *baseSink,
                                              GstBuffer *buffer)
 {
-    assert(0);
+    dbg("p_gst_video_sink_render");
 
     PGstVideoSink *sink = P_GST_VIDEO_SINK(baseSink);
     if (buffer == NULL || G_UNLIKELY(!GST_IS_BUFFER (buffer))) {
@@ -58,7 +89,7 @@ static GstFlowReturn p_gst_video_sink_render(GstBaseSink *baseSink,
         return GST_FLOW_RESEND;
     }
 
-    gst_buffer_ref(buffer);
+    sink->renderCallback(buffer, sink->userData);
 
 #warning TODO: do something with the frame
 
@@ -67,11 +98,16 @@ static GstFlowReturn p_gst_video_sink_render(GstBaseSink *baseSink,
 
 static void p_gst_video_sink_class_init(PGstVideoSinkClass *klass)
 {
+    dbg("p_gst_video_sink_class_init");
+
     GstBaseSinkClass *baseSinkClass = GST_BASE_SINK_CLASS(klass);
-    baseSinkClass->render = p_gst_video_sink_render;
+    baseSinkClass->render   = p_gst_video_sink_render;
+    baseSinkClass->preroll  = p_gst_video_sink_render;
+    baseSinkClass->get_caps = p_gst_video_sink_get_caps;
+    baseSinkClass->set_caps = p_gst_video_sink_set_caps;
 
     GstElementClass *elementClass = GST_ELEMENT_CLASS(klass);
     gst_element_class_add_pad_template(elementClass,
-                                       gst_static_pad_template_get(&s_rgbPadTemplate));
+                                       gst_static_pad_template_get(&s_sinktemplate));
 #warning TODO: caps? preroll?
 }

@@ -38,6 +38,9 @@ typedef struct _PGstVideoSinkClass PGstVideoSinkClass;
 
 struct _PGstVideoSink {
     GstVideoSink parent;
+
+    void *userData;
+    void (*renderCallback)(GstBuffer *, void *);
 };
 
 struct _PGstVideoSinkClass {
@@ -45,6 +48,8 @@ struct _PGstVideoSinkClass {
 };
 
 GType p_gst_video_sink_get_type(void) G_GNUC_CONST;
+
+GstCaps *p_gst_video_sink_get_static_caps();
 
 G_END_DECLS
 
