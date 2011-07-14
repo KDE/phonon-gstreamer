@@ -55,7 +55,6 @@ G_DEFINE_TYPE(PGstVideoSink, p_gst_video_sink, GST_TYPE_VIDEO_SINK)
 
 static void p_gst_video_sink_init(PGstVideoSink *sink)
 {
-    dbg("p_gst_video_sink_init");
 }
 
 GstCaps *p_gst_video_sink_get_static_caps()
@@ -65,22 +64,17 @@ GstCaps *p_gst_video_sink_get_static_caps()
 
 static GstCaps *p_gst_video_sink_get_caps(GstBaseSink *baseSink)
 {
-    dbg("p_gst_video_sink_get_caps");
-
     UNUSED(baseSink);
     return gst_static_pad_template_get_caps(&s_rgbPadTemplate);
 }
 
 static gboolean p_gst_video_sink_set_caps(GstBaseSink *baseSink, GstCaps *caps)
 {
-    dbg("p_gst_video_sink_set_caps");
 }
 
 static GstFlowReturn p_gst_video_sink_render(GstBaseSink *baseSink,
                                              GstBuffer *buffer)
 {
-    dbg("p_gst_video_sink_render");
-
     PGstVideoSink *sink = P_GST_VIDEO_SINK(baseSink);
     if (buffer == NULL || G_UNLIKELY(!GST_IS_BUFFER (buffer))) {
 #warning sounds bogus?
@@ -94,8 +88,6 @@ static GstFlowReturn p_gst_video_sink_render(GstBaseSink *baseSink,
 
 static void p_gst_video_sink_class_init(PGstVideoSinkClass *klass)
 {
-    dbg("p_gst_video_sink_class_init");
-
     GstBaseSinkClass *baseSinkClass = GST_BASE_SINK_CLASS(klass);
     baseSinkClass->render   = p_gst_video_sink_render;
 #warning yeah, right, ehm, needs improvements I guess?
