@@ -24,6 +24,7 @@
 #include "backend.h"
 #include "streamreader.h"
 #include "phonon-config-gstreamer.h"
+#include "debug.h"
 #include "gsthelper.h"
 #include "pipeline.h"
 
@@ -35,6 +36,7 @@
 #include <QtCore/QTimer>
 #include <QtCore/QVector>
 #include <QtGui/QApplication>
+#include <phonon/GlobalDescriptionContainer>
 
 #define ABOUT_TO_FINNISH_TIME 2000
 #define MAX_QUEUE_TIME 20 * GST_SECOND
@@ -84,6 +86,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         m_root = this;
         m_pipeline = new Pipeline(this);
         m_isValid = true;
+	GlobalSubtitles::instance()->register_(this);
 
         connect(m_pipeline, SIGNAL(aboutToFinish()),
                 this, SLOT(handleAboutToFinish()));
@@ -108,6 +111,8 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         connect(m_pipeline, SIGNAL(seekableChanged(bool)),
                 this, SIGNAL(seekableChanged(bool)));
 
+	connect(m_pipeline, SIGNAL(textTagChanged(int)),
+		this, SLOT(getSubtitleInfo(int)));
         connect(m_tickTimer, SIGNAL(timeout()), SLOT(emitTick()));
     }
     connect(this, SIGNAL(stateChanged(Phonon::State, Phonon::State)),
@@ -121,6 +126,7 @@ MediaObject::~MediaObject()
         g_signal_handlers_disconnect_matched(bus, G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, this);
         delete m_pipeline;
     }
+    GlobalSubtitles::instance()->unregister_(this);
 }
 
 void MediaObject::saveState()
@@ -336,6 +342,27 @@ void MediaObject::getStreamInfo()
     }
 }
 
+void MediaObject::getSubtitleInfo(int stream)
+{
+    int text_number = 0;
+    g_object_get(G_OBJECT(m_pipeline->element()), "n-text", &text_number, NULL);
+    if (text_number)
+        GlobalSubtitles::instance()->add(this, -1, "Disable", "");
+    for (gint i = 0; i < text_number; ++i) {
+        GstTagList *tags = NULL;
+        g_signal_emit_by_name (G_OBJECT(m_pipeline->element()), "get-text-tags",
+			       i, &tags);
+
+	if (tags) {
+            gchar *tlc;
+
+	    gst_tag_list_get_string (tags, GST_TAG_LANGUAGE_CODE, &tlc);
+	    QString name = QString("Subtitle %1 - [%2]").arg(i).arg(tlc);
+	    GlobalSubtitles::instance()->add(this, i, name);
+	}
+    }
+}
+
 void MediaObject::setPrefinishMark(qint32 newPrefinishMark)
 {
     m_prefinishMark = newPrefinishMark;
@@ -465,7 +492,8 @@ void MediaObject::notifyStateChange(Phonon::State newstate, Phonon::State oldsta
 //interface management
 bool MediaObject::hasInterface(Interface iface) const
 {
-    return iface == AddonInterface::TitleInterface || iface == AddonInterface::NavigationInterface;
+    return iface == AddonInterface::TitleInterface || iface == AddonInterface::NavigationInterface
+        || iface == AddonInterface::SubtitleInterface;
 }
 
 QVariant MediaObject::interfaceCall(Interface iface, int command, const QList<QVariant> &params)
@@ -503,7 +531,25 @@ QVariant MediaObject::interfaceCall(Interface iface, int command, const QList<QV
                     break;
             }
             break;
-        }
+        case SubtitleInterface:
+	    switch(command)
+	    {
+	        case availableSubtitles:
+		    return QVariant::fromValue(_iface_availableSubtitles());
+	            break;
+	        case currentSubtitle:
+		    return QVariant::fromValue(_iface_currentSubtitle());
+	            break;
+	        case setCurrentSubtitle:
+		    if (params.isEmpty() || !params.first().canConvert<SubtitleDescription>()) {
+		        error() << Q_FUNC_INFO << "arguments invalid";
+                        return QVariant();
+		    }
+                    _iface_setCurrentSubtitle(params.first().value<SubtitleDescription>());
+	            break;
+	    }
+	    break;
+	}
     }
     return QVariant();
 }
@@ -570,6 +616,48 @@ void MediaObject::_iface_setCurrentTitle(int title)
     } else {
         setState(Phonon::StoppedState);
     }*/
+}
+
+QList<SubtitleDescription> MediaObject::_iface_availableSubtitles() const
+{
+    return GlobalSubtitles::instance()->listFor(this);
+}
+
+SubtitleDescription MediaObject::_iface_currentSubtitle() const
+{
+    return m_currentSubtitle;
+}
+
+void MediaObject::_iface_setCurrentSubtitle(const SubtitleDescription &subtitle)
+{
+    DEBUG_BLOCK;
+    if (subtitle.property("type").toString() == "file") {
+        QString filename = subtitle.name();
+
+        if (!filename.startsWith("file://"))
+            filename.prepend("file://");
+	// It's not possible to change the suburi when the pipeline is PLAYING mainly
+	// because the pipeline has not been built with the subtitle element. A workaround
+	// consists to restart the pipeline and set the suburi property (totem does exactly the same thing)
+	// TODO: Harald suggests to insert a empty bin into the playbin2 pipeline and then insert a subtitle element
+	// on the fly into that bin when the subtitle feature is required... 
+        stop();
+        // Assuming that the input subtitle encoding is UTF-8
+        // TODO: we could try to detect the encoding ONLY for the most common ones (like libVLC)
+	// FIXME: The font name and size should be obtained from Qt
+        g_object_set(G_OBJECT(m_pipeline->element()), "suburi", filename.toStdString().c_str(),
+                     "subtitle-font-desc", "Sans Bold 16", "subtitle-encoding", "UTF-8", NULL);
+        play();
+        m_currentSubtitle = subtitle;
+        GlobalSubtitles::instance()->add(this, m_currentSubtitle);
+        emit availableSubtitlesChanged();
+    } else {
+        //FIXME: If localIndex is -1, then disable the subtitle rendering. If it's non-zero enable
+        // the subtitle rendering (both using the "flags" property)
+        const int localIndex = GlobalSubtitles::instance()->localIdFor(this, subtitle.index());
+        g_object_set(G_OBJECT(m_pipeline->element()), "current-text", localIndex, NULL);
+        m_currentSubtitle = subtitle;
+    }
 }
 
 void MediaObject::setTrack(int title)

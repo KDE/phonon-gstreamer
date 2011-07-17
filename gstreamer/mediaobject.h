@@ -23,6 +23,7 @@
 #include "pipeline.h"
 #include <phonon/mediaobjectinterface.h>
 #include <phonon/addoninterface.h>
+#include <phonon/objectdescription.h>
 #include <phonon/MediaController>
 
 #include <QtCore/QObject>
@@ -192,6 +193,7 @@ protected:
 
 private Q_SLOTS:
     void getStreamInfo();
+    void getSubtitleInfo(int stream);
     void emitTick();
     void beginPlay();
     void notifyStateChange(Phonon::State newstate, Phonon::State oldstate);
@@ -215,6 +217,9 @@ private:
     void _iface_setCurrentTitle(int title);
     QList<MediaController::NavigationMenu> _iface_availableMenus() const;
     void _iface_jumpToMenu(MediaController::NavigationMenu menu);
+    QList<SubtitleDescription> _iface_availableSubtitles() const;
+    SubtitleDescription _iface_currentSubtitle() const;
+    void _iface_setCurrentSubtitle(const SubtitleDescription &subtitle);
     void setTrack(int title);
 
     bool m_resumeState;
@@ -246,6 +251,7 @@ private:
     bool m_autoplayTitles;
     int m_availableTitles;
     int m_currentTitle;
+    SubtitleDescription m_currentSubtitle;
     int m_pendingTitle;
 
     // When we emit aboutToFinish(), libphonon calls setNextSource. To achive gapless playback,

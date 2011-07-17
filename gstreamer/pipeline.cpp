@@ -44,6 +44,7 @@ Pipeline::Pipeline(QObject *parent)
     gst_object_ref(m_pipeline);
     gst_object_sink(m_pipeline);
     g_signal_connect(m_pipeline, "video-changed", G_CALLBACK(cb_videoChanged), this);
+    g_signal_connect(m_pipeline, "text-tags-changed", G_CALLBACK(cb_textTagsChanged), this);
     g_signal_connect(m_pipeline, "notify::source", G_CALLBACK(cb_setupSource), this);
     g_signal_connect(m_pipeline, "about-to-finish", G_CALLBACK(cb_aboutToFinish), this);
 
@@ -368,6 +369,12 @@ void Pipeline::cb_videoChanged(GstElement *playbin, gpointer data)
 
     // FIXME: Only emit this if n-video goes between 0 and non zero.
     emit that->videoAvailabilityChanged(videoAvailable);
+}
+
+void Pipeline::cb_textTagsChanged(GstElement *playbin, gint stream, gpointer data)
+{
+    Pipeline *that = static_cast<Pipeline *>(data);
+    emit that->textTagChanged(stream);
 }
 
 bool Pipeline::videoIsAvailable() const

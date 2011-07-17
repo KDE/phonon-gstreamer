@@ -85,6 +85,7 @@ class Pipeline : public QObject
         void setSource(const Phonon::MediaSource &source);
 
         static void cb_videoChanged(GstElement *playbin, gpointer data);
+        static void cb_textTagsChanged(GstElement *playbin, gint stream, gpointer data);
 
         GstElement *audioPipe();
         GstElement *videoPipe();
@@ -114,6 +115,7 @@ class Pipeline : public QObject
         void buffering(int);
         void stateChanged(GstState oldState, GstState newState);
         void videoAvailabilityChanged(bool);
+        void textTagChanged(int stream);
         void errorMessage(const QString &message, Phonon::ErrorType type);
         void metaDataChanged(QMultiMap<QString, QString>);
         void mouseOverActive(bool isActive);

@@ -27,6 +27,7 @@
 #include "volumefadereffect.h"
 #include <gst/interfaces/propertyprobe.h>
 #include <phonon/pulsesupport.h>
+#include <phonon/GlobalDescriptionContainer>
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QSet>
@@ -113,6 +114,8 @@ Backend::Backend(QObject *parent, const QVariantList &)
 
 Backend::~Backend()
 {
+    if (GlobalSubtitles::self)
+        delete GlobalSubtitles::self;
     delete m_effectManager;
     delete m_deviceManager;
     PulseSupport::shutdown();
@@ -310,6 +313,10 @@ QList<int> Backend::objectDescriptionIndexes(ObjectDescriptionType type) const
             break;
         }
         break;
+    case Phonon::SubtitleType: {
+            list << GlobalSubtitles::instance()->globalIndexes();
+        }
+        break;
     default:
         break;
     }
@@ -361,6 +368,16 @@ QHash<QByteArray, QVariant> Backend::objectDescriptionProperties(ObjectDescripti
             } else
                 Q_ASSERT(1); // Since we use list position as ID, this should not happen
         }
+        break;
+
+    case Phonon::SubtitleType: {
+            const SubtitleDescription description = GlobalSubtitles::instance()->fromIndex(index);
+            ret.insert("name", description.name());
+            ret.insert("description", description.description());
+            ret.insert("type", description.property("type"));
+        }
+        break;
+
     default:
         break;
     }
