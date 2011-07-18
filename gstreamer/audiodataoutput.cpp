@@ -1,6 +1,7 @@
-/*  This file is part of the KDE project
+/*
     Copyright (C) 2006 Matthias Kretz <kretz@kde.org>
     Copyright (C) 2009 Martin Sandsmark <sandsmark@samfundet.no>
+    Copyright (C) 2011 Harald Sitter <sitter@kde.org>
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -18,7 +19,6 @@
 
     You should have received a copy of the GNU Lesser General Public
     License along with this library.  If not, see <http://www.gnu.org/licenses/>.
-
 */
 
 #include "audiodataoutput.h"
@@ -39,6 +39,7 @@ namespace Phonon
 {
 namespace Gstreamer
 {
+
 AudioDataOutput::AudioDataOutput(Backend *backend, QObject *parent)
     : QObject(parent),
     MediaNode(backend, AudioSink)
@@ -112,45 +113,51 @@ inline void AudioDataOutput::convertAndEmit(const QVector<qint16> &leftBuffer, c
 void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad*, gpointer gThat)
 {
     // TODO emit endOfMedia
-    AudioDataOutput *that = reinterpret_cast<AudioDataOutput*>(gThat);
+    AudioDataOutput *that = reinterpret_cast<AudioDataOutput *>(gThat);
 
     // determine the number of channels
-    GstStructure* structure = gst_caps_get_structure (GST_BUFFER_CAPS(buffer), 0);
-    gst_structure_get_int (structure, "channels", &that->m_channels);
+    GstStructure *structure = gst_caps_get_structure(GST_BUFFER_CAPS(buffer), 0);
+    gst_structure_get_int(structure, "channels", &that->m_channels);
 
     if (that->m_channels > 2 || that->m_channels < 0) {
         qWarning() << Q_FUNC_INFO << ": Number of channels not supported: " << that->m_channels;
         return;
     }
 
-    gint16 *data = reinterpret_cast<gint16*>(GST_BUFFER_DATA(buffer));
-    guint size = GST_BUFFER_SIZE(buffer) / sizeof(gint16);
+    gint16 *gstBufferData = reinterpret_cast<gint16 *>(GST_BUFFER_DATA(buffer));
+    guint gstBufferSize = GST_BUFFER_SIZE(buffer) / sizeof(gint16);
 
-    that->m_pendingData.reserve(that->m_pendingData.size() + size);
+    that->m_pendingData.reserve(that->m_pendingData.size() + gstBufferSize);
 
-    for (uint i=0; i<size; i++) {
+    for (uint i = 0; i < gstBufferSize; ++i) {
         // 8 bit? interleaved? yay for lacking documentation!
-        that->m_pendingData.append(data[i]);
+        that->m_pendingData.append(gstBufferData[i]);
     }
 
     while (that->m_pendingData.size() > that->m_dataSize * that->m_channels) {
+        int processedElements = 0;
         if (that->m_channels == 1) {
-            QVector<qint16> intBuffer(that->m_dataSize);
-            memcpy(intBuffer.data(), that->m_pendingData.constData(), that->m_dataSize * sizeof(qint16));
-
-            that->convertAndEmit(intBuffer, intBuffer);
-            int newSize = that->m_pendingData.size() - that->m_dataSize;
-            memmove(that->m_pendingData.data(), that->m_pendingData.constData() + that->m_dataSize, newSize * sizeof(qint16));
-            that->m_pendingData.resize(newSize);
-        } else {
-            QVector<qint16> left(that->m_dataSize), right(that->m_dataSize);
-            for (int i=0; i<that->m_dataSize; i++) {
-                left[i] = that->m_pendingData[i*2];
-                right[i] = that->m_pendingData[i*2+1];
+            // Copy construct the entire pending vector -> implictly shared.
+            QVector<qint16> mono(that->m_pendingData);
+            // Resize the entire data vector copy to only contain the requested
+            // amount of samples.
+            // The hope is that the remaining samples in the copied vector will
+            // still be implicitly shared. At any rate there is no loss as only
+            // the remaining elements ought to be copied to the mono vector.
+            mono.resize(that->m_dataSize);
+            that->convertAndEmit(mono, mono);
+            processedElements = that->m_dataSize;
+        } else { // 2 Channels, anything > 2 is discarded above
+            QVector<qint16> left(that->m_dataSize);
+            QVector<qint16> right(that->m_dataSize);
+            for (int i = 0; i < that->m_dataSize; ++i) {
+                left[i]  = that->m_pendingData[i * 2];
+                right[i] = that->m_pendingData[i * 2 + 1];
             }
-            that->m_pendingData.resize(that->m_pendingData.size() - that->m_dataSize*2);
             that->convertAndEmit(left, right);
+            processedElements = that->m_dataSize * 2;
         }
+        that->m_pendingData.remove(0, processedElements);
     }
 }
 
@@ -160,5 +167,3 @@ QT_END_NAMESPACE
 QT_END_HEADER
 
 #include "moc_audiodataoutput.cpp"
-// vim: sw=4 ts=4
-
