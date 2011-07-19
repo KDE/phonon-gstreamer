@@ -40,6 +40,7 @@
 
 #define ABOUT_TO_FINNISH_TIME 2000
 #define MAX_QUEUE_TIME 20 * GST_SECOND
+#define GST_PLAY_FLAG_TEXT (1 << 2)
 
 QT_BEGIN_NAMESPACE
 
@@ -630,7 +631,6 @@ SubtitleDescription MediaObject::_iface_currentSubtitle() const
 
 void MediaObject::_iface_setCurrentSubtitle(const SubtitleDescription &subtitle)
 {
-    DEBUG_BLOCK;
     if (subtitle.property("type").toString() == "file") {
         QString filename = subtitle.name();
 
@@ -652,10 +652,16 @@ void MediaObject::_iface_setCurrentSubtitle(const SubtitleDescription &subtitle)
         GlobalSubtitles::instance()->add(this, m_currentSubtitle);
         emit availableSubtitlesChanged();
     } else {
-        //FIXME: If localIndex is -1, then disable the subtitle rendering. If it's non-zero enable
-        // the subtitle rendering (both using the "flags" property)
         const int localIndex = GlobalSubtitles::instance()->localIdFor(this, subtitle.index());
-        g_object_set(G_OBJECT(m_pipeline->element()), "current-text", localIndex, NULL);
+        int flags;
+
+        g_object_get (G_OBJECT(m_pipeline->element()), "flags", &flags, NULL);
+        if (localIndex == -1) {
+            flags &= ~GST_PLAY_FLAG_TEXT;
+        } else {
+            flags |= GST_PLAY_FLAG_TEXT;
+        }
+        g_object_set(G_OBJECT(m_pipeline->element()), "flags", flags, "current-text", localIndex, NULL);
         m_currentSubtitle = subtitle;
     }
 }
