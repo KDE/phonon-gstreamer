@@ -82,7 +82,7 @@ class Pipeline : public QObject
 
         static void cb_endOfPads(GstElement *playbin, gpointer data);
 
-        void setSource(const Phonon::MediaSource &source);
+        void setSource(const Phonon::MediaSource &source, bool reset = false);
 
         static void cb_videoChanged(GstElement *playbin, gpointer data);
 
@@ -107,6 +107,8 @@ class Pipeline : public QObject
         Phonon::State phononState() const;
         static void cb_setupSource(GstElement *playbin, GParamSpec *spec, gpointer data);
 
+        qint64 position() const;
+
     signals:
         void eos();
         void warning(const QString &message);
@@ -120,6 +122,7 @@ class Pipeline : public QObject
         void availableMenusChanged(QList<MediaController::NavigationMenu>);
         void seekableChanged(bool isSeekable);
         void aboutToFinish();
+        void streamChanged();
 
     private:
         GstPipeline *m_pipeline;
@@ -140,6 +143,8 @@ class Pipeline : public QObject
         GstElement *m_videoPipe;
 
         bool m_seeking;
+        bool m_resetting;
+        qint64 m_posAtReset;
 
     private Q_SLOTS:
         void pluginInstallFailure(const QString &msg);
