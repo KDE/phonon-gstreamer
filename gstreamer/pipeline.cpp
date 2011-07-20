@@ -97,7 +97,7 @@ Pipeline::Pipeline(QObject *parent)
     gst_bin_add(GST_BIN(m_videoGraph), m_videoPipe);
     GstPad *videopad = gst_element_get_pad(m_videoPipe, "sink");
     gst_element_add_pad(m_videoGraph, gst_ghost_pad_new("sink", videopad));
-    gst_object_unref(audiopad);
+    gst_object_unref(videopad);
 
     g_object_set(m_pipeline, "video-sink", m_videoGraph, NULL);
 
