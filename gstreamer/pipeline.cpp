@@ -82,7 +82,7 @@ Pipeline::Pipeline(QObject *parent)
     }
 
     gst_bin_add(GST_BIN(m_audioGraph), m_audioPipe);
-    GstPad *audiopad = gst_element_get_pad (m_audioPipe, "sink");
+    GstPad *audiopad = gst_element_get_static_pad (m_audioPipe, "sink");
     gst_element_add_pad (m_audioGraph, gst_ghost_pad_new ("sink", audiopad));
     gst_object_unref (audiopad);
 
@@ -95,7 +95,7 @@ Pipeline::Pipeline(QObject *parent)
 
     m_videoPipe = gst_element_factory_make("queue", "videoPipe");
     gst_bin_add(GST_BIN(m_videoGraph), m_videoPipe);
-    GstPad *videopad = gst_element_get_pad(m_videoPipe, "sink");
+    GstPad *videopad = gst_element_get_static_pad(m_videoPipe, "sink");
     gst_element_add_pad(m_videoGraph, gst_ghost_pad_new("sink", videopad));
     gst_object_unref(videopad);
 

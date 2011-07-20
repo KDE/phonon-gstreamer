@@ -204,7 +204,7 @@ bool MediaNode::disconnectNode(QObject *obj)
         Q_ASSERT(sink->root()); //sink has to have a root since it is connected
 
         if (sink->description() & (AudioSink)) {
-            GstPad *sinkPad = gst_element_get_pad(sink->audioElement(), "sink");
+            GstPad *sinkPad = gst_element_get_static_pad(sink->audioElement(), "sink");
             // Release requested src pad from tee
             GstPad *requestedPad = gst_pad_get_peer(sinkPad);
             if (requestedPad) {
@@ -217,7 +217,7 @@ bool MediaNode::disconnectNode(QObject *obj)
         }
 
         if (sink->description() & (VideoSink)) {
-            GstPad *sinkPad = gst_element_get_pad(sink->videoElement(), "sink");
+            GstPad *sinkPad = gst_element_get_static_pad(sink->videoElement(), "sink");
             // Release requested src pad from tee
             GstPad *requestedPad = gst_pad_get_peer(sinkPad);
             if (requestedPad) {
@@ -296,7 +296,7 @@ bool MediaNode::addOutput(MediaNode *output, GstElement *tee)
 
     GstState state = root()->pipeline()->state();
     GstPad *srcPad = gst_element_get_request_pad (tee, "src%d");
-    GstPad *sinkPad = gst_element_get_pad (sinkElement, "sink");
+    GstPad *sinkPad = gst_element_get_static_pad (sinkElement, "sink");
 
     if (!sinkPad) {
         success = false;
@@ -330,7 +330,7 @@ bool MediaNode::addOutput(MediaNode *output, GstElement *tee)
 bool MediaNode::connectToFakeSink(GstElement *tee, GstElement *sink, GstElement *bin)
 {
     bool success = true;
-    GstPad *sinkPad = gst_element_get_pad (sink, "sink");
+    GstPad *sinkPad = gst_element_get_static_pad (sink, "sink");
 
     if (GST_PAD_IS_LINKED (sinkPad)) {
         //This fakesink is already connected
@@ -353,7 +353,7 @@ bool MediaNode::connectToFakeSink(GstElement *tee, GstElement *sink, GstElement 
 bool MediaNode::releaseFakeSinkIfConnected(GstElement *tee, GstElement *fakesink, GstElement *bin)
 {
     if (GST_ELEMENT_PARENT(fakesink) == GST_ELEMENT(bin)) {
-        GstPad *sinkPad = gst_element_get_pad(fakesink, "sink");
+        GstPad *sinkPad = gst_element_get_static_pad(fakesink, "sink");
 
         // Release requested src pad from tee
         GstPad *requestedPad = gst_pad_get_peer(sinkPad);
