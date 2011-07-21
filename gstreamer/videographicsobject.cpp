@@ -102,8 +102,8 @@ void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
     // RGB888 Means the data is 8 bits o' red, 8 bits o' green, and 8 bits o' blue per pixel.
     frame->data0 =
             QByteArray::fromRawData(
-                reinterpret_cast<const char*>(
-                    GST_BUFFER_DATA(buffer)), 3*frame->width*frame->height);
+                reinterpret_cast<const char*>(GST_BUFFER_DATA(buffer)),
+                GST_BUFFER_SIZE(buffer));
     frame->data1 = 0;
     frame->data2 = 0;
 
