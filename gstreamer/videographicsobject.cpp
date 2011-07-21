@@ -79,10 +79,12 @@ void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
         return;
 
     // Frontend holds lock on data
-    if (!that->m_mutex.tryLock()) {
-        qWarning("lock fail");
-        return;
-    }
+#warning to drop or not to drop, that is the question
+//    if (!that->m_mutex.tryLock()) {
+//        qWarning("lock fail");
+//        return;
+//    }
+    that->lock();
 
     // At this point we can do stuff with the data, so we take it over.
     gst_buffer_ref(buffer);
