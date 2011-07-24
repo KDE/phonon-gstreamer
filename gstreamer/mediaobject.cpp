@@ -72,6 +72,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_currentTitle(1)
         , m_pendingTitle(1)
         , m_waitingForNextSource(false)
+        , m_waitingForPreviousSource(false)
 {
     qRegisterMetaType<GstCaps*>("GstCaps*");
     qRegisterMetaType<State>("State");
@@ -90,7 +91,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
 	GlobalSubtitles::instance()->register_(this);
 
         connect(m_pipeline, SIGNAL(aboutToFinish()),
-                this, SLOT(handleAboutToFinish()));
+                this, SLOT(handleAboutToFinish()), Qt::DirectConnection);
         connect(m_pipeline, SIGNAL(eos()),
                 this, SLOT(handleEndOfStream()));
         connect(m_pipeline, SIGNAL(warning(QString)),
@@ -111,6 +112,8 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
                 this, SIGNAL(hasVideoChanged(bool)));
         connect(m_pipeline, SIGNAL(seekableChanged(bool)),
                 this, SIGNAL(seekableChanged(bool)));
+        connect(m_pipeline, SIGNAL(streamChanged()),
+                this, SLOT(handleStreamChange()));
 
 	connect(m_pipeline, SIGNAL(textTagChanged(int)),
 		this, SLOT(getSubtitleInfo(int)));
@@ -278,9 +281,11 @@ MediaSource MediaObject::source() const
 
 void MediaObject::setNextSource(const MediaSource &source)
 {
-    qDebug() << "Got next source";
+    qDebug() << "Got next source. Waiting for end of current.";
     m_waitingForNextSource = true;
-    setSource(source);
+    m_waitingForPreviousSource = false;
+    m_pipeline->setSource(source);
+    m_aboutToFinishWait.wakeAll();
 }
 
 qint64 MediaObject::getPipelinePos() const
@@ -289,11 +294,8 @@ qint64 MediaObject::getPipelinePos() const
 
     // Note some formats (usually mpeg) do not allow us to accurately seek to the
     // beginning or end of the file so we 'fake' it here rather than exposing the front end to potential issues.
-
-    gint64 pos = 0;
-    GstFormat format = GST_FORMAT_TIME;
-    gst_element_query_position (GST_ELEMENT(m_pipeline->element()), &format, &pos);
-    return (pos / GST_MSECOND);
+    //
+    return m_pipeline->position();
 }
 
 /*
@@ -304,11 +306,11 @@ void MediaObject::setSource(const MediaSource &source)
     if (!isValid())
         return;
 
+    qDebug() << "Setting new source";
+    m_source = source;
     m_pipeline->setSource(source);
-    if (!m_waitingForNextSource) {
-        m_source = source;
-        emit currentSourceChanged(source);
-    }
+    m_aboutToFinishWait.wakeAll();
+    //emit currentSourceChanged(source);
 }
 
 // Called when we are ready to leave the loading state
@@ -387,20 +389,29 @@ void MediaObject::seek(qint64 time)
         return;
 
     if (m_waitingForNextSource) {
+        qDebug() << "Seeking back within old source";
         m_waitingForNextSource = false;
-        setSource(m_source);
+        m_waitingForPreviousSource = true;
+        m_pipeline->setSource(m_source, true);
     }
     m_pipeline->seekToMSec(time);
+    m_lastTime = 0;
+}
+
+void MediaObject::handleStreamChange()
+{
+    if (m_waitingForPreviousSource) {
+        m_waitingForPreviousSource = false;
+    } else {
+        m_source = m_pipeline->currentSource();
+        m_waitingForNextSource = false;
+        emit currentSourceChanged(m_pipeline->currentSource());
+    }
 }
 
 void MediaObject::handleDurationChange(qint64 duration)
 {
     m_totalTime = duration;
-    if (m_waitingForNextSource) {
-        m_source = m_pipeline->currentSource();
-        emit currentSourceChanged(m_pipeline->currentSource());
-        m_waitingForNextSource = false;
-    }
     emit totalTimeChanged(duration);
 }
 
@@ -735,6 +746,10 @@ void MediaObject::handleAboutToFinish()
 {
     qDebug() << "About to finish";
     emit aboutToFinish();
+    m_aboutToFinishLock.lock();
+    m_aboutToFinishWait.wait(&m_aboutToFinishLock);
+    qDebug() << "Finally got a source";
+    m_aboutToFinishLock.unlock();
 }
 
 } // ns Gstreamer

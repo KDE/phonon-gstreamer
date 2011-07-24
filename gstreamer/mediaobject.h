@@ -30,6 +30,8 @@
 #include <QtCore/QString>
 #include <QtCore/QStringList>
 #include <QtCore/QVariant>
+#include <QtCore/QWaitCondition>
+#include <QtCore/QMutex>
 
 #include "phonon-config-gstreamer.h"
 
@@ -206,6 +208,7 @@ private Q_SLOTS:
 
     void handleMouseOverChange(bool active);
     void handleAboutToFinish();
+    void handleStreamChange();
 
 private:
     // GStreamer specific :
@@ -265,11 +268,17 @@ private:
     // It also causes currentSourceChanged() to be emitted once the duration changes, which happens
     // when we actually *do* start hearing the new source.
     bool m_waitingForNextSource;
+    bool m_waitingForPreviousSource;
 
     // This keeps track of the source currently heard over the speakers.
     // It can be different from the pipeline's current source due to how the
     // almost-at-end gapless playback code works.
     Phonon::MediaSource m_source;
+
+    QMutex m_aboutToFinishLock;
+    QWaitCondition m_aboutToFinishWait;
+
+    qint64 m_lastTime;
 };
 }
 } //namespace Phonon::Gstreamer

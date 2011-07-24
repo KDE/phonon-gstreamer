@@ -72,7 +72,7 @@ AudioOutput::AudioOutput(Backend *backend, QObject *parent)
             if (gst_element_link_many(queue, m_conv, audioresample, m_volumeElement,
                                       m_audioSink, (const char*)NULL)) {
                 // Add ghost sink for audiobin
-                GstPad *audiopad = gst_element_get_pad (queue, "sink");
+                GstPad *audiopad = gst_element_get_static_pad (queue, "sink");
                 gst_element_add_pad (m_audioBin, gst_ghost_pad_new ("sink", audiopad));
                 gst_object_unref (audiopad);
                 m_isValid = true; // Initialization ok, accept input

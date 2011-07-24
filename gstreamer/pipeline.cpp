@@ -39,6 +39,7 @@ Pipeline::Pipeline(QObject *parent)
     , m_bufferPercent(0)
     , m_isStream(false)
     , m_installer(new PluginInstaller(this))
+    , m_resetting(false)
 {
     m_pipeline = GST_PIPELINE(gst_element_factory_make("playbin2", NULL));
     gst_object_ref(m_pipeline);
@@ -82,7 +83,7 @@ Pipeline::Pipeline(QObject *parent)
     }
 
     gst_bin_add(GST_BIN(m_audioGraph), m_audioPipe);
-    GstPad *audiopad = gst_element_get_pad (m_audioPipe, "sink");
+    GstPad *audiopad = gst_element_get_static_pad (m_audioPipe, "sink");
     gst_element_add_pad (m_audioGraph, gst_ghost_pad_new ("sink", audiopad));
     gst_object_unref (audiopad);
 
@@ -95,9 +96,9 @@ Pipeline::Pipeline(QObject *parent)
 
     m_videoPipe = gst_element_factory_make("queue", "videoPipe");
     gst_bin_add(GST_BIN(m_videoGraph), m_videoPipe);
-    GstPad *videopad = gst_element_get_pad(m_videoPipe, "sink");
+    GstPad *videopad = gst_element_get_static_pad(m_videoPipe, "sink");
     gst_element_add_pad(m_videoGraph, gst_ghost_pad_new("sink", videopad));
-    gst_object_unref(audiopad);
+    gst_object_unref(videopad);
 
     g_object_set(m_pipeline, "video-sink", m_videoGraph, NULL);
 
@@ -134,14 +135,14 @@ GstElement *Pipeline::videoGraph()
     return m_videoGraph;
 }
 
-void Pipeline::setSource(const Phonon::MediaSource &source)
+void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
 {
     m_seeking = false;
     m_installer->reset();
     m_resumeAfterInstall = false;
     m_metaData.clear();
 
-    qDebug() << source.mrl();
+    qDebug() << "New source:" << source.mrl();
     QByteArray gstUri;
     switch(source.type()) {
         case MediaSource::Url:
@@ -174,7 +175,20 @@ void Pipeline::setSource(const Phonon::MediaSource &source)
     //when using an abstract stream source doesn't explode.
     m_currentSource = source;
 
+    GstState oldState = state();
+
+    if (reset && oldState > GST_STATE_READY) {
+        qDebug() << "Resetting pipeline for reverse seek";
+        m_resetting = true;
+        m_posAtReset = position();
+        gst_element_set_state(GST_ELEMENT(m_pipeline), GST_STATE_READY);
+    }
+
     g_object_set(m_pipeline, "uri", gstUri.constData(), NULL);
+
+    if (reset && oldState > GST_STATE_READY) {
+        gst_element_set_state(GST_ELEMENT(m_pipeline), oldState);
+    }
 }
 
 Pipeline::~Pipeline()
@@ -270,6 +284,8 @@ void Pipeline::handleDurationMessage(GstMessage *gstMessage)
 {
     gint64 duration;
     GstFormat format;
+    if (m_resetting)
+        return;
     gst_message_parse_duration(gstMessage, &format, &duration);
     if (format == GST_FORMAT_TIME)
         emit durationChanged(duration/GST_MSECOND);
@@ -331,6 +347,11 @@ void Pipeline::handleStateMessage(GstMessage *gstMessage)
         return;
     }
 
+    if (gstMessage->src != GST_OBJECT(m_pipeline)) {
+        gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
+        return;
+    }
+
     // Apparently gstreamer sometimes enters the same state twice.
     // FIXME: Sometimes we enter the same state twice. currently not disallowed by the state machine
     if (m_seeking) {
@@ -338,11 +359,7 @@ void Pipeline::handleStateMessage(GstMessage *gstMessage)
             m_seeking = false;
         return;
     }
-
-    if (gstMessage->src != GST_OBJECT(m_pipeline)) {
-        gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
-        return;
-    }
+    qDebug() << "State change";
 
     if (newState == GST_STATE_READY) {
         m_installer->checkInstalledPlugins();
@@ -350,6 +367,12 @@ void Pipeline::handleStateMessage(GstMessage *gstMessage)
 
     //FIXME: This is a hack until proper state engine is implemented in the pipeline
     // Wait to update stuff until we're at the final requested state
+    if (pendingState == GST_STATE_VOID_PENDING && newState > GST_STATE_READY && m_resetting) {
+        m_resetting = false;
+        seekToMSec(m_posAtReset);
+//        return;
+    }
+
     if (pendingState == GST_STATE_VOID_PENDING) {
         emit durationChanged(totalDuration());
         emit seekableChanged(isSeekable());
@@ -402,6 +425,7 @@ gboolean Pipeline::cb_element(GstBus *bus, GstMessage *msg, gpointer data)
 
 void Pipeline::handleElementMessage(GstMessage *gstMessage)
 {
+    const GstStructure *str = gst_message_get_structure(gstMessage);
     if (gst_is_missing_plugin_message(gstMessage)) {
         m_installer->addPlugin(gstMessage);
     } else {
@@ -422,6 +446,16 @@ void Pipeline::handleElementMessage(GstMessage *gstMessage)
             break;
         }
 #endif // GST_VERSION
+    }
+    // Currently undocumented, but discovered via gst-plugins-base commit 7e674d
+    // gst 0.10.25.1
+    if (gst_structure_has_name(str, "playbin2-stream-changed")) {
+        gchar *uri;
+        g_object_get(m_pipeline, "uri", &uri, NULL);
+        qDebug() << "Stream changed to" << uri;
+        g_free(uri);
+        if (!m_resetting)
+            emit streamChanged();
     }
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
 }
@@ -720,6 +754,9 @@ QList<MediaController::NavigationMenu> Pipeline::availableMenus() const
 
 bool Pipeline::seekToMSec(qint64 time)
 {
+    m_posAtReset = time;
+    if (m_resetting)
+        return true;
     m_seeking = true;
     return gst_element_seek(GST_ELEMENT(m_pipeline), 1.0, GST_FORMAT_TIME,
                      GST_SEEK_FLAG_FLUSH, GST_SEEK_TYPE_SET,
@@ -804,6 +841,16 @@ void Pipeline::cb_aboutToFinish(GstElement *appSrc, gpointer data)
 Phonon::MediaSource Pipeline::currentSource() const
 {
     return m_currentSource;
+}
+
+qint64 Pipeline::position() const
+{
+    gint64 pos = 0;
+    GstFormat format = GST_FORMAT_TIME;
+    if (m_resetting)
+        return m_posAtReset;
+    gst_element_query_position (GST_ELEMENT(m_pipeline), &format, &pos);
+    return (pos / GST_MSECOND);
 }
 
 }

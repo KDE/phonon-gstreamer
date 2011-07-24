@@ -78,7 +78,7 @@ void VideoWidget::setupVideoBin()
 
     m_renderer = m_backend->deviceManager()->createVideoRenderer(this);
     GstElement *videoSink = m_renderer->videoSink();
-    GstPad *videoPad = gst_element_get_pad(videoSink, "sink");
+    GstPad *videoPad = gst_element_get_static_pad(videoSink, "sink");
     g_signal_connect(videoPad, "notify::caps", G_CALLBACK(cb_capsChanged), this);
 
     m_videoBin = gst_bin_new (NULL);
@@ -117,7 +117,7 @@ void VideoWidget::setupVideoBin()
                 success = gst_element_link_many(queue, m_colorspace, videoScale, m_videoplug, videoSink, (const char*)NULL);
             }
             if (success) {
-                GstPad *videopad = gst_element_get_pad (queue, "sink");
+                GstPad *videopad = gst_element_get_static_pad (queue, "sink");
                 gst_element_add_pad (m_videoBin, gst_ghost_pad_new ("sink", videopad));
                 gst_object_unref (videopad);
                 QWidget *parentWidget = qobject_cast<QWidget*>(parent());
@@ -129,7 +129,7 @@ void VideoWidget::setupVideoBin()
         }
     } else {
         gst_bin_add_many (GST_BIN (m_videoBin), videoSink, NULL);
-        GstPad *videopad = gst_element_get_pad (videoSink,"sink");
+        GstPad *videopad = gst_element_get_static_pad (videoSink,"sink");
         gst_element_add_pad (m_videoBin, gst_ghost_pad_new ("sink", videopad));
         gst_object_unref (videopad);
         QWidget *parentWidget = qobject_cast<QWidget*>(parent());
