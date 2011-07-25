@@ -770,7 +770,8 @@ bool Pipeline::seekToMSec(qint64 time)
     m_posAtReset = time;
     if (m_resetting)
         return true;
-    m_seeking = true;
+    if (state() == GST_STATE_PLAYING)
+        m_seeking = true;
     return gst_element_seek(GST_ELEMENT(m_pipeline), 1.0, GST_FORMAT_TIME,
                      GST_SEEK_FLAG_FLUSH, GST_SEEK_TYPE_SET,
                      time * GST_MSECOND, GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE);
