@@ -208,6 +208,8 @@ private Q_SLOTS:
     void handleAboutToFinish();
     void handleStreamChange();
 
+    void newMetaData(QMultiMap<QString,QString>);
+
 private:
     // GStreamer specific :
     void setTotalTime(qint64 newTime);
@@ -268,6 +270,7 @@ private:
     // It can be different from the pipeline's current source due to how the
     // almost-at-end gapless playback code works.
     Phonon::MediaSource m_source;
+    QMultiMap<QString, QString> m_sourceMeta;
 
     QMutex m_aboutToFinishLock;
     QWaitCondition m_aboutToFinishWait;

@@ -101,7 +101,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         connect(m_pipeline, SIGNAL(errorMessage(QString,Phonon::ErrorType)),
                 this, SLOT(setError(QString,Phonon::ErrorType)));
         connect(m_pipeline, SIGNAL(metaDataChanged(QMultiMap<QString,QString>)),
-                this, SIGNAL(metaDataChanged(QMultiMap<QString,QString>)));
+                this, SLOT(newMetaData(QMultiMap<QString,QString>)));
         connect(m_pipeline, SIGNAL(availableMenusChanged(QList<MediaController::NavigationMenu>)),
                 this, SIGNAL(availableMenusChanged(QList<MediaController::NavigationMenu>)));
         connect(m_pipeline, SIGNAL(videoAvailabilityChanged(bool)),
@@ -376,7 +376,9 @@ void MediaObject::handleStreamChange()
         m_waitingForPreviousSource = false;
     } else {
         m_source = m_pipeline->currentSource();
+        m_sourceMeta = m_pipeline->metaData();
         m_waitingForNextSource = false;
+        emit metaDataChanged(m_pipeline->metaData());
         emit currentSourceChanged(m_pipeline->currentSource());
     }
 }
@@ -617,7 +619,7 @@ void MediaObject::handleBuffering(int percent)
 
 QMultiMap<QString, QString> MediaObject::metaData()
 {
-    return m_pipeline->metaData();
+    return m_sourceMeta;
 }
 
 void MediaObject::setMetaData(QMultiMap<QString, QString> newData)
@@ -661,6 +663,11 @@ void MediaObject::handleAboutToFinish()
     m_aboutToFinishWait.wait(&m_aboutToFinishLock);
     qDebug() << "Finally got a source";
     m_aboutToFinishLock.unlock();
+}
+
+void MediaObject::newMetaData(QMultiMap<QString, QString> metadata)
+{
+    //TODO: Implement this for streaming sources
 }
 
 } // ns Gstreamer
