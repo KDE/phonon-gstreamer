@@ -786,6 +786,8 @@ Phonon::State Pipeline::phononState() const
             return Phonon::LoadingState;
         case GST_STATE_PAUSED:
             return Phonon::PausedState;
+        case GST_STATE_VOID_PENDING: //Quiet GCC
+            break;
     }
     return Phonon::ErrorState;
 }
@@ -800,12 +802,15 @@ static void cb_feedAppSrc(GstAppSrc *appSrc, guint buffsize, gpointer data)
 
 static void cb_seekAppSrc(GstAppSrc *appSrc, guint64 pos, gpointer data)
 {
+    Q_UNUSED(appSrc);
     StreamReader *reader = static_cast<StreamReader*>(data);
     reader->setCurrentPos(pos);
 }
 
 void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer data)
 {
+    Q_UNUSED(playbin);
+    Q_UNUSED(param);
     Pipeline *that = static_cast<Pipeline*>(data);
     if (that->m_isStream) {
         GstElement *phononSrc;
@@ -827,6 +832,7 @@ void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer d
 
 void Pipeline::cb_aboutToFinish(GstElement *appSrc, gpointer data)
 {
+    Q_UNUSED(appSrc);
     Pipeline *that = static_cast<Pipeline*>(data);
     emit that->aboutToFinish();
 }

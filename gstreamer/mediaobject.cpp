@@ -431,6 +431,8 @@ Phonon::State MediaObject::translateState(GstState state) const
             return Phonon::StoppedState;
         case GST_STATE_NULL:
             return Phonon::LoadingState;
+        case GST_STATE_VOID_PENDING: //Quiet GCC
+            break;
     }
     return Phonon::ErrorState;
 }
@@ -644,6 +646,9 @@ void MediaObject::requestState(Phonon::State state)
         case Phonon::ErrorState:
             // Use ErrorState to represent a fatal error
             m_pipeline->setState(GST_STATE_NULL);
+            break;
+        case Phonon::LoadingState: //Quiet GCC
+        case Phonon::BufferingState:
             break;
     }
 }
