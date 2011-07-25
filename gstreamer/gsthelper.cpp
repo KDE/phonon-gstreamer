@@ -71,7 +71,7 @@ bool GstHelper::setProperty(GstElement *elem, const char *propertyName, const QB
     Q_ASSERT(propertyName && strlen(propertyName));
 
     if (GST_IS_PROPERTY_PROBE(elem) && gst_property_probe_get_property( GST_PROPERTY_PROBE( elem), propertyName ) ) {
-        g_object_set(G_OBJECT(elem), propertyName, propertyValue.constData(), (const char*)NULL);
+        g_object_set(G_OBJECT(elem), propertyName, propertyValue.constData(), NULL);
         return true;
     }
     return false;
@@ -88,7 +88,7 @@ QByteArray GstHelper::property(GstElement *elem, const char *propertyName)
 
     if (GST_IS_PROPERTY_PROBE(elem) && gst_property_probe_get_property( GST_PROPERTY_PROBE(elem), propertyName)) {
         gchar *value = NULL;
-        g_object_get (G_OBJECT(elem), propertyName, &value, (const char*)NULL);
+        g_object_get (G_OBJECT(elem), propertyName, &value, NULL);
         retVal = QByteArray(value);
         g_free (value);
     }

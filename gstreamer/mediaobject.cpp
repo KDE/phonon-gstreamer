@@ -284,7 +284,9 @@ void MediaObject::setNextSource(const MediaSource &source)
     qDebug() << "Got next source. Waiting for end of current.";
     m_waitingForNextSource = true;
     m_waitingForPreviousSource = false;
+    m_aboutToFinishSignalLock.lock();
     m_pipeline->setSource(source);
+    m_aboutToFinishSignalLock.unlock();
     m_aboutToFinishWait.wakeAll();
 }
 
@@ -404,7 +406,9 @@ void MediaObject::handleStreamChange()
         m_waitingForPreviousSource = false;
     } else {
         m_source = m_pipeline->currentSource();
+        m_sourceMeta = m_pipeline->metaData();
         m_waitingForNextSource = false;
+        emit metaDataChanged(m_pipeline->metaData());
         emit currentSourceChanged(m_pipeline->currentSource());
     }
 }
@@ -459,6 +463,8 @@ Phonon::State MediaObject::translateState(GstState state) const
             return Phonon::StoppedState;
         case GST_STATE_NULL:
             return Phonon::LoadingState;
+        case GST_STATE_VOID_PENDING: //Quiet GCC
+            break;
     }
     return Phonon::ErrorState;
 }
@@ -709,7 +715,7 @@ void MediaObject::handleBuffering(int percent)
 
 QMultiMap<QString, QString> MediaObject::metaData()
 {
-    return m_pipeline->metaData();
+    return m_sourceMeta;
 }
 
 void MediaObject::setMetaData(QMultiMap<QString, QString> newData)
@@ -739,15 +745,20 @@ void MediaObject::requestState(Phonon::State state)
             // Use ErrorState to represent a fatal error
             m_pipeline->setState(GST_STATE_NULL);
             break;
+        case Phonon::LoadingState: //Quiet GCC
+        case Phonon::BufferingState:
+            break;
     }
 }
 
 void MediaObject::handleAboutToFinish()
 {
     qDebug() << "About to finish";
-    emit aboutToFinish();
+    m_aboutToFinishSignalLock.lock();
     m_aboutToFinishLock.lock();
-    m_aboutToFinishWait.wait(&m_aboutToFinishLock);
+    emit aboutToFinish();
+    m_aboutToFinishSignalLock.unlock();
+    m_aboutToFinishWait.wait(&m_aboutToFinishLock, 3000);
     qDebug() << "Finally got a source";
     m_aboutToFinishLock.unlock();
 }

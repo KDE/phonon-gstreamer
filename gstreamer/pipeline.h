@@ -119,6 +119,7 @@ class Pipeline : public QObject
         void videoAvailabilityChanged(bool);
         void textTagChanged(int stream);
         void errorMessage(const QString &message, Phonon::ErrorType type);
+        // Only emitted when metadata changes in the middle of a stream.
         void metaDataChanged(QMultiMap<QString, QString>);
         void mouseOverActive(bool isActive);
         void availableMenusChanged(QList<MediaController::NavigationMenu>);
@@ -134,6 +135,7 @@ class Pipeline : public QObject
         // Otherwise, it is possible to jump to another track, play a few seconds, pause, then finish installation
         // and spontaniously start playback without user action.
         bool m_resumeAfterInstall;
+        // Determines if we're using an QIODevice stream
         bool m_isStream;
         QMultiMap<QString, QString> m_metaData;
         QList<MediaController::NavigationMenu> m_menus;

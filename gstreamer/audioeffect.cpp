@@ -67,7 +67,7 @@ GstElement* AudioEffect::createEffectBin()
     gst_object_unref (srcPad);
 
     //Link sink pad
-    gst_element_link_many(queue, mconv, m_effectElement, (const char*)NULL);
+    gst_element_link_many(queue, mconv, m_effectElement, NULL);
     GstPad *sinkpad = gst_element_get_static_pad (queue, "sink");
     gst_element_add_pad (audioBin, gst_ghost_pad_new ("sink", sinkpad));
     gst_object_unref (sinkpad);

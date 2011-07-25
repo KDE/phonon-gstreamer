@@ -67,10 +67,10 @@ AudioOutput::AudioOutput(Backend *backend, QObject *parent)
 
         if (queue && m_audioBin && m_conv && audioresample && m_audioSink && m_volumeElement) {
             gst_bin_add_many(GST_BIN(m_audioBin), queue, m_conv,
-                             audioresample, m_volumeElement, m_audioSink, (const char*)NULL);
+                             audioresample, m_volumeElement, m_audioSink, NULL);
 
             if (gst_element_link_many(queue, m_conv, audioresample, m_volumeElement,
-                                      m_audioSink, (const char*)NULL)) {
+                                      m_audioSink, NULL)) {
                 // Add ghost sink for audiobin
                 GstPad *audiopad = gst_element_get_static_pad (queue, "sink");
                 gst_element_add_pad (m_audioBin, gst_ghost_pad_new ("sink", audiopad));
@@ -125,7 +125,7 @@ void AudioOutput::setVolume(qreal newVolume)
     m_volumeLevel = newVolume;
 
     if (m_volumeElement) {
-        g_object_set(G_OBJECT(m_volumeElement), "volume", newVolume, (const char*)NULL);
+        g_object_set(G_OBJECT(m_volumeElement), "volume", newVolume, NULL);
     }
 
     emit volumeChanged(newVolume);

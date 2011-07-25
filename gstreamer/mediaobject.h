@@ -274,8 +274,13 @@ private:
     // It can be different from the pipeline's current source due to how the
     // almost-at-end gapless playback code works.
     Phonon::MediaSource m_source;
+    QMultiMap<QString, QString> m_sourceMeta;
 
+    //One simply pauses the gst signal handler 'till we get something
     QMutex m_aboutToFinishLock;
+    //This other one makes sure we don't set the next source while we're setting up mutexes to wait
+    //for the next source :P
+    QMutex m_aboutToFinishSignalLock;
     QWaitCondition m_aboutToFinishWait;
 
     qint64 m_lastTime;

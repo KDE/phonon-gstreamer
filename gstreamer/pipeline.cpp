@@ -73,13 +73,13 @@ Pipeline::Pipeline(QObject *parent)
     // pull-mode access. Also note that the max-size-time are increased to
     // reduce buffer overruns as these are not gracefully handled at the moment.
     m_audioPipe = gst_element_factory_make("queue", "audioPipe");
-    g_object_set(G_OBJECT(m_audioPipe), "max-size-time",  MAX_QUEUE_TIME, (const char*)NULL);
+    g_object_set(G_OBJECT(m_audioPipe), "max-size-time",  MAX_QUEUE_TIME, NULL);
 
     QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
     if (!tegraEnv.isEmpty()) {
-        g_object_set(G_OBJECT(m_audioPipe), "max-size-time", 0, (const char*)NULL);
-        g_object_set(G_OBJECT(m_audioPipe), "max-size-buffers", 0, (const char*)NULL);
-        g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0, (const char*)NULL);
+        g_object_set(G_OBJECT(m_audioPipe), "max-size-time", 0, NULL);
+        g_object_set(G_OBJECT(m_audioPipe), "max-size-buffers", 0, NULL);
+        g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0, NULL);
     }
 
     gst_bin_add(GST_BIN(m_audioGraph), m_audioPipe);
@@ -105,9 +105,9 @@ Pipeline::Pipeline(QObject *parent)
     //FIXME: Put this stuff somewhere else, or at least document why its needed.
     if (!tegraEnv.isEmpty()) {
         //TODO: Move this line into the videooutput
-        //g_object_set(G_OBJECT(videoQueue), "max-size-time", 33000, (const char*)NULL);
-        g_object_set(G_OBJECT(m_audioPipe), "max-size-buffers", 1, (const char*)NULL);
-        g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0, (const char*)NULL);
+        //g_object_set(G_OBJECT(videoQueue), "max-size-time", 33000, NULL);
+        g_object_set(G_OBJECT(m_audioPipe), "max-size-buffers", 1, NULL);
+        g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0, NULL);
     }
 
     connect(m_installer, SIGNAL(failure(const QString&)), this, SLOT(pluginInstallFailure(const QString&)));
@@ -150,7 +150,7 @@ void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
             gstUri = source.mrl().toEncoded();
             break;
         case MediaSource::Invalid:
-            //TODO: Raise error
+            emit errorMessage("Invalid source specified", Phonon::FatalError);
             return;
         case MediaSource::Stream:
             gstUri = "appsrc://";
@@ -167,8 +167,14 @@ void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
                 case Phonon::Dvd:
                     gstUri = "dvd://";
                     break;
+                case Phonon::NoDisc:
+                    emit errorMessage("Invalid disk source specified", Phonon::FatalError);
+                    return;
             }
             break;
+        case MediaSource::Empty:
+            emit errorMessage("Empty source specified", Phonon::FatalError);
+            return;
     }
 
     //TODO: Test this to make sure that resuming playback after plugin installation
@@ -683,6 +689,13 @@ void Pipeline::handleTagMessage(GstMessage *msg)
             // As we manipulate the title, we need to recompare
             // oldMap and m_metaData here...
             //if (oldMap != m_metaData && !m_loading)
+
+            // Only emit signal if we're on a live stream.
+            // Its a kludgy hack that for 99% of cases of streaming should work.
+            // If not, this needs fixed in mediaobject.cpp.
+            guint kbps;
+            g_object_get(m_pipeline, "connection-speed", &kbps, NULL);
+            if (kbps != 0)
                 emit metaDataChanged(m_metaData);
         }
     }
@@ -793,6 +806,8 @@ Phonon::State Pipeline::phononState() const
             return Phonon::LoadingState;
         case GST_STATE_PAUSED:
             return Phonon::PausedState;
+        case GST_STATE_VOID_PENDING: //Quiet GCC
+            break;
     }
     return Phonon::ErrorState;
 }
@@ -807,12 +822,15 @@ static void cb_feedAppSrc(GstAppSrc *appSrc, guint buffsize, gpointer data)
 
 static void cb_seekAppSrc(GstAppSrc *appSrc, guint64 pos, gpointer data)
 {
+    Q_UNUSED(appSrc);
     StreamReader *reader = static_cast<StreamReader*>(data);
     reader->setCurrentPos(pos);
 }
 
 void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer data)
 {
+    Q_UNUSED(playbin);
+    Q_UNUSED(param);
     Pipeline *that = static_cast<Pipeline*>(data);
     if (that->m_isStream) {
         GstElement *phononSrc;
@@ -834,6 +852,7 @@ void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer d
 
 void Pipeline::cb_aboutToFinish(GstElement *appSrc, gpointer data)
 {
+    Q_UNUSED(appSrc);
     Pipeline *that = static_cast<Pipeline*>(data);
     emit that->aboutToFinish();
 }
