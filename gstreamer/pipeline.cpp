@@ -682,6 +682,13 @@ void Pipeline::handleTagMessage(GstMessage *msg)
             // As we manipulate the title, we need to recompare
             // oldMap and m_metaData here...
             //if (oldMap != m_metaData && !m_loading)
+
+            // Only emit signal if we're on a live stream.
+            // Its a kludgy hack that for 99% of cases of streaming should work.
+            // If not, this needs fixed in mediaobject.cpp.
+            guint kbps;
+            g_object_get(m_pipeline, "connection-speed", &kbps, NULL);
+            if (kbps != 0)
                 emit metaDataChanged(m_metaData);
         }
     }

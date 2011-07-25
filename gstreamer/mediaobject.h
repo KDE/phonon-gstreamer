@@ -208,8 +208,6 @@ private Q_SLOTS:
     void handleAboutToFinish();
     void handleStreamChange();
 
-    void newMetaData(QMultiMap<QString,QString>);
-
 private:
     // GStreamer specific :
     void setTotalTime(qint64 newTime);
