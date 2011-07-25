@@ -149,7 +149,7 @@ void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
             gstUri = source.mrl().toEncoded();
             break;
         case MediaSource::Invalid:
-            //TODO: Raise error
+            emit errorMessage("Invalid source specified", Phonon::FatalError);
             return;
         case MediaSource::Stream:
             gstUri = "appsrc://";
@@ -166,8 +166,14 @@ void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
                 case Phonon::Dvd:
                     gstUri = "dvd://";
                     break;
+                case Phonon::NoDisc:
+                    emit errorMessage("Invalid disk source specified", Phonon::FatalError);
+                    return;
             }
             break;
+        case MediaSource::Empty:
+            emit errorMessage("Empty source specified", Phonon::FatalError);
+            return;
     }
 
     //TODO: Test this to make sure that resuming playback after plugin installation
