@@ -72,13 +72,13 @@ Pipeline::Pipeline(QObject *parent)
     // pull-mode access. Also note that the max-size-time are increased to
     // reduce buffer overruns as these are not gracefully handled at the moment.
     m_audioPipe = gst_element_factory_make("queue", "audioPipe");
-    g_object_set(G_OBJECT(m_audioPipe), "max-size-time",  MAX_QUEUE_TIME, (const char*)NULL);
+    g_object_set(G_OBJECT(m_audioPipe), "max-size-time",  MAX_QUEUE_TIME, NULL);
 
     QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
     if (!tegraEnv.isEmpty()) {
-        g_object_set(G_OBJECT(m_audioPipe), "max-size-time", 0, (const char*)NULL);
-        g_object_set(G_OBJECT(m_audioPipe), "max-size-buffers", 0, (const char*)NULL);
-        g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0, (const char*)NULL);
+        g_object_set(G_OBJECT(m_audioPipe), "max-size-time", 0, NULL);
+        g_object_set(G_OBJECT(m_audioPipe), "max-size-buffers", 0, NULL);
+        g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0, NULL);
     }
 
     gst_bin_add(GST_BIN(m_audioGraph), m_audioPipe);
@@ -104,9 +104,9 @@ Pipeline::Pipeline(QObject *parent)
     //FIXME: Put this stuff somewhere else, or at least document why its needed.
     if (!tegraEnv.isEmpty()) {
         //TODO: Move this line into the videooutput
-        //g_object_set(G_OBJECT(videoQueue), "max-size-time", 33000, (const char*)NULL);
-        g_object_set(G_OBJECT(m_audioPipe), "max-size-buffers", 1, (const char*)NULL);
-        g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0, (const char*)NULL);
+        //g_object_set(G_OBJECT(videoQueue), "max-size-time", 33000, NULL);
+        g_object_set(G_OBJECT(m_audioPipe), "max-size-buffers", 1, NULL);
+        g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0, NULL);
     }
 
     connect(m_installer, SIGNAL(failure(const QString&)), this, SLOT(pluginInstallFailure(const QString&)));

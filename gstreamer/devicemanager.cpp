@@ -57,8 +57,8 @@ VideoCaptureDevice::VideoCaptureDevice(DeviceManager *manager, const QByteArray 
             gchar *deviceDescription = NULL;
 
             if (GST_IS_PROPERTY_PROBE(dev) && gst_property_probe_get_property( GST_PROPERTY_PROBE(dev), "device" ) ) {
-                g_object_set (G_OBJECT(dev), "device", gstId.constData(), (const char*)NULL);
-                g_object_get (G_OBJECT(dev), "device-name", &deviceDescription, (const char*)NULL);
+                g_object_set (G_OBJECT(dev), "device", gstId.constData(), NULL);
+                g_object_get (G_OBJECT(dev), "device-name", &deviceDescription, NULL);
                 description = QByteArray(deviceDescription);
                 g_free (deviceDescription);
                 gst_element_set_state(dev, GST_STATE_NULL);
@@ -87,8 +87,8 @@ AudioDevice::AudioDevice(DeviceManager *manager, const QByteArray &gstId)
             gchar *deviceDescription = NULL;
 
             if (GST_IS_PROPERTY_PROBE(aSink) && gst_property_probe_get_property( GST_PROPERTY_PROBE(aSink), "device" ) ) {
-                g_object_set (G_OBJECT(aSink), "device", gstId.constData(), (const char*)NULL);
-                g_object_get (G_OBJECT(aSink), "device-name", &deviceDescription, (const char*)NULL);
+                g_object_set (G_OBJECT(aSink), "device", gstId.constData(), NULL);
+                g_object_get (G_OBJECT(aSink), "device-name", &deviceDescription, NULL);
                 description = QByteArray(deviceDescription);
                 g_free (deviceDescription);
                 gst_element_set_state(aSink, GST_STATE_NULL);
@@ -153,13 +153,13 @@ GstElement *DeviceManager::createGNOMEAudioSink(Category category)
         if (g_object_class_find_property (G_OBJECT_GET_CLASS (sink), "profile")) {
             switch (category) {
             case NotificationCategory:
-                g_object_set (G_OBJECT (sink), "profile", 0, (const char*)NULL); // 0 = 'sounds'
+                g_object_set (G_OBJECT (sink), "profile", 0, NULL); // 0 = 'sounds'
                 break;
             case CommunicationCategory:
-                g_object_set (G_OBJECT (sink), "profile", 2, (const char*)NULL); // 2 = 'chat'
+                g_object_set (G_OBJECT (sink), "profile", 2, NULL); // 2 = 'chat'
                 break;
             default:
-                g_object_set (G_OBJECT (sink), "profile", 1, (const char*)NULL); // 1 = 'music and movies'
+                g_object_set (G_OBJECT (sink), "profile", 1, NULL); // 1 = 'music and movies'
                 break;
             }
         }
@@ -277,7 +277,7 @@ GstElement *DeviceManager::createAudioSink(Category category)
         if (sink) {
             m_backend->logMessage("AudioOutput Using fake audio sink");
             //without sync the sink will pull the pipeline as fast as the CPU allows
-            g_object_set (G_OBJECT (sink), "sync", TRUE, (const char*)NULL);
+            g_object_set (G_OBJECT (sink), "sync", TRUE, NULL);
         }
     }
     Q_ASSERT(sink);

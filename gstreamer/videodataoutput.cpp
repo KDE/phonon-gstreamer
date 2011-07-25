@@ -53,7 +53,7 @@ VideoDataOutput::VideoDataOutput(Backend *backend, QObject *parent)
     GstElement* convert = gst_element_factory_make("ffmpegcolorspace", NULL);
 
     g_signal_connect(sink, "handoff", G_CALLBACK(processBuffer), this);
-    g_object_set(G_OBJECT(sink), "signal-handoffs", true, (const char*)NULL);
+    g_object_set(G_OBJECT(sink), "signal-handoffs", true, NULL);
 
         // Save ourselves a metric crapton of work by simply requesting
         // a format native to Qt.
@@ -72,7 +72,7 @@ VideoDataOutput::VideoDataOutput(Backend *backend, QObject *parent)
     gst_element_add_pad(m_queue, gst_ghost_pad_new("sink", inputpad));
     gst_object_unref(inputpad);
 
-    g_object_set(G_OBJECT(sink), "sync", true, (const char*)NULL);
+    g_object_set(G_OBJECT(sink), "sync", true, NULL);
 
     m_isValid = true;
 }
