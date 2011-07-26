@@ -199,6 +199,7 @@ private Q_SLOTS:
     void emitTick();
     void beginPlay();
     void notifyStateChange(Phonon::State newstate, Phonon::State oldstate);
+    void autoDetectSubtitle();
 
     void handleEndOfStream();
     void logWarning(const QString &);
@@ -224,6 +225,7 @@ private:
     SubtitleDescription _iface_currentSubtitle() const;
     void _iface_setCurrentSubtitle(const SubtitleDescription &subtitle);
     void setTrack(int title);
+    void changeSubUri(const Mrl & mrl);
 
     bool m_resumeState;
     State m_oldState;

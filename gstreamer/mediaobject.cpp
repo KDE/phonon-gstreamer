@@ -31,6 +31,7 @@
 #include <QtCore/QByteRef>
 #include <QtCore/QEvent>
 #include <QtCore/QFile>
+#include <QtCore/QFileInfo>
 #include <QtCore/QPointer>
 #include <QtCore/QStringList>
 #include <QtCore/QTimer>
@@ -279,6 +280,37 @@ MediaSource MediaObject::source() const
     return m_source;
 }
 
+void MediaObject::changeSubUri(const Mrl & mrl)
+{
+    //FIXME: Try to detect common encodings, like libvlc does
+    //FIXME: Move subtitle-font-desc in Pipeline::Pipeline() and use QApplication::font()
+    g_object_set(G_OBJECT(m_pipeline->element()), "suburi", mrl.toEncoded().constData(), "subtitle-font-desc", "Sans Bold 16", "subtitle-encoding", "UTF-8", NULL);
+}
+
+void MediaObject::autoDetectSubtitle()
+{
+    if (m_source.type() == MediaSource::LocalFile ||
+       (m_source.type() == MediaSource::Url && m_source.mrl().scheme() == "file") ) {
+
+        QList<QLatin1String> exts = QList<QLatin1String>()
+            << QLatin1String("sub") << QLatin1String("srt")
+            << QLatin1String("smi") << QLatin1String("ssa")
+            << QLatin1String("ass") << QLatin1String("asc");
+
+        // Remove the file extension
+        QString absCompleteBaseName = m_source.fileName();
+        absCompleteBaseName.replace(QFileInfo(absCompleteBaseName).suffix(), "");
+
+        // Looking for a subtitle in the same directory and matching the same name
+        foreach(QLatin1String ext, exts) {
+            if (QFile::exists(absCompleteBaseName + ext)) {
+                changeSubUri(Mrl("file://" + absCompleteBaseName + ext));
+                break;
+            }
+	}
+    }
+}
+
 void MediaObject::setNextSource(const MediaSource &source)
 {
     qDebug() << "Got next source. Waiting for end of current.";
@@ -310,6 +342,7 @@ void MediaObject::setSource(const MediaSource &source)
 
     qDebug() << "Setting new source";
     m_source = source;
+    autoDetectSubtitle();
     m_pipeline->setSource(source);
     m_aboutToFinishWait.wakeAll();
     //emit currentSourceChanged(source);
@@ -659,11 +692,7 @@ void MediaObject::_iface_setCurrentSubtitle(const SubtitleDescription &subtitle)
 	// TODO: Harald suggests to insert a empty bin into the playbin2 pipeline and then insert a subtitle element
 	// on the fly into that bin when the subtitle feature is required... 
         stop();
-        // Assuming that the input subtitle encoding is UTF-8
-        // TODO: we could try to detect the encoding ONLY for the most common ones (like libVLC)
-	// FIXME: The font name and size should be obtained from Qt
-        g_object_set(G_OBJECT(m_pipeline->element()), "suburi", filename.toStdString().c_str(),
-                     "subtitle-font-desc", "Sans Bold 16", "subtitle-encoding", "UTF-8", NULL);
+        changeSubUri(Mrl(filename));
         play();
         m_currentSubtitle = subtitle;
         GlobalSubtitles::instance()->add(this, m_currentSubtitle);
