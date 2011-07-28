@@ -244,8 +244,6 @@ gboolean Pipeline::cb_eos(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
     Q_UNUSED(bus)
     Pipeline *that = static_cast<Pipeline*>(data);
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(gstMessage));
-    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
     emit that->eos();
     return true;
 }
@@ -256,14 +254,12 @@ gboolean Pipeline::cb_warning(GstBus *bus, GstMessage *gstMessage, gpointer data
     gchar *debug;
     GError *err;
     Pipeline *that = static_cast<Pipeline*>(data);
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(gstMessage));
     gst_message_parse_warning(gstMessage, &err, &debug);
     QString msgString;
     msgString.sprintf("Warning: %s\nMessage:%s", debug, err->message);
     emit that->warning(msgString);
     g_free (debug);
     g_error_free (err);
-    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
     return true;
 }
 
@@ -274,13 +270,11 @@ gboolean Pipeline::cb_duration(GstBus *bus, GstMessage *gstMessage, gpointer dat
     GstFormat format;
     Pipeline *that = static_cast<Pipeline*>(data);
     qDebug() << "Duration message";
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(gstMessage));
     if (that->m_resetting)
         return true;
     gst_message_parse_duration(gstMessage, &format, &duration);
     if (format == GST_FORMAT_TIME)
         emit that->durationChanged(duration/GST_MSECOND);
-    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
     return true;
 }
 
@@ -298,7 +292,6 @@ gboolean Pipeline::cb_buffering(GstBus *bus, GstMessage *gstMessage, gpointer da
 {
     Q_UNUSED(bus)
     Pipeline *that = static_cast<Pipeline*>(data);
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(gstMessage));
     gint percent = 0;
     gst_structure_get_int (gstMessage->structure, "buffer-percent", &percent); //gst_message_parse_buffering was introduced in 0.10.11
 
@@ -307,7 +300,6 @@ gboolean Pipeline::cb_buffering(GstBus *bus, GstMessage *gstMessage, gpointer da
         that->m_bufferPercent = percent;
     }
 
-    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
     return true;
 }
 
@@ -318,7 +310,6 @@ gboolean Pipeline::cb_state(GstBus *bus, GstMessage *gstMessage, gpointer data)
     GstState newState;
     GstState pendingState;
     Pipeline *that = static_cast<Pipeline*>(data);
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(gstMessage));
     gst_message_parse_state_changed(gstMessage, &oldState, &newState, &pendingState);
 
     if (oldState == newState) {
@@ -326,7 +317,6 @@ gboolean Pipeline::cb_state(GstBus *bus, GstMessage *gstMessage, gpointer data)
     }
 
     if (gstMessage->src != GST_OBJECT(that->m_pipeline)) {
-        gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
         return true;
     }
 
@@ -397,7 +387,6 @@ gboolean Pipeline::cb_element(GstBus *bus, GstMessage *gstMessage, gpointer data
 {
     Q_UNUSED(bus)
     Pipeline *that = static_cast<Pipeline*>(data);
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(gstMessage));
     const GstStructure *str = gst_message_get_structure(gstMessage);
     if (gst_is_missing_plugin_message(gstMessage)) {
         that->m_installer->addPlugin(gstMessage);
@@ -430,7 +419,6 @@ gboolean Pipeline::cb_element(GstBus *bus, GstMessage *gstMessage, gpointer data
         if (!that->m_resetting)
             emit that->streamChanged();
     }
-    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
     return true;
 }
 
@@ -460,7 +448,6 @@ gboolean Pipeline::cb_error(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
     Q_UNUSED(bus)
     Pipeline *that = static_cast<Pipeline*>(data);
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(gstMessage));
     PluginInstaller::InstallStatus status = that->m_installer->checkInstalledPlugins();
     qDebug() << status;
 
@@ -475,7 +462,6 @@ gboolean Pipeline::cb_error(GstBus *bus, GstMessage *gstMessage, gpointer data)
         emit that->errorMessage(err->message, Phonon::FatalError);
         g_error_free(err);
     }
-    gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
     return true;
 }
 
@@ -546,7 +532,6 @@ gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
 {
     Q_UNUSED(bus)
     Pipeline *that = static_cast<Pipeline*>(data);
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
     GstTagList* tag_list = 0;
     gst_message_parse_tag(msg, &tag_list);
     if (tag_list) {
@@ -655,7 +640,6 @@ gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
                 emit that->metaDataChanged(that->m_metaData);
         }
     }
-    gst_mini_object_unref(GST_MINI_OBJECT_CAST(msg));
     return true;
 }
 
