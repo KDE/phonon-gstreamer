@@ -285,7 +285,7 @@ MediaSource MediaObject::source() const
 void MediaObject::changeSubUri(const Mrl & mrl)
 {
     QString fontDesc;
-    QByteArray customFont = qgetenv("PHONON_GST_SUBTITLE_FONT");
+    QByteArray customFont = qgetenv("PHONON_SUBTITLE_FONT");
 
     if (customFont.isNull()) {
         QFont videoWidgetFont = QApplication::font("VideoWidget");
