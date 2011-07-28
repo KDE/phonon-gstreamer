@@ -242,7 +242,7 @@ GstState Pipeline::state() const
 gboolean Pipeline::cb_eos(GstBus *bus, GstMessage *msg, gpointer data)
 {
     Q_UNUSED(bus)
-    MediaObject *that = static_cast<MediaObject*>(data);
+    Pipeline *that = static_cast<Pipeline*>(data);
     gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
     QMetaObject::invokeMethod(that, "handleEOSMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
     return true;
@@ -257,7 +257,7 @@ void Pipeline::handleEOSMessage(GstMessage *gstMessage)
 gboolean Pipeline::cb_warning(GstBus *bus, GstMessage *msg, gpointer data)
 {
     Q_UNUSED(bus)
-    MediaObject *that = static_cast<MediaObject*>(data);
+    Pipeline *that = static_cast<Pipeline*>(data);
     gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
     QMetaObject::invokeMethod(that, "handleWarningMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
     return true;
@@ -311,7 +311,7 @@ qint64 Pipeline::totalDuration() const
 gboolean Pipeline::cb_buffering(GstBus *bus, GstMessage *msg, gpointer data)
 {
     Q_UNUSED(bus)
-    MediaObject *that = static_cast<MediaObject*>(data);
+    Pipeline *that = static_cast<Pipeline*>(data);
     gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
     QMetaObject::invokeMethod(that, "handleBufferingMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
     return true;
