@@ -41,6 +41,7 @@ Pipeline::Pipeline(QObject *parent)
     , m_installer(new PluginInstaller(this))
     , m_resetting(false)
 {
+    qRegisterMetaType<GstState>("GstState");
     m_pipeline = GST_PIPELINE(gst_element_factory_make("playbin2", NULL));
     gst_object_ref(m_pipeline);
     gst_object_sink(m_pipeline);
@@ -239,63 +240,48 @@ GstState Pipeline::state() const
     return state;
 }
 
-gboolean Pipeline::cb_eos(GstBus *bus, GstMessage *msg, gpointer data)
+gboolean Pipeline::cb_eos(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
     Q_UNUSED(bus)
     Pipeline *that = static_cast<Pipeline*>(data);
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
-    QMetaObject::invokeMethod(that, "handleEOSMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
-    return true;
-}
-
-void Pipeline::handleEOSMessage(GstMessage *gstMessage)
-{
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(gstMessage));
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
-    emit eos();
-}
-
-gboolean Pipeline::cb_warning(GstBus *bus, GstMessage *msg, gpointer data)
-{
-    Q_UNUSED(bus)
-    Pipeline *that = static_cast<Pipeline*>(data);
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
-    QMetaObject::invokeMethod(that, "handleWarningMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
+    emit that->eos();
     return true;
 }
 
-void Pipeline::handleWarningMessage(GstMessage *gstMessage)
+gboolean Pipeline::cb_warning(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
+    Q_UNUSED(bus)
     gchar *debug;
     GError *err;
+    Pipeline *that = static_cast<Pipeline*>(data);
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(gstMessage));
     gst_message_parse_warning(gstMessage, &err, &debug);
     QString msgString;
     msgString.sprintf("Warning: %s\nMessage:%s", debug, err->message);
-    emit warning(msgString);
+    emit that->warning(msgString);
     g_free (debug);
     g_error_free (err);
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
-}
-
-gboolean Pipeline::cb_duration(GstBus *bus, GstMessage *msg, gpointer data)
-{
-    Q_UNUSED(bus)
-    Pipeline *that = static_cast<Pipeline*>(data);
-    qDebug() << "Duration message";
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
-    QMetaObject::invokeMethod(that, "handleDurationMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
     return true;
 }
 
-void Pipeline::handleDurationMessage(GstMessage *gstMessage)
+gboolean Pipeline::cb_duration(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
+    Q_UNUSED(bus)
     gint64 duration;
     GstFormat format;
-    if (m_resetting)
-        return;
+    Pipeline *that = static_cast<Pipeline*>(data);
+    qDebug() << "Duration message";
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(gstMessage));
+    if (that->m_resetting)
+        return true;
     gst_message_parse_duration(gstMessage, &format, &duration);
     if (format == GST_FORMAT_TIME)
-        emit durationChanged(duration/GST_MSECOND);
+        emit that->durationChanged(duration/GST_MSECOND);
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
+    return true;
 }
 
 qint64 Pipeline::totalDuration() const
@@ -308,83 +294,70 @@ qint64 Pipeline::totalDuration() const
     return -1;
 }
 
-gboolean Pipeline::cb_buffering(GstBus *bus, GstMessage *msg, gpointer data)
+gboolean Pipeline::cb_buffering(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
     Q_UNUSED(bus)
     Pipeline *that = static_cast<Pipeline*>(data);
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
-    QMetaObject::invokeMethod(that, "handleBufferingMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
-    return true;
-}
-
-/**
- * Handles GST_MESSAGE_BUFFERING messages
- */
-void Pipeline::handleBufferingMessage(GstMessage *gstMessage)
-{
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(gstMessage));
     gint percent = 0;
     gst_structure_get_int (gstMessage->structure, "buffer-percent", &percent); //gst_message_parse_buffering was introduced in 0.10.11
 
-    if (m_bufferPercent != percent) {
-        emit buffering(percent);
-        m_bufferPercent = percent;
+    if (that->m_bufferPercent != percent) {
+        emit that->buffering(percent);
+        that->m_bufferPercent = percent;
     }
 
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
-}
-
-gboolean Pipeline::cb_state(GstBus *bus, GstMessage *msg, gpointer data)
-{
-    Q_UNUSED(bus)
-    Pipeline *that = static_cast<Pipeline*>(data);
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
-    QMetaObject::invokeMethod(that, "handleStateMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
     return true;
 }
 
-void Pipeline::handleStateMessage(GstMessage *gstMessage)
+gboolean Pipeline::cb_state(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
+    Q_UNUSED(bus)
     GstState oldState;
     GstState newState;
     GstState pendingState;
+    Pipeline *that = static_cast<Pipeline*>(data);
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(gstMessage));
     gst_message_parse_state_changed(gstMessage, &oldState, &newState, &pendingState);
 
     if (oldState == newState) {
-        return;
+        return true;
     }
 
-    if (gstMessage->src != GST_OBJECT(m_pipeline)) {
+    if (gstMessage->src != GST_OBJECT(that->m_pipeline)) {
         gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
-        return;
+        return true;
     }
 
     // Apparently gstreamer sometimes enters the same state twice.
     // FIXME: Sometimes we enter the same state twice. currently not disallowed by the state machine
-    if (m_seeking) {
+    if (that->m_seeking) {
         if (GST_STATE_TRANSITION(oldState, newState) == GST_STATE_CHANGE_PAUSED_TO_PLAYING)
-            m_seeking = false;
-        return;
+            that->m_seeking = false;
+        return true;
     }
     qDebug() << "State change";
 
     if (newState == GST_STATE_READY) {
-        m_installer->checkInstalledPlugins();
+        that->m_installer->checkInstalledPlugins();
     }
 
     //FIXME: This is a hack until proper state engine is implemented in the pipeline
     // Wait to update stuff until we're at the final requested state
-    if (pendingState == GST_STATE_VOID_PENDING && newState > GST_STATE_READY && m_resetting) {
-        m_resetting = false;
-        seekToMSec(m_posAtReset);
+    if (pendingState == GST_STATE_VOID_PENDING && newState > GST_STATE_READY && that->m_resetting) {
+        that->m_resetting = false;
+        that->seekToMSec(that->m_posAtReset);
 //        return;
     }
 
     if (pendingState == GST_STATE_VOID_PENDING) {
-        emit durationChanged(totalDuration());
-        emit seekableChanged(isSeekable());
+        emit that->durationChanged(that->totalDuration());
+        emit that->seekableChanged(that->isSeekable());
     }
 
-    emit stateChanged(oldState, newState);
+    emit that->stateChanged(oldState, newState);
+    return true;
 }
 
 void Pipeline::cb_videoChanged(GstElement *playbin, gpointer data)
@@ -420,20 +393,14 @@ bool Pipeline::audioIsAvailable() const
     return audioCount > 0;
 }
 
-gboolean Pipeline::cb_element(GstBus *bus, GstMessage *msg, gpointer data)
+gboolean Pipeline::cb_element(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
     Q_UNUSED(bus)
     Pipeline *that = static_cast<Pipeline*>(data);
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
-    QMetaObject::invokeMethod(that, "handleElementMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
-    return true;
-}
-
-void Pipeline::handleElementMessage(GstMessage *gstMessage)
-{
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(gstMessage));
     const GstStructure *str = gst_message_get_structure(gstMessage);
     if (gst_is_missing_plugin_message(gstMessage)) {
-        m_installer->addPlugin(gstMessage);
+        that->m_installer->addPlugin(gstMessage);
     } else {
 #if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
         switch (gst_navigation_message_get_type(gstMessage)) {
@@ -442,11 +409,11 @@ void Pipeline::handleElementMessage(GstMessage *gstMessage)
             if (!gst_navigation_message_parse_mouse_over(gstMessage, &active)) {
                 break;
             }
-            emit mouseOverActive(active);
+            emit that->mouseOverActive(active);
             break;
         }
         case GST_NAVIGATION_MESSAGE_COMMANDS_CHANGED:
-            updateNavigation();
+            that->updateNavigation();
             break;
         default:
             break;
@@ -457,13 +424,14 @@ void Pipeline::handleElementMessage(GstMessage *gstMessage)
     // gst 0.10.25.1
     if (gst_structure_has_name(str, "playbin2-stream-changed")) {
         gchar *uri;
-        g_object_get(m_pipeline, "uri", &uri, NULL);
+        g_object_get(that->m_pipeline, "uri", &uri, NULL);
         qDebug() << "Stream changed to" << uri;
         g_free(uri);
-        if (!m_resetting)
-            emit streamChanged();
+        if (!that->m_resetting)
+            emit that->streamChanged();
     }
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
+    return true;
 }
 
 //TODO: implement state changes
@@ -488,40 +456,26 @@ void Pipeline::pluginInstallComplete()
     }
 }
 
-gboolean Pipeline::cb_error(GstBus *bus, GstMessage *msg, gpointer data)
+gboolean Pipeline::cb_error(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
     Q_UNUSED(bus)
     Pipeline *that = static_cast<Pipeline*>(data);
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
-    QMetaObject::invokeMethod(that, "handleErrorMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
-    return true;
-}
-
-void Pipeline::handleErrorMessage(GstMessage *gstMessage)
-{
-    PluginInstaller::InstallStatus status = m_installer->checkInstalledPlugins();
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(gstMessage));
+    PluginInstaller::InstallStatus status = that->m_installer->checkInstalledPlugins();
     qDebug() << status;
 
     if (status == PluginInstaller::Missing) {
-        Phonon::ErrorType type = (audioIsAvailable() || videoIsAvailable()) ? Phonon::NormalError : Phonon::FatalError;
-        emit errorMessage(tr("One or more plugins are missing in your GStreamer installation."), type);
+        Phonon::ErrorType type = (that->audioIsAvailable() || that->videoIsAvailable()) ? Phonon::NormalError : Phonon::FatalError;
+        emit that->errorMessage(tr("One or more plugins are missing in your GStreamer installation."), type);
     } else if (status == PluginInstaller::Installed) {
         gchar *debug;
         GError *err;
         gst_message_parse_error (gstMessage, &err, &debug);
         //TODO: Log the error
-        emit errorMessage(err->message, Phonon::FatalError);
+        emit that->errorMessage(err->message, Phonon::FatalError);
         g_error_free(err);
     }
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(gstMessage));
-}
-
-gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
-{
-    Q_UNUSED(bus)
-    Pipeline *that = static_cast<Pipeline*>(data);
-    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
-    QMetaObject::invokeMethod(that, "handleTagMessage", Qt::QueuedConnection, Q_ARG(GstMessage*, msg));
     return true;
 }
 
@@ -588,9 +542,11 @@ void foreach_tag_function(const GstTagList *list, const gchar *tag, gpointer use
         newData->insert(key, value);
 }
 
-
-void Pipeline::handleTagMessage(GstMessage *msg)
+gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
 {
+    Q_UNUSED(bus)
+    Pipeline *that = static_cast<Pipeline*>(data);
+    gst_mini_object_ref(GST_MINI_OBJECT_CAST(msg));
     GstTagList* tag_list = 0;
     gst_message_parse_tag(msg, &tag_list);
     if (tag_list) {
@@ -606,15 +562,15 @@ void Pipeline::handleTagMessage(GstMessage *msg)
         // have a commonly available tag (ORGANIZATION) or we have a
         // change in title
         bool fake_it =
-           (m_isStream
+           (that->m_isStream
             && ((!newTags.contains("TITLE")
                  && newTags.contains("ORGANIZATION"))
                 || (newTags.contains("TITLE")
-                    && m_metaData.value("TITLE") != newTags.value("TITLE")))
+                    && that->m_metaData.value("TITLE") != newTags.value("TITLE")))
             && !newTags.contains("ALBUM")
             && !newTags.contains("ARTIST"));
 
-        TagMap oldMap = m_metaData; // Keep a copy of the old one for reference
+        TagMap oldMap = that->m_metaData; // Keep a copy of the old one for reference
 
         // Now we've checked the new data, append any new meta tags to the existing tag list
         // We cannot use TagMap::iterator as this is a multimap and when streaming data
@@ -622,69 +578,69 @@ void Pipeline::handleTagMessage(GstMessage *msg)
         QList<QString> keys = newTags.keys();
         for (QList<QString>::iterator i = keys.begin(); i != keys.end(); ++i) {
             QString key = *i;
-            if (m_isStream) {
+            if (that->m_isStream) {
                 // If we're streaming, we need to remove data in m_metaData
                 // in order to stop it filling up indefinitely (as it's a multimap)
-                m_metaData.remove(key);
+                that->m_metaData.remove(key);
             }
             QList<QString> values = newTags.values(key);
             for (QList<QString>::iterator j = values.begin(); j != values.end(); ++j) {
                 QString value = *j;
-                QString currVal = m_metaData.value(key);
-                if (!m_metaData.contains(key) || currVal != value) {
-                    m_metaData.insert(key, value);
+                QString currVal = that->m_metaData.value(key);
+                if (!that->m_metaData.contains(key) || currVal != value) {
+                    that->m_metaData.insert(key, value);
                 }
             }
         }
 
         // For radio streams, if we get a metadata update where the title changes, we assume everything else is invalid.
         // If we don't already have a title, we don't do anything since we're actually just appending new data into that.
-        if (m_isStream && oldMap.contains("TITLE") && m_metaData.value("TITLE") != oldMap.value("TITLE")) {
-            m_metaData.clear();
+        if (that->m_isStream && oldMap.contains("TITLE") && that->m_metaData.value("TITLE") != oldMap.value("TITLE")) {
+            that->m_metaData.clear();
         }
 
         //m_backend->logMessage("Meta tags found", Backend::Info, this);
-        if (oldMap != m_metaData) {
+        if (oldMap != that->m_metaData) {
             // This is a bit of a hack to ensure that stream metadata is
             // returned. We get as much as we can from the Shoutcast server's
             // StreamTitle= header. If further info is decoded from the stream
             // itself later, then it will overwrite this info.
-            if (m_isStream && fake_it) {
-                m_metaData.remove("ALBUM");
-                m_metaData.remove("ARTIST");
+            if (that->m_isStream && fake_it) {
+                that->m_metaData.remove("ALBUM");
+                that->m_metaData.remove("ARTIST");
 
                 // Detect whether we want to "fill in the blanks"
                 QString str;
-                if (m_metaData.contains("TITLE"))
+                if (that->m_metaData.contains("TITLE"))
                 {
-                    str = m_metaData.value("TITLE");
+                    str = that->m_metaData.value("TITLE");
                     int splitpoint;
                     // Check to see if our title matches "%s - %s"
                     // Where neither %s are empty...
                     if ((splitpoint = str.indexOf(" - ")) > 0
                         && str.size() > (splitpoint+3)) {
-                        m_metaData.insert("ARTIST", str.left(splitpoint));
-                        m_metaData.replace("TITLE", str.mid(splitpoint+3));
+                        that->m_metaData.insert("ARTIST", str.left(splitpoint));
+                        that->m_metaData.replace("TITLE", str.mid(splitpoint+3));
                     }
                 } else {
-                    str = m_metaData.value("GENRE");
+                    str = that->m_metaData.value("GENRE");
                     if (!str.isEmpty())
-                        m_metaData.insert("TITLE", str);
+                        that->m_metaData.insert("TITLE", str);
                     else
-                        m_metaData.insert("TITLE", "Streaming Data");
+                        that->m_metaData.insert("TITLE", "Streaming Data");
                 }
-                if (!m_metaData.contains("ARTIST")) {
-                    str = m_metaData.value("LOCATION");
+                if (!that->m_metaData.contains("ARTIST")) {
+                    str = that->m_metaData.value("LOCATION");
                     if (!str.isEmpty())
-                        m_metaData.insert("ARTIST", str);
+                        that->m_metaData.insert("ARTIST", str);
                     else
-                        m_metaData.insert("ARTIST", "Streaming Data");
+                        that->m_metaData.insert("ARTIST", "Streaming Data");
                 }
-                str = m_metaData.value("ORGANIZATION");
+                str = that->m_metaData.value("ORGANIZATION");
                 if (!str.isEmpty())
-                    m_metaData.insert("ALBUM", str);
+                    that->m_metaData.insert("ALBUM", str);
                 else
-                    m_metaData.insert("ALBUM", "Streaming Data");
+                    that->m_metaData.insert("ALBUM", "Streaming Data");
             }
             // As we manipulate the title, we need to recompare
             // oldMap and m_metaData here...
@@ -694,12 +650,13 @@ void Pipeline::handleTagMessage(GstMessage *msg)
             // Its a kludgy hack that for 99% of cases of streaming should work.
             // If not, this needs fixed in mediaobject.cpp.
             guint kbps;
-            g_object_get(m_pipeline, "connection-speed", &kbps, NULL);
+            g_object_get(that->m_pipeline, "connection-speed", &kbps, NULL);
             if (kbps != 0)
-                emit metaDataChanged(m_metaData);
+                emit that->metaDataChanged(that->m_metaData);
         }
     }
     gst_mini_object_unref(GST_MINI_OBJECT_CAST(msg));
+    return true;
 }
 
 QMultiMap<QString, QString> Pipeline::metaData() const

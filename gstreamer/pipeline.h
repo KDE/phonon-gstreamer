@@ -54,32 +54,16 @@ class Pipeline : public QObject
         bool queryDuration(GstFormat *format, gint64 *duration) const;
         qint64 totalDuration() const;
 
-        Q_INVOKABLE void handleEOSMessage(GstMessage *msg);
         static gboolean cb_eos(GstBus *bus, GstMessage *msg, gpointer data);
-
         static gboolean cb_warning(GstBus *bus, GstMessage *msg, gpointer data);
-        Q_INVOKABLE void handleWarningMessage(GstMessage *msg);
-
         static gboolean cb_duration(GstBus *bus, GstMessage *msg, gpointer data);
-        Q_INVOKABLE void handleDurationMessage(GstMessage *msg);
-
         static gboolean cb_buffering(GstBus *bus, GstMessage *msg, gpointer data);
-        Q_INVOKABLE void handleBufferingMessage(GstMessage *msg);
-
         static gboolean cb_state(GstBus *bus, GstMessage *msg, gpointer data);
-        Q_INVOKABLE void handleStateMessage(GstMessage *msg);
-
         static gboolean cb_element(GstBus *bus, GstMessage *msg, gpointer data);
-        Q_INVOKABLE void handleElementMessage(GstMessage *msg);
-
         static gboolean cb_error(GstBus *bus, GstMessage *msg, gpointer data);
-        Q_INVOKABLE void handleErrorMessage(GstMessage *msg);
-
         static gboolean cb_tag(GstBus *bus, GstMessage *msg, gpointer data);
-        Q_INVOKABLE void handleTagMessage(GstMessage *msg);
 
         static void cb_aboutToFinish(GstElement *appSrc, gpointer data);
-
         static void cb_endOfPads(GstElement *playbin, gpointer data);
 
         void setSource(const Phonon::MediaSource &source, bool reset = false);

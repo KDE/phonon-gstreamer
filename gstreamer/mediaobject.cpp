@@ -316,9 +316,7 @@ void MediaObject::setNextSource(const MediaSource &source)
     qDebug() << "Got next source. Waiting for end of current.";
     m_waitingForNextSource = true;
     m_waitingForPreviousSource = false;
-    m_aboutToFinishSignalLock.lock();
     m_pipeline->setSource(source);
-    m_aboutToFinishSignalLock.unlock();
     m_aboutToFinishWait.wakeAll();
 }
 
@@ -783,10 +781,10 @@ void MediaObject::requestState(Phonon::State state)
 void MediaObject::handleAboutToFinish()
 {
     qDebug() << "About to finish";
-    m_aboutToFinishSignalLock.lock();
     m_aboutToFinishLock.lock();
     emit aboutToFinish();
-    m_aboutToFinishSignalLock.unlock();
+    // Three seconds should be more than enough for any application to get their act together.
+    // Any longer than that and they have bigger issues.
     m_aboutToFinishWait.wait(&m_aboutToFinishLock, 3000);
     qDebug() << "Finally got a source";
     m_aboutToFinishLock.unlock();
