@@ -53,11 +53,7 @@ public:
 
     const VideoFrame *frame() const;
 
-    GstElement *videoElement()
-    {
-        qDebug() << "fishy";
-        return m_bin;
-    }
+    GstElement *videoElement() { return m_bin; }
 
 signals:
     void frameReady();
