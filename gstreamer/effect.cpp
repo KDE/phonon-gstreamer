@@ -128,6 +128,7 @@ void Effect::setupEffectParams()
                 }
             }
         }
+        g_free(property_specs);
     }
 }
 

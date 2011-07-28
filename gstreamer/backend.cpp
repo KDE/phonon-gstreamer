@@ -119,6 +119,7 @@ Backend::~Backend()
     delete m_effectManager;
     delete m_deviceManager;
     PulseSupport::shutdown();
+    gst_deinit();
 }
 
 /***
