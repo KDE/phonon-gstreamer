@@ -84,7 +84,7 @@ void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
 //        qWarning("lock fail");
 //        return;
 //    }
-    that->lock();
+    that->m_mutex.lock();
 
     // At this point we can do stuff with the data, so we take it over.
     gst_buffer_ref(buffer);
