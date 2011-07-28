@@ -89,7 +89,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         m_root = this;
         m_pipeline = new Pipeline(this);
         m_isValid = true;
-	GlobalSubtitles::instance()->register_(this);
+        GlobalSubtitles::instance()->register_(this);
 
         connect(m_pipeline, SIGNAL(aboutToFinish()),
                 this, SLOT(handleAboutToFinish()), Qt::DirectConnection);
@@ -116,8 +116,9 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         connect(m_pipeline, SIGNAL(streamChanged()),
                 this, SLOT(handleStreamChange()));
 
-	connect(m_pipeline, SIGNAL(textTagChanged(int)),
-		this, SLOT(getSubtitleInfo(int)));
+        connect(m_pipeline, SIGNAL(textTagChanged(int)),
+                this, SLOT(getSubtitleInfo(int)));
+
         connect(m_tickTimer, SIGNAL(timeout()), SLOT(emitTick()));
     }
     connect(this, SIGNAL(stateChanged(Phonon::State, Phonon::State)),
@@ -307,7 +308,7 @@ void MediaObject::autoDetectSubtitle()
                 changeSubUri(Mrl("file://" + absCompleteBaseName + ext));
                 break;
             }
-	}
+        }
     }
 }
 
@@ -387,15 +388,15 @@ void MediaObject::getSubtitleInfo(int stream)
     for (gint i = 0; i < text_number; ++i) {
         GstTagList *tags = NULL;
         g_signal_emit_by_name (G_OBJECT(m_pipeline->element()), "get-text-tags",
-			       i, &tags);
+                               i, &tags);
 
-	if (tags) {
+        if (tags) {
             gchar *tlc;
 
-	    gst_tag_list_get_string (tags, GST_TAG_LANGUAGE_CODE, &tlc);
-	    QString name = QString("Subtitle %1 - [%2]").arg(i).arg(tlc);
-	    GlobalSubtitles::instance()->add(this, i, name);
-	}
+            gst_tag_list_get_string (tags, GST_TAG_LANGUAGE_CODE, &tlc);
+            QString name = QString("Subtitle %1 - [%2]").arg(i).arg(tlc);
+            GlobalSubtitles::instance()->add(this, i, name);
+        }
     }
 }
 
@@ -581,24 +582,24 @@ QVariant MediaObject::interfaceCall(Interface iface, int command, const QList<QV
             }
             break;
         case SubtitleInterface:
-	    switch(command)
-	    {
-	        case availableSubtitles:
-		    return QVariant::fromValue(_iface_availableSubtitles());
-	            break;
-	        case currentSubtitle:
-		    return QVariant::fromValue(_iface_currentSubtitle());
-	            break;
-	        case setCurrentSubtitle:
-		    if (params.isEmpty() || !params.first().canConvert<SubtitleDescription>()) {
-		        error() << Q_FUNC_INFO << "arguments invalid";
+            switch(command)
+            {
+                case availableSubtitles:
+                    return QVariant::fromValue(_iface_availableSubtitles());
+                    break;
+                case currentSubtitle:
+                    return QVariant::fromValue(_iface_currentSubtitle());
+                    break;
+                case setCurrentSubtitle:
+                    if (params.isEmpty() || !params.first().canConvert<SubtitleDescription>()) {
+                        error() << Q_FUNC_INFO << "arguments invalid";
                         return QVariant();
-		    }
+                    }
                     _iface_setCurrentSubtitle(params.first().value<SubtitleDescription>());
-	            break;
-	    }
-	    break;
-	}
+                    break;
+            }
+            break;
+        }
     }
     return QVariant();
 }
@@ -684,11 +685,11 @@ void MediaObject::_iface_setCurrentSubtitle(const SubtitleDescription &subtitle)
 
         if (!filename.startsWith("file://"))
             filename.prepend("file://");
-	// It's not possible to change the suburi when the pipeline is PLAYING mainly
-	// because the pipeline has not been built with the subtitle element. A workaround
-	// consists to restart the pipeline and set the suburi property (totem does exactly the same thing)
-	// TODO: Harald suggests to insert a empty bin into the playbin2 pipeline and then insert a subtitle element
-	// on the fly into that bin when the subtitle feature is required... 
+        // It's not possible to change the suburi when the pipeline is PLAYING mainly
+        // because the pipeline has not been built with the subtitle element. A workaround
+        // consists to restart the pipeline and set the suburi property (totem does exactly the same thing)
+        // TODO: Harald suggests to insert a empty bin into the playbin2 pipeline and then insert a subtitle element
+        // on the fly into that bin when the subtitle feature is required... 
         stop();
         changeSubUri(Mrl(filename));
         play();
