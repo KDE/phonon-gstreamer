@@ -455,10 +455,9 @@ gboolean Pipeline::cb_error(GstBus *bus, GstMessage *gstMessage, gpointer data)
         Phonon::ErrorType type = (that->audioIsAvailable() || that->videoIsAvailable()) ? Phonon::NormalError : Phonon::FatalError;
         emit that->errorMessage(tr("One or more plugins are missing in your GStreamer installation."), type);
     } else if (status == PluginInstaller::Installed) {
-        gchar *debug;
         GError *err;
-        gst_message_parse_error (gstMessage, &err, &debug);
         //TODO: Log the error
+        gst_message_parse_error (gstMessage, &err, NULL);
         emit that->errorMessage(err->message, Phonon::FatalError);
         g_error_free(err);
     }
