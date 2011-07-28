@@ -37,6 +37,7 @@
 #include <QtCore/QTimer>
 #include <QtCore/QVector>
 #include <QtGui/QApplication>
+#include <QtGui/QFont>
 #include <phonon/GlobalDescriptionContainer>
 
 #define ABOUT_TO_FINNISH_TIME 2000
@@ -283,9 +284,17 @@ MediaSource MediaObject::source() const
 
 void MediaObject::changeSubUri(const Mrl & mrl)
 {
+    QString fontDesc;
+    QByteArray customFont = qgetenv("PHONON_GST_SUBTITLE_FONT");
+
+    if (customFont.isNull()) {
+        QFont videoWidgetFont = QApplication::font("VideoWidget");
+        fontDesc = videoWidgetFont.family() + " " + QString::number(videoWidgetFont.pointSize());
+    }
     //FIXME: Try to detect common encodings, like libvlc does
-    //FIXME: Move subtitle-font-desc in Pipeline::Pipeline() and use QApplication::font()
-    g_object_set(G_OBJECT(m_pipeline->element()), "suburi", mrl.toEncoded().constData(), "subtitle-font-desc", "Sans Bold 16", "subtitle-encoding", "UTF-8", NULL);
+    g_object_set(G_OBJECT(m_pipeline->element()), "suburi", mrl.toEncoded().constData(),
+        "subtitle-font-desc", customFont.isNull() ? fontDesc.toStdString().c_str() : customFont.constData(),
+        "subtitle-encoding", "UTF-8", NULL);
 }
 
 void MediaObject::autoDetectSubtitle()
