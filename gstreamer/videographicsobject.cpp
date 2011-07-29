@@ -78,12 +78,7 @@ void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
     if (!that || !that->videoGraphicsObject())
         return;
 
-    // Frontend holds lock on data
-#warning to drop or not to drop, that is the question
-//    if (!that->m_mutex.tryLock()) {
-//        qWarning("lock fail");
-//        return;
-//    }
+    // Frontend could hold lock on data
     that->m_mutex.lock();
 
     // At this point we can do stuff with the data, so we take it over.
@@ -101,16 +96,7 @@ void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
             static_cast<double>(frame->width/frame->height);
 
     frame->format = VideoFrame::Format_RGB32;
-    // RGB888 Means the data is 8 bits o' red, 8 bits o' green, and 8 bits o' blue per pixel.
-    QByteArray paintMethod = qgetenv("PHONON_PAINT");
-    if (paintMethod == QByteArray("glarb") ||
-            paintMethod == QByteArray("glsl"))
-        frame->data = reinterpret_cast<const char *>(GST_BUFFER_DATA(buffer));
-    else
-        frame->data0 =
-                QByteArray::fromRawData(
-                    reinterpret_cast<const char *>(GST_BUFFER_DATA(buffer)),
-                    GST_BUFFER_SIZE(buffer));
+    frame->data = reinterpret_cast<const char *>(GST_BUFFER_DATA(buffer));
 
     that->m_mutex.unlock();
     emit that->frameReady();
