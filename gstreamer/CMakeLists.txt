@@ -53,7 +53,7 @@ if (BUILD_PHONON_GSTREAMER)
       medianode.cpp
       medianodeevent.cpp
       mediaobject.cpp
-      phononsrc.cpp
+      pipeline.cpp
       plugininstaller.cpp
       qwidgetvideosink.cpp
       streamreader.cpp
@@ -79,7 +79,7 @@ if (BUILD_PHONON_GSTREAMER)
       ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} ${PHONON_LIBRARY}
       ${GSTREAMER_LIBRARIES} ${GSTREAMER_BASE_LIBRARY} ${GSTREAMER_INTERFACE_LIBRARY}
       ${GSTREAMER_PLUGIN_VIDEO_LIBRARY} ${GSTREAMER_PLUGIN_AUDIO_LIBRARY} ${GSTREAMER_PLUGIN_PBUTILS_LIBRARY}
-      ${GLIB2_LIBRARIES} ${GOBJECT_LIBRARIES})
+      ${GLIB2_LIBRARIES} ${GOBJECT_LIBRARIES} ${GSTREAMER_APP_LIBRARY})
    if(USE_INSTALL_PLUGIN)
        target_link_libraries(phonon_gstreamer ${GSTREAMER_PLUGIN_PBUTILS_LIBRARIES})
    endif(USE_INSTALL_PLUGIN)

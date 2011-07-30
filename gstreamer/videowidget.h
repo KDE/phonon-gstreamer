@@ -81,6 +81,8 @@ public:
         return this;
     }
 
+    static void cb_capsChanged(GstPad *pad, GParamSpec *spec, gpointer data);
+
 protected:
     virtual void keyPressEvent(QKeyEvent *event);
     virtual void keyReleaseEvent(QKeyEvent *event);

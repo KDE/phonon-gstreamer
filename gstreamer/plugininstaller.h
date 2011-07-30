@@ -21,6 +21,7 @@
 #include <QtCore/QObject>
 #include <QtCore/QHash>
 #include <gst/gstcaps.h>
+#include <gst/gstmessage.h>
 #include <gst/pbutils/install-plugins.h>
 #include "phonon-config-gstreamer.h"
 
@@ -58,7 +59,7 @@ class PluginInstaller : public QObject {
         PluginInstaller(QObject *parent = 0);
 
         void addPlugin(const QString &name, PluginType type);
-        void addPlugin(const GstCaps *caps, PluginType type);
+        void addPlugin(GstMessage *msg);
 
         InstallStatus checkInstalledPlugins();
 #ifdef PLUGIN_INSTALL_API
@@ -89,7 +90,8 @@ class PluginInstaller : public QObject {
 
     private:
         QHash<QString, PluginType> m_pluginList;
-        QHash<GstCaps *, PluginType> m_capList;
+        QList<QString> m_descList;
+        InstallStatus m_state;
         static bool init();
         static bool s_ready;
 };

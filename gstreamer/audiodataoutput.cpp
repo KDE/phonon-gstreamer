@@ -55,7 +55,7 @@ AudioDataOutput::AudioDataOutput(Backend *backend, QObject *parent)
     GstElement* convert = gst_element_factory_make("audioconvert", NULL);
 
     g_signal_connect(sink, "handoff", G_CALLBACK(processBuffer), this);
-    g_object_set(G_OBJECT(sink), "signal-handoffs", true, (const char*)NULL);
+    g_object_set(G_OBJECT(sink), "signal-handoffs", true, NULL);
 
     //G_BYTE_ORDER is the host machine's endianess
     GstCaps *caps = gst_caps_new_simple("audio/x-raw-int",
@@ -72,7 +72,7 @@ AudioDataOutput::AudioDataOutput(Backend *backend, QObject *parent)
     gst_element_add_pad(m_queue, gst_ghost_pad_new("sink", inputpad));
     gst_object_unref(inputpad);
 
-    g_object_set(G_OBJECT(sink), "sync", true, (const char*)NULL);
+    g_object_set(G_OBJECT(sink), "sync", true, NULL);
 
     m_isValid = true;
 }
