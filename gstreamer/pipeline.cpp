@@ -174,7 +174,6 @@ void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
             }
             break;
         case MediaSource::Empty:
-            emit errorMessage("Empty source specified", Phonon::FatalError);
             return;
     }
 
