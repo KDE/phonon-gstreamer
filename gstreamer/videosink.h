@@ -45,6 +45,7 @@ struct _PGstVideoSink {
     int rgb;
 
     void *userData;
+    void (*stop_cb)(void *);
     void (*render_cb)(GstBuffer *, void *);
 };
 

@@ -42,6 +42,7 @@ VideoGraphicsObject::VideoGraphicsObject(Backend *backend, QObject *parent) :
 
     m_sink = P_GST_VIDEO_SINK(g_object_new(P_GST_TYPE_VIDEO_SINK, NULL));
     m_sink->userData = this;
+    m_sink->stop_cb = VideoGraphicsObject::stop;
     m_sink->render_cb = VideoGraphicsObject::renderCallback;
 
     GstElement *sink = GST_ELEMENT(m_sink);
@@ -70,6 +71,15 @@ VideoGraphicsObject::~VideoGraphicsObject()
     gst_object_unref(m_bin);
     if (m_buffer)
         gst_buffer_unref(m_buffer);
+}
+
+void VideoGraphicsObject::stop(void *userData)
+{
+    VideoGraphicsObject *that = reinterpret_cast<VideoGraphicsObject *>(userData);
+    if (!that)
+        return;
+
+    QMetaObject::invokeMethod(that, "reset", Qt::QueuedConnection);
 }
 
 struct component_t {

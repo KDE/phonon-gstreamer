@@ -48,6 +48,7 @@ public:
     virtual void setVideoGraphicsObject(Phonon::VideoGraphicsObject *object) { m_frontendObject = object; }
 
     static void renderCallback(GstBuffer *buffer, void *userData);
+    static void stop(void *userData);
 
     void lock();
     bool tryLock();
@@ -59,6 +60,7 @@ public:
 
 signals:
     void frameReady();
+    void reset();
 
 private:
     Phonon::VideoFrame m_frame;

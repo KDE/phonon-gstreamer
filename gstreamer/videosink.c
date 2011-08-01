@@ -115,6 +115,13 @@ p_gst_video_sink_render (GstBaseSink *baseSink,
 }
 
 static void
+p_gst_video_sink_stop (GstBaseSink *baseSink)
+{
+    PGstVideoSink *sink = P_GST_VIDEO_SINK (baseSink);
+    sink->stop_cb (sink->userData);
+}
+
+static void
 p_gst_video_sink_class_init (PGstVideoSinkClass *klass)
 {
     GstBaseSinkClass *baseSinkClass = GST_BASE_SINK_CLASS (klass);
@@ -123,6 +130,7 @@ p_gst_video_sink_class_init (PGstVideoSinkClass *klass)
     baseSinkClass->preroll  = p_gst_video_sink_render;
     baseSinkClass->get_caps = p_gst_video_sink_get_caps;
     baseSinkClass->set_caps = p_gst_video_sink_set_caps;
+    baseSinkClass->stop = p_gst_video_sink_stop;
 
     GstElementClass *elementClass = GST_ELEMENT_CLASS (klass);
     gst_element_class_add_pad_template (elementClass,
