@@ -819,6 +819,20 @@ qint64 Pipeline::position() const
 
 QByteArray Pipeline::captureDeviceURI(const MediaSource &source) const
 {
+#ifndef PHONON_NO_AUDIOCAPTURE
+    //TODO
+#endif
+#ifndef PHONON_NO_VIDEOCAPTURE
+    if (source.videoCaptureDevice().isValid()) {
+        DeviceAccessList devList = source.videoCaptureDevice().property("deviceAccessList").value<Phonon::DeviceAccessList>();
+        QString devPath;
+        foreach (DeviceAccess dev, devList) {
+            if (dev.first == "v4l2") {
+                return QString("v4l2://%0").arg(dev.second).toUtf8();
+            }
+        }
+    }
+#endif
     return QByteArray();
 }
 
