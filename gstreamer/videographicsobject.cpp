@@ -66,6 +66,10 @@ VideoGraphicsObject::VideoGraphicsObject(Backend *backend, QObject *parent) :
 
 VideoGraphicsObject::~VideoGraphicsObject()
 {
+    gst_element_set_state(m_bin, GST_STATE_NULL);
+    gst_object_unref(m_bin);
+    if (m_buffer)
+        gst_buffer_unref(m_buffer);
 }
 
 void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
