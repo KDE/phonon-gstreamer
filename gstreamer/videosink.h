@@ -39,6 +39,11 @@ typedef struct _PGstVideoSinkClass PGstVideoSinkClass;
 struct _PGstVideoSink {
     GstVideoSink parent;
 
+    int width;
+    int height;
+
+    int rgb;
+
     void *userData;
     void (*renderCallback)(GstBuffer *, void *);
 };
