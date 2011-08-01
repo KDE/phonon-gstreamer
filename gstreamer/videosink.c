@@ -109,7 +109,7 @@ p_gst_video_sink_render (GstBaseSink *baseSink,
         return GST_FLOW_RESEND;
     }
 
-    sink->renderCallback(buffer, sink->userData);
+    sink->render_cb(buffer, sink->userData);
 
     return GST_FLOW_OK;
 }

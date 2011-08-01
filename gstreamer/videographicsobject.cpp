@@ -42,7 +42,7 @@ VideoGraphicsObject::VideoGraphicsObject(Backend *backend, QObject *parent) :
 
     m_sink = P_GST_VIDEO_SINK(g_object_new(P_GST_TYPE_VIDEO_SINK, NULL));
     m_sink->userData = this;
-    m_sink->renderCallback = VideoGraphicsObject::renderCallback;
+    m_sink->render_cb = VideoGraphicsObject::renderCallback;
 
     GstElement *sink = GST_ELEMENT(m_sink);
     GstElement *queue = gst_element_factory_make("queue", NULL);
