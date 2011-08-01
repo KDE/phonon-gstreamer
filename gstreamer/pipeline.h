@@ -93,6 +93,7 @@ class Pipeline : public QObject
         static void cb_setupSource(GstElement *playbin, GParamSpec *spec, gpointer data);
 
         qint64 position() const;
+        QByteArray captureDeviceURI(const MediaSource &source) const;
 
     signals:
         void eos();

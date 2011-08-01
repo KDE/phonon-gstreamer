@@ -157,6 +157,11 @@ void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
             gstUri = "appsrc://";
             m_isStream = true;
             break;
+        case MediaSource::CaptureDevice:
+            gstUri = captureDeviceURI(source);
+            if (gstUri.isEmpty())
+                emit errorMessage("Invalid capture device specified", Phonon::FatalError);
+            break;
         case MediaSource::Disc:
             switch(source.discType()) {
                 case Phonon::Cd:
@@ -810,6 +815,11 @@ qint64 Pipeline::position() const
         return m_posAtReset;
     gst_element_query_position (GST_ELEMENT(m_pipeline), &format, &pos);
     return (pos / GST_MSECOND);
+}
+
+QByteArray Pipeline::captureDeviceURI(const MediaSource &source) const
+{
+    return QByteArray();
 }
 
 }
