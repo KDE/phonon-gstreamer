@@ -22,8 +22,10 @@
 #ifndef PHONON_GSTREAMER_VIDEOGRAPHICSOBJECT_H
 #define PHONON_GSTREAMER_VIDEOGRAPHICSOBJECT_H
 
+#include <QtCore/QMutex>
 #include <QtCore/QObject>
 
+#include <phonon/videoframe.h>
 #include <phonon/videographicsobject.h>
 
 #include "medianode.h"
