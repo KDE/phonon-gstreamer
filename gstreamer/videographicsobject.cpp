@@ -36,21 +36,21 @@ VideoGraphicsObject::VideoGraphicsObject(Backend *backend, QObject *parent) :
     static int count = 0;
     m_name = "VideoGraphicsObject" + QString::number(count++);
 
-    m_bin = gst_bin_new(0);
+    m_bin = gst_bin_new(NULL);
     gst_object_ref(GST_OBJECT(m_bin));
     gst_object_sink(GST_OBJECT(m_bin));
 
-    m_sink = P_GST_VIDEO_SINK(g_object_new(P_GST_TYPE_VIDEO_SINK, 0));
+    m_sink = P_GST_VIDEO_SINK(g_object_new(P_GST_TYPE_VIDEO_SINK, NULL));
     m_sink->userData = this;
     m_sink->renderCallback = VideoGraphicsObject::renderCallback;
 
     GstElement *sink = GST_ELEMENT(m_sink);
-    GstElement *queue = gst_element_factory_make("queue", 0);
-    GstElement *convert = gst_element_factory_make("ffmpegcolorspace", 0);
+    GstElement *queue = gst_element_factory_make("queue", NULL);
+    GstElement *convert = gst_element_factory_make("ffmpegcolorspace", NULL);
 
     GstCaps *caps = p_gst_video_sink_get_static_caps();
 
-    gst_bin_add_many(GST_BIN(m_bin), sink, convert, queue, 0);
+    gst_bin_add_many(GST_BIN(m_bin), sink, convert, queue, NULL);
     gst_element_link(queue, convert);
     gst_element_link_filtered(convert, sink, caps);
     gst_caps_unref(caps);
@@ -59,7 +59,7 @@ VideoGraphicsObject::VideoGraphicsObject(Backend *backend, QObject *parent) :
     gst_element_add_pad(m_bin, gst_ghost_pad_new("sink", inputpad));
     gst_object_unref(inputpad);
 
-    g_object_set(G_OBJECT(sink), "sync", true, (const char*)0);
+    g_object_set(G_OBJECT(sink), "sync", true, NULL);
 
     m_isValid = true;
 }
