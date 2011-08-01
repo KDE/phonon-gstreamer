@@ -72,13 +72,18 @@ VideoGraphicsObject::~VideoGraphicsObject()
         gst_buffer_unref(m_buffer);
 }
 
+struct component_t {
+    char *data;
+    int bytes;
+};
+
 void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
 {
     // No data, no pointer to this -> failure
     if (!buffer || !userData)
         return;
 
-    VideoGraphicsObject *that = static_cast<VideoGraphicsObject *>(userData);
+    VideoGraphicsObject *that = reinterpret_cast<VideoGraphicsObject *>(userData);
     if (!that || !that->videoGraphicsObject())
         return;
 
@@ -93,14 +98,45 @@ void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
     that->m_buffer = buffer;
 
     VideoFrame *frame = &that->m_frame;
-    GstStructure *structure = gst_caps_get_structure(GST_BUFFER_CAPS(buffer), 0);
-    gst_structure_get_int(structure, "width", &frame->width);
-    gst_structure_get_int(structure, "height", &frame->height);
-    frame->aspectRatio =
-            static_cast<double>(frame->width/frame->height);
+    frame->width = that->m_sink->width;
+    frame->height = that->m_sink->height;
+    frame->aspectRatio = static_cast<double>(frame->width / frame->height);
 
-    frame->format = VideoFrame::Format_RGB32;
-    frame->data = reinterpret_cast<const char *>(GST_BUFFER_DATA(buffer));
+    if (that->m_sink->rgb == FALSE) { // YV12
+        qDebug() << "!!!!!!!!!!!! USING YV12 !!!!!!!!!!!!";
+        // http://gstreamer.freedesktop.org/wiki/RawVideo
+        // Y
+        struct component_t y;
+        y.data = reinterpret_cast<char *>(GST_BUFFER_DATA(buffer));
+        y.bytes = frame->width * frame->height;
+
+        // V follows after Y (so start of y + bytes = start of v)
+        struct component_t v;
+        v.data = y.data + y.bytes;
+        v.bytes = (frame->width/2) * (frame->height/2);
+
+        // U follows after V, same size, same relative offset
+        struct component_t u;
+        u.data = v.data + v.bytes;
+        u.bytes = v.bytes; // for YV12/I420 V and U are the same size.
+
+        // If we did everything right then our components collective bytes count
+        // should be equal to the buffer's overall size.
+        Q_ASSERT((y.bytes + v.bytes + u.bytes) == GST_BUFFER_SIZE(buffer));
+        Q_ASSERT(y.data != v.data && v.data != u.data && u.data != y.data);
+
+        frame->format = VideoFrame::Format_YV12;
+        frame->planeCount = 3;
+        frame->plane[0].setRawData(y.data, y.bytes);
+        frame->plane[1].setRawData(v.data, v.bytes);
+        frame->plane[2].setRawData(u.data, u.bytes);
+    } else { // RGB32
+        qDebug() << "!!!!!!!!!!!! USING RGB32 !!!!!!!!!!!!";
+        frame->format = VideoFrame::Format_RGB32;
+        frame->planeCount = 1;
+        frame->plane[0].setRawData(reinterpret_cast<const char *>(GST_BUFFER_DATA(buffer)),
+                                   GST_BUFFER_SIZE(buffer));
+    }
 
     that->m_mutex.unlock();
     emit that->frameReady();
