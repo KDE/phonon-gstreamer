@@ -13,12 +13,12 @@
 # along with this library.  If not, see <http://www.gnu.org/licenses/>.
 
 find_package(GStreamer REQUIRED)
-macro_log_feature(GSTREAMER_FOUND "GStreamer" "gstreamer 0.10 is required for the multimedia backend" "http://gstreamer.freedesktop.org/modules/" TRUE "0.10")
+macro_log_feature(GSTREAMER_FOUND "GStreamer" "gstreamer 0.11 is required for the multimedia backend" "http://gstreamer.freedesktop.org/modules/" TRUE "0.11")
 
 find_package(GStreamerPlugins REQUIRED)
-macro_log_feature(GSTREAMER_PLUGIN_VIDEO_FOUND "GStreamer video plugin" "The gstreamer video plugin (part of gstreamer-plugins-base 0.10) is required for the multimedia gstreamer backend" "http://gstreamer.freedesktop.org/modules/" TRUE "0.10")
-macro_log_feature(GSTREAMER_PLUGIN_AUDIO_FOUND "GStreamer audio plugin" "The gstreamer audio plugin (part of gstreamer-plugins-base 0.10) is required for the multimedia gstreamer backend" "http://gstreamer.freedesktop.org/modules/" TRUE "0.10")
-macro_log_feature(GSTREAMER_PLUGIN_PBUTILS_FOUND "GStreamer pbutils plugin" "The gstreamer pbutils plugin (part of gstreamer-plugins-base 0.10) is required for the multimedia gstreamer backend" "http://gstreamer.freedesktop.org/modules/" TRUE "0.10")
+macro_log_feature(GSTREAMER_PLUGIN_VIDEO_FOUND "GStreamer video plugin" "The gstreamer video plugin (part of gstreamer-plugins-base 0.11) is required for the multimedia gstreamer backend" "http://gstreamer.freedesktop.org/modules/" TRUE "0.11")
+macro_log_feature(GSTREAMER_PLUGIN_AUDIO_FOUND "GStreamer audio plugin" "The gstreamer audio plugin (part of gstreamer-plugins-base 0.11) is required for the multimedia gstreamer backend" "http://gstreamer.freedesktop.org/modules/" TRUE "0.11")
+macro_log_feature(GSTREAMER_PLUGIN_PBUTILS_FOUND "GStreamer pbutils plugin" "The gstreamer pbutils plugin (part of gstreamer-plugins-base 0.11) is required for the multimedia gstreamer backend" "http://gstreamer.freedesktop.org/modules/" TRUE "0.11")
 
 find_package(GLIB2 REQUIRED)
 macro_log_feature(GLIB2_FOUND "GLib2" "GLib 2 is required to compile the gstreamer backend for Phonon" "http://www.gtk.org/download/" TRUE)
