@@ -36,6 +36,8 @@ VideoGraphicsObject::VideoGraphicsObject(Backend *backend, QObject *parent) :
     static int count = 0;
     m_name = "VideoGraphicsObject" + QString::number(count++);
 
+    m_frame.format = VideoFrame::Format_Invalid;
+
     m_bin = gst_bin_new(NULL);
     gst_object_ref(GST_OBJECT(m_bin));
     gst_object_sink(GST_OBJECT(m_bin));
@@ -78,6 +80,8 @@ void VideoGraphicsObject::stop(void *userData)
     VideoGraphicsObject *that = reinterpret_cast<VideoGraphicsObject *>(userData);
     if (!that)
         return;
+
+    that->m_frame.format = VideoFrame::Format_Invalid;
 
     QMetaObject::invokeMethod(that, "reset", Qt::QueuedConnection);
 }
