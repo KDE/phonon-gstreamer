@@ -84,7 +84,7 @@ void VideoWidget::setupVideoBin()
     m_videoBin = gst_bin_new (NULL);
     Q_ASSERT(m_videoBin);
     gst_object_ref (GST_OBJECT (m_videoBin)); //Take ownership
-    gst_object_sink (GST_OBJECT (m_videoBin));
+    gst_object_ref_sink (GST_OBJECT (m_videoBin));
     QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
     if (tegraEnv.isEmpty()) {
         //The videoplug element is the final element before the pluggable videosink

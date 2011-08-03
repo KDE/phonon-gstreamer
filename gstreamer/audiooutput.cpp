@@ -51,7 +51,7 @@ AudioOutput::AudioOutput(Backend *backend, QObject *parent)
     if (m_backend->isValid()) {
         m_audioBin = gst_bin_new (NULL);
         gst_object_ref (GST_OBJECT (m_audioBin));
-        gst_object_sink (GST_OBJECT (m_audioBin));
+        gst_object_ref_sink (GST_OBJECT (m_audioBin));
 
         m_conv = gst_element_factory_make ("audioconvert", NULL);
 

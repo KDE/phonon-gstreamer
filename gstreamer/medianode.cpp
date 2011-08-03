@@ -47,25 +47,25 @@ MediaNode::MediaNode(Backend *backend, NodeDescription description) :
     if (description & AudioSource) {
         m_audioTee = gst_element_factory_make("tee", NULL);
         gst_object_ref (GST_OBJECT (m_audioTee));
-        gst_object_sink (GST_OBJECT (m_audioTee));
+        gst_object_ref_sink (GST_OBJECT (m_audioTee));
 
         // Fake audio sink to swallow unconnected audio pads
         m_fakeAudioSink = gst_element_factory_make("fakesink", NULL);
         g_object_set (G_OBJECT (m_fakeAudioSink), "sync", TRUE, NULL);
         gst_object_ref (GST_OBJECT (m_fakeAudioSink));
-        gst_object_sink (GST_OBJECT (m_fakeAudioSink));
+        gst_object_ref_sink (GST_OBJECT (m_fakeAudioSink));
     }
 
     if (description & VideoSource) {
         m_videoTee = gst_element_factory_make("tee", NULL);
         gst_object_ref (GST_OBJECT (m_videoTee));
-        gst_object_sink (GST_OBJECT (m_videoTee));
+        gst_object_ref_sink (GST_OBJECT (m_videoTee));
 
         // Fake video sink to swallow unconnected video pads
         m_fakeVideoSink = gst_element_factory_make("fakesink", NULL);
         g_object_set (G_OBJECT (m_fakeVideoSink), "sync", TRUE, NULL);
         gst_object_ref (GST_OBJECT (m_fakeVideoSink));
-        gst_object_sink (GST_OBJECT (m_fakeVideoSink));
+        gst_object_ref_sink (GST_OBJECT (m_fakeVideoSink));
     }
 }
 

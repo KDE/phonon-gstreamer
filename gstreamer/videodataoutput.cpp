@@ -46,7 +46,7 @@ VideoDataOutput::VideoDataOutput(Backend *backend, QObject *parent)
 
     m_queue = gst_bin_new(NULL);
     gst_object_ref(GST_OBJECT(m_queue));
-    gst_object_sink(GST_OBJECT(m_queue));
+    gst_object_ref_sink(GST_OBJECT(m_queue));
 
     GstElement* sink = gst_element_factory_make("fakesink", NULL);
     GstElement* queue = gst_element_factory_make("queue", NULL);

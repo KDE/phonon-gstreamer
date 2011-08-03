@@ -107,7 +107,7 @@ GstElement* X11Renderer::createVideoSink()
     }
 
     gst_object_ref (GST_OBJECT (videoSink)); //Take ownership
-    gst_object_sink (GST_OBJECT (videoSink));
+    gst_object_ref_sink (GST_OBJECT (videoSink));
 
     return videoSink;
 }

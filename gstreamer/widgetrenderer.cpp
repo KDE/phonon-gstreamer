@@ -70,7 +70,7 @@ WidgetRenderer::WidgetRenderer(VideoWidget *videoWidget)
     videoWidget->backend()->logMessage("Creating QWidget renderer");
     if ((m_videoSink = GST_ELEMENT(g_object_new(get_type_RGB(), NULL)))) {
         gst_object_ref (GST_OBJECT (m_videoSink)); //Take ownership
-        gst_object_sink (GST_OBJECT (m_videoSink));
+        gst_object_ref_sink (GST_OBJECT (m_videoSink));
 
         QWidgetVideoSinkBase*  sink = reinterpret_cast<QWidgetVideoSinkBase*>(m_videoSink);
         // Let the videosink know which widget to direct frame updates to
