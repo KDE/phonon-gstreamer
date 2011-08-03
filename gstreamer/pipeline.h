@@ -51,7 +51,7 @@ class Pipeline : public QObject
         GstState state() const;
         Phonon::MediaSource currentSource() const;
         void writeToDot(MediaObject *media, const QString &type);
-        bool queryDuration(GstFormat *format, gint64 *duration) const;
+        bool queryDuration(GstFormat format, gint64 *duration) const;
         qint64 totalDuration() const;
 
         static gboolean cb_eos(GstBus *bus, GstMessage *msg, gpointer data);

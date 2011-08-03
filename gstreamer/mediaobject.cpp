@@ -373,7 +373,7 @@ void MediaObject::getStreamInfo()
     if (m_source.discType() == Phonon::Cd) {
         gint64 titleCount;
         GstFormat format = gst_format_get_by_nick("track");
-        if (m_pipeline->queryDuration(&format, &titleCount)) {
+        if (m_pipeline->queryDuration(format, &titleCount)) {
         //check if returned format is still "track",
         //gstreamer sometimes returns the total time, if tracks information is not available.
             if (qstrcmp(gst_format_get_name(format), "track") == 0)  {

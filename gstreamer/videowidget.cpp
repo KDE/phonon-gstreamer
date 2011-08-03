@@ -515,11 +515,14 @@ void VideoWidget::cb_capsChanged(GstPad *pad, GParamSpec *spec, gpointer data)
 
     gint width;
     gint height;
-    //FIXME: This sometimes gives a gstreamer warning. Feels like GStreamer shouldn't, and instead
-    //just quietly return false, probably a bug.
-    if (gst_video_get_size(pad, &width, &height)) {
-        QMetaObject::invokeMethod(that, "setMovieSize", Q_ARG(QSize, QSize(width, height)));
-    }
+    GstCaps *caps = gst_pad_get_caps(pad, NULL);
+    GstStructure *structure = gst_caps_get_structure(caps, 0);
+    gst_caps_unref(caps);
+    gst_structure_get_int(structure, "width", &width);
+    gst_structure_get_int(structure, "height", &height);
+    gst_structure_free(structure);
+
+    QMetaObject::invokeMethod(that, "setMovieSize", Q_ARG(QSize, QSize(width, height)));
 }
 
 }

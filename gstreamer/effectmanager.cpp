@@ -51,7 +51,7 @@ EffectManager::EffectManager(Backend *backend)
         GstPluginFeature *feature = GST_PLUGIN_FEATURE(iter->data);
         klass = gst_element_factory_get_klass(GST_ELEMENT_FACTORY(feature));
         if (klass == QLatin1String("Filter/Effect/Audio")) {
-            name = GST_PLUGIN_FEATURE_NAME(feature);
+            name = GST_OBJECT_NAME(feature);
 
             // These plugins simply make no sense to the frontend:
             // "audiorate" Should be internal

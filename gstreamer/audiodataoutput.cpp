@@ -111,7 +111,7 @@ inline void AudioDataOutput::convertAndEmit()
     emit dataReady(map);
 }
 
-void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad*, gpointer gThat)
+void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad, gpointer gThat)
 {
     // TODO emit endOfMedia
     AudioDataOutput *that = static_cast<AudioDataOutput *>(gThat);
@@ -122,12 +122,15 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad*, gpo
         return;
 
     // determine the number of channels
-    GstStructure *structure = gst_caps_get_structure(GST_BUFFER_CAPS(buffer), 0);
+    GstCaps *caps = gst_pad_get_caps(pad, NULL);
+    GstStructure *structure = gst_caps_get_structure(caps, 0);
+    gst_caps_unref(caps);
     gst_structure_get_int(structure, "channels", &that->m_channels);
 
     // Let's get the buffers
-    gint16 *gstBufferData = reinterpret_cast<gint16 *>(GST_BUFFER_DATA(buffer));
-    guint gstBufferSize = GST_BUFFER_SIZE(buffer) / sizeof(gint16);
+    gsize bufferSize;
+    gint16 *gstBufferData = reinterpret_cast<gint16 *>(gst_buffer_map(buffer, &bufferSize, NULL, GST_MAP_READ));
+    guint gstBufferSize = bufferSize / sizeof(gint16);
 
     if (gstBufferSize == 0) {
         qWarning() << Q_FUNC_INFO << ": received a buffer of 0 size ... doing nothing";

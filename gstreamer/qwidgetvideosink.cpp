@@ -82,8 +82,10 @@ GstFlowReturn QWidgetVideoSink<FMT>::render(GstBaseSink* sink, GstBuffer* buf)
     {
         QWidgetVideoSink<FMT> *self = G_TYPE_CHECK_INSTANCE_CAST(sink, QWidgetVideoSinkClass<FMT>::get_type(), QWidgetVideoSink<FMT>);
         QByteArray frame;
-        frame.resize(buf->size);
-        memcpy(frame.data(), buf->data, buf->size);
+        gsize bufSize;
+        gpointer bufData = gst_buffer_map(buf, &bufSize, NULL, GST_MAP_READ);
+        frame.resize(bufSize);
+        memcpy(frame.data(), bufData, bufSize);
         NewFrameEvent *frameEvent = new NewFrameEvent(frame, self->width, self->height);
         QApplication::postEvent(self->renderWidget, frameEvent);
     }

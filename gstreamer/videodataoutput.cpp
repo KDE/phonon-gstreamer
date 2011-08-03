@@ -83,11 +83,13 @@ VideoDataOutput::~VideoDataOutput()
     gst_object_unref(m_queue);
 }
 
-void VideoDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad*, gpointer gThat)
+void VideoDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad, gpointer gThat)
 {
     VideoDataOutput *that = reinterpret_cast<VideoDataOutput*>(gThat);
 
-    GstStructure* structure = gst_caps_get_structure(GST_BUFFER_CAPS(buffer), 0);
+    GstCaps *caps = gst_pad_get_caps(pad, NULL);
+    GstStructure* structure = gst_caps_get_structure(caps, 0);
+    gst_caps_unref(caps);
     int width;
     int height;
     double aspect;
@@ -95,13 +97,14 @@ void VideoDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad*, gpo
     gst_structure_get_int(structure, "width", &width);
     gst_structure_get_int(structure, "height", &height);
     aspect = (double)width/height;
+    const char *bufferData = reinterpret_cast<const char*>(gst_buffer_map(buffer, NULL, NULL, GST_MAP_READ));
     const Experimental::VideoFrame2 f = {
         width,
         height,
         aspect,
         Experimental::VideoFrame2::Format_RGB888,
                 // RGB888 Means the data is 8 bits o' red, 8 bits o' green, and 8 bits o' blue per pixel.
-        QByteArray::fromRawData(reinterpret_cast<const char*>(GST_BUFFER_DATA(buffer)), 3*width*height),
+        QByteArray::fromRawData(bufferData, 3*width*height),
         0,
         0
     };

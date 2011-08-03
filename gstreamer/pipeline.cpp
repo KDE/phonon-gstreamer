@@ -232,7 +232,7 @@ void Pipeline::writeToDot(MediaObject *media, const QString &type)
     GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS(bin, GST_DEBUG_GRAPH_SHOW_ALL, QString("phonon-%0").arg(type).toUtf8().constData());
 }
 
-bool Pipeline::queryDuration(GstFormat *format, gint64 *duration) const
+bool Pipeline::queryDuration(GstFormat format, gint64 *duration) const
 {
     return gst_element_query_duration(GST_ELEMENT(m_pipeline), format, duration);
 }
@@ -284,9 +284,8 @@ gboolean Pipeline::cb_duration(GstBus *bus, GstMessage *gstMessage, gpointer dat
 
 qint64 Pipeline::totalDuration() const
 {
-    GstFormat format = GST_FORMAT_TIME;
     gint64 duration = 0;
-    if (queryDuration(&format, &duration)) {
+    if (queryDuration(GST_FORMAT_TIME, &duration)) {
         return duration/GST_MSECOND;
     }
     return -1;
@@ -297,7 +296,7 @@ gboolean Pipeline::cb_buffering(GstBus *bus, GstMessage *gstMessage, gpointer da
     Q_UNUSED(bus)
     Pipeline *that = static_cast<Pipeline*>(data);
     gint percent = 0;
-    gst_structure_get_int (gstMessage->structure, "buffer-percent", &percent); //gst_message_parse_buffering was introduced in 0.10.11
+    gst_structure_get_int (gst_message_get_structure(gstMessage), "buffer-percent", &percent); //gst_message_parse_buffering was introduced in 0.10.11
 
     if (that->m_bufferPercent != percent) {
         emit that->buffering(percent);
@@ -761,7 +760,8 @@ static void cb_feedAppSrc(GstAppSrc *appSrc, guint buffsize, gpointer data)
 {
     StreamReader *reader = static_cast<StreamReader*>(data);
     GstBuffer *buf = gst_buffer_new_and_alloc(buffsize);
-    reader->read(reader->currentPos(), buffsize, (char*)GST_BUFFER_DATA(buf));
+    gpointer bufData = gst_buffer_map(buf, NULL, NULL, GST_MAP_WRITE);
+    reader->read(reader->currentPos(), buffsize, (char*)bufData);
     gst_app_src_push_buffer(appSrc, buf);
 }
 
@@ -810,10 +810,9 @@ Phonon::MediaSource Pipeline::currentSource() const
 qint64 Pipeline::position() const
 {
     gint64 pos = 0;
-    GstFormat format = GST_FORMAT_TIME;
     if (m_resetting)
         return m_posAtReset;
-    gst_element_query_position (GST_ELEMENT(m_pipeline), &format, &pos);
+    gst_element_query_position (GST_ELEMENT(m_pipeline), GST_FORMAT_TIME, &pos);
     return (pos / GST_MSECOND);
 }
 
