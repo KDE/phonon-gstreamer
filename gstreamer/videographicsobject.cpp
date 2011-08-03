@@ -113,7 +113,6 @@ void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
     frame->aspectRatio = static_cast<double>(frame->width / frame->height);
 
     if (that->m_sink->rgb == FALSE) { // YV12
-        qDebug() << "!!!!!!!!!!!! USING YV12 !!!!!!!!!!!!";
         // http://gstreamer.freedesktop.org/wiki/RawVideo
         // Y
         struct component_t y;
@@ -141,7 +140,6 @@ void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
         frame->plane[1].setRawData(v.data, v.bytes);
         frame->plane[2].setRawData(u.data, u.bytes);
     } else { // RGB32
-        qDebug() << "!!!!!!!!!!!! USING RGB32 !!!!!!!!!!!!";
         frame->format = VideoFrame::Format_RGB32;
         frame->planeCount = 1;
         frame->plane[0].setRawData(reinterpret_cast<const char *>(GST_BUFFER_DATA(buffer)),
