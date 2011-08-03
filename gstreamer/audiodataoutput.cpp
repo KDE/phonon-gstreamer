@@ -139,6 +139,10 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad*, gpo
         return;
     }
 
+    // I set the number of channels
+    if (that->m_channelBuffers.size() != that->m_channels)
+        that->m_channelBuffers.resize(that->m_channels);
+
     // check how many emits I will perform
     int nBlockToSend = (that->m_pendingData.size() + gstBufferSize) / (dataSize * that->m_channels);
 
