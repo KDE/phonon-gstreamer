@@ -282,7 +282,7 @@ MediaSource MediaObject::source() const
     return m_source;
 }
 
-void MediaObject::changeSubUri(const Mrl & mrl)
+void MediaObject::changeSubUri(const Mrl &mrl)
 {
     QString fontDesc;
     QByteArray customFont = qgetenv("PHONON_SUBTITLE_FONT");

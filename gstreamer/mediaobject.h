@@ -138,7 +138,7 @@ public:
     Pipeline *pipeline()
     {
         return m_pipeline;
-    };
+    }
 
     void invalidateGraph();
 
@@ -225,7 +225,7 @@ private:
     SubtitleDescription _iface_currentSubtitle() const;
     void _iface_setCurrentSubtitle(const SubtitleDescription &subtitle);
     void setTrack(int title);
-    void changeSubUri(const Mrl & mrl);
+    void changeSubUri(const Mrl &mrl);
 
     bool m_resumeState;
     State m_oldState;
