@@ -286,6 +286,7 @@ void MediaObject::changeSubUri(const Mrl &mrl)
 {
     QString fontDesc;
     QByteArray customFont = qgetenv("PHONON_SUBTITLE_FONT");
+    QByteArray customEncoding = qgetenv("PHONON_SUBTITLE_ENCODING");
 
     if (customFont.isNull()) {
         QFont videoWidgetFont = QApplication::font("VideoWidget");
@@ -294,7 +295,7 @@ void MediaObject::changeSubUri(const Mrl &mrl)
     //FIXME: Try to detect common encodings, like libvlc does
     g_object_set(G_OBJECT(m_pipeline->element()), "suburi", mrl.toEncoded().constData(),
         "subtitle-font-desc", customFont.isNull() ? fontDesc.toStdString().c_str() : customFont.constData(),
-        "subtitle-encoding", "UTF-8", NULL);
+        "subtitle-encoding", customEncoding.isNull() ? "UTF-8" : customEncoding.constData(), NULL);
 }
 
 void MediaObject::autoDetectSubtitle()
@@ -412,6 +413,7 @@ void MediaObject::getSubtitleInfo(int stream)
             GlobalSubtitles::instance()->add(this, i, name);
         }
     }
+    emit availableSubtitlesChanged();
 }
 
 void MediaObject::setPrefinishMark(qint32 newPrefinishMark)
