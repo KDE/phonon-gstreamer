@@ -128,6 +128,7 @@ p_gst_video_sink_stop (GstBaseSink *baseSink)
 {
     PGstVideoSink *sink = P_GST_VIDEO_SINK (baseSink);
     sink->stop_cb (sink->userData);
+    p_gst_video_sink_init (sink);
 }
 
 static void
