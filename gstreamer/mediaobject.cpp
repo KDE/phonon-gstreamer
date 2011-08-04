@@ -249,7 +249,9 @@ void MediaObject::setError(const QString &errorString, Phonon::ErrorType error)
 {
     m_errorString = errorString;
     m_error = error;
-    requestState(Phonon::ErrorState);
+    // Perform this asynchronously because this is also called from within the pipeline's cb_error
+    // handler, which can cause deadlock once we finally get down to gst_element_set_state
+    QMetaObject::invokeMethod(this, "requestState", Q_ARG(Phonon::State, Phonon::ErrorState));
 }
 
 qint64 MediaObject::totalTime() const
