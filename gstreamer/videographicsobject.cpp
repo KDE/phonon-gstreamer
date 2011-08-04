@@ -21,7 +21,9 @@
 
 #include "videographicsobject.h"
 
+extern "C" {
 #include <gst/video/video.h>
+}
 
 #include "gsthelper.h"
 
@@ -116,38 +118,48 @@ void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
     frame->height = that->m_sink->height;
     frame->aspectRatio = static_cast<double>(frame->width / frame->height);
 
-    if (that->m_sink->rgb == FALSE) { // YV12
+    switch (that->m_sink->format) {
+    case NoFormat:
+        frame->format = VideoFrame::Format_Invalid;
+        break;
+    case RGB32Format:
+        frame->format = VideoFrame::Format_RGB32;
+        frame->planeCount = 1;
+        frame->plane[0].setRawData(reinterpret_cast<const char *>(GST_BUFFER_DATA(buffer)),
+                                   GST_BUFFER_SIZE(buffer));
+        break;
+    case I420Format:
+    case YV12Format:
         // http://gstreamer.freedesktop.org/wiki/RawVideo
         // Y
         struct component_t y;
         y.data = reinterpret_cast<char *>(GST_BUFFER_DATA(buffer));
         y.bytes = frame->width * frame->height;
 
-        // V follows after Y (so start of y + bytes = start of v)
-        struct component_t v;
-        v.data = y.data + y.bytes;
-        v.bytes = (frame->width/2) * (frame->height/2);
-
         // U follows after V, same size, same relative offset
         struct component_t u;
-        u.data = v.data + v.bytes;
-        u.bytes = v.bytes; // for YV12/I420 V and U are the same size.
+        u.data = y.data + y.bytes;
+        u.bytes = (frame->width/2) * (frame->height/2);
+
+        // V follows after Y (so start of y + bytes = start of v)
+        struct component_t v;
+        v.data = u.data + u.bytes;
+        v.bytes = u.bytes; // for YV12/I420 V and U are the same size.
 
         // If we did everything right then our components collective bytes count
         // should be equal to the buffer's overall size.
-        Q_ASSERT((y.bytes + v.bytes + u.bytes) == GST_BUFFER_SIZE(buffer));
+        Q_ASSERT((y.bytes + u.bytes + v.bytes) == GST_BUFFER_SIZE(buffer));
         Q_ASSERT(y.data != v.data && v.data != u.data && u.data != y.data);
 
         frame->format = VideoFrame::Format_YV12;
+
+        if (that->m_sink->format == I420Format)
+            qSwap(u.data, v.data);
+
         frame->planeCount = 3;
         frame->plane[0].setRawData(y.data, y.bytes);
-        frame->plane[1].setRawData(v.data, v.bytes);
-        frame->plane[2].setRawData(u.data, u.bytes);
-    } else { // RGB32
-        frame->format = VideoFrame::Format_RGB32;
-        frame->planeCount = 1;
-        frame->plane[0].setRawData(reinterpret_cast<const char *>(GST_BUFFER_DATA(buffer)),
-                                   GST_BUFFER_SIZE(buffer));
+        frame->plane[1].setRawData(u.data, u.bytes);
+        frame->plane[2].setRawData(v.data, v.bytes);
     }
 
     that->m_mutex.unlock();

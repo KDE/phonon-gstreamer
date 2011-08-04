@@ -36,13 +36,20 @@ G_BEGIN_DECLS
 typedef struct _PGstVideoSink PGstVideoSink;
 typedef struct _PGstVideoSinkClass PGstVideoSinkClass;
 
+enum PGstVideoFormat {
+    NoFormat,
+    RGB32Format,
+    I420Format,
+    YV12Format
+};
+
 struct _PGstVideoSink {
     GstVideoSink parent;
 
     int width;
     int height;
 
-    int rgb;
+    enum PGstVideoFormat format;
 
     void *userData;
     void (*stop_cb)(void *);

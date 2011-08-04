@@ -34,7 +34,7 @@ static GstStaticPadTemplate s_sinktemplate =
 GST_STATIC_PAD_TEMPLATE ("sink",
                          GST_PAD_SINK,
                          GST_PAD_ALWAYS,
-                         GST_STATIC_CAPS (GST_VIDEO_CAPS_YUV ("{ YV12 }") ";" \
+                         GST_STATIC_CAPS (GST_VIDEO_CAPS_YUV ("{ I420, YV12 }") ";" \
                                           GST_VIDEO_CAPS_xRGB_HOST_ENDIAN));
 
 static GstStaticPadTemplate s_rgbPadTemplate =
@@ -49,7 +49,7 @@ GST_STATIC_PAD_TEMPLATE ("sink",
                          GST_PAD_SINK,
                          GST_PAD_ALWAYS,
                          GST_STATIC_CAPS(
-                             GST_VIDEO_CAPS_YUV ("{ YV12 }")));
+                             GST_VIDEO_CAPS_YUV ("{ I420, YV12 }")));
 /*                                    GST_VIDEO_CAPS_YUV ("{ IYUV, I420, YV12 }")));*/
 
 G_DEFINE_TYPE (PGstVideoSink, p_gst_video_sink, GST_TYPE_VIDEO_SINK)
@@ -71,7 +71,7 @@ p_gst_video_sink_init (PGstVideoSink *sink)
 {
     sink->width  = -1;
     sink->height = -1;
-    sink->rgb = TRUE;
+    sink->format = NoFormat;
 }
 
 static GstCaps
@@ -88,9 +88,18 @@ p_gst_video_sink_set_caps (GstBaseSink *baseSink, GstCaps *caps)
     GstStructure *structure = gst_caps_get_structure (caps, 0);
 
     if (strcmp (gst_structure_get_name (structure), "video/x-raw-yuv") == 0) {
-        sink->rgb = FALSE;
+        guint32 fourcc = 0;
+        gst_structure_get_fourcc (structure, "format", &fourcc);
+        if (fourcc == GST_STR_FOURCC ("I420")) {
+            sink->format = I420Format;
+            dbg("-----using I420------");
+        }
+        else if (fourcc == GST_STR_FOURCC ("YV12")) {
+            sink->format = YV12Format;
+            dbg("-----using YV12------");
+        }
     } else if (strcmp (gst_structure_get_name (structure), "video/x-raw-rgb") == 0) {
-        sink->rgb = TRUE;
+        sink->format = RGB32Format;
     }
 
     gst_structure_get_int (structure, "width",  &sink->width);
