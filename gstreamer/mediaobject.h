@@ -20,16 +20,18 @@
 #define Phonon_GSTREAMER_MEDIAOBJECT_H
 
 #include "medianode.h"
+#include "pipeline.h"
 #include <phonon/mediaobjectinterface.h>
 #include <phonon/addoninterface.h>
+#include <phonon/objectdescription.h>
 #include <phonon/MediaController>
 
 #include <QtCore/QObject>
 #include <QtCore/QString>
 #include <QtCore/QStringList>
 #include <QtCore/QVariant>
-
-#include <gst/pbutils/install-plugins.h>
+#include <QtCore/QWaitCondition>
+#include <QtCore/QMutex>
 
 #include "phonon-config-gstreamer.h"
 
@@ -50,7 +52,6 @@ class VideoWidget;
 class AudioPath;
 class VideoPath;
 class AudioOutput;
-class PluginInstaller;
 
 class MediaObject : public QObject, public MediaObjectInterface
 #ifndef QT_NO_PHONON_MEDIACONTROLLER
@@ -86,6 +87,8 @@ public:
     void stop();
     void seek(qint64 time);
 
+    Phonon::State translateState(GstState state) const;
+
     QString errorString() const;
     Phonon::ErrorType errorType() const;
 
@@ -114,68 +117,39 @@ public:
 
     bool audioAvailable()
     {
-        return m_hasAudio;
+        return m_pipeline->audioIsAvailable();
     }
 
     bool videoAvailable()
     {
-        return m_hasVideo;
+        return m_pipeline->videoIsAvailable();
     }
 
     GstElement *audioGraph()
     {
-        return m_audioGraph;
+        return m_pipeline->audioGraph();
     }
 
     GstElement *videoGraph()
     {
-        return m_videoGraph;
+        return m_pipeline->videoGraph();
     }
 
-    GstElement *pipeline()
+    Pipeline *pipeline()
     {
         return m_pipeline;
-    };
-
-    gulong capsHandler()
-    {
-        return m_capsHandler;
-    };
-
-    void connectVideo(GstPad *videoPad);
-    void connectAudio(GstPad *audioPad);
-    void addSubtitle(GstPad *pad);
-
-    // Bus sync-message signal handlers
-    Q_INVOKABLE void handleTagMessage(GstMessage *msg);
-    Q_INVOKABLE void handleStateMessage(GstMessage *msg);
-    Q_INVOKABLE void handleErrorMessage(GstMessage *msg);
-    Q_INVOKABLE void handleWarningMessage(GstMessage *msg);
-    Q_INVOKABLE void handleBufferingMessage(GstMessage *msg);
-    Q_INVOKABLE void handleElementMessage(GstMessage *msg);
-    Q_INVOKABLE void handleDurationMessage(GstMessage *msg);
-    Q_INVOKABLE void handleEOSMessage(GstMessage *msg);
-    Q_INVOKABLE void handleEndOfStream();
-
-    static gboolean cb_eos(GstBus *bus, GstMessage *msg, gpointer data);
-    static gboolean cb_tag(GstBus *bus, GstMessage *msg, gpointer data);
-    static gboolean cb_state(GstBus *bus, GstMessage *msg, gpointer data);
-    static gboolean cb_element(GstBus *bus, GstMessage *msg, gpointer data);
-    static gboolean cb_duration(GstBus *bus, GstMessage *msg, gpointer data);
-    static gboolean cb_buffering(GstBus *bus, GstMessage *msg, gpointer data);
-    static gboolean cb_warning(GstBus *bus, GstMessage *msg, gpointer data);
-    static gboolean cb_error(GstBus *bus, GstMessage *msg, gpointer data);
+    }
 
     void invalidateGraph();
 
-    static void cb_newpad (GstElement *decodebin, GstPad *pad, gboolean last, gpointer data);
-    static void cb_pad_added (GstElement *decodebin, GstPad *pad, gpointer data);
-    static void cb_unknown_type (GstElement *decodebin, GstPad *pad, GstCaps *caps, gpointer data);
     void saveState();
     void resumeState();
 
+    QMultiMap<QString, QString> metaData();
+    void setMetaData(QMultiMap<QString, QString> newData);
+
 public Q_SLOTS:
-    void setState(State);
+    void requestState(Phonon::State);
 
 Q_SIGNALS:
     void currentSourceChanged(const MediaSource &newSource);
@@ -190,9 +164,6 @@ Q_SIGNALS:
     void aboutToFinish();
     void totalTimeChanged(qint64 length);
     void bufferStatus(int percentFilled);
-
-    QMultiMap<QString, QString> metaData();
-    void setMetaData(QMultiMap<QString, QString> newData);
 
     // AddonInterface:
     void titleChanged(int);
@@ -209,51 +180,40 @@ Q_SIGNALS:
     void availableAudioChannelsChanged();
 
 protected:
-    void beginLoad();
     void loadingComplete();
-    void newPadAvailable (GstPad *pad);
-    void changeState(State);
-    void setError(const QString &errorString, Phonon::ErrorType error = NormalError);
-    /*
-     * @param encodedUrl percent-encoded QString for source compat reasons.  Should change to QUrl
-     */
-    bool createPipefromURL(const Mrl &mrl);
-    bool createPipefromStream(const MediaSource &);
-    bool createPipefromDevice(const MediaSource &);
-    bool createPipefromDVD(const MediaSource &);
-    bool createV4lPipe(const DeviceAccess &access, const MediaSource &);
+    Q_INVOKABLE void setError(const QString &errorString, Phonon::ErrorType error = NormalError);
 
     GstElement *audioElement()
     {
-        Q_ASSERT(m_audioPipe);
-        return m_audioPipe;
+        return m_pipeline->audioPipe();
     }
 
     GstElement *videoElement()
     {
-        Q_ASSERT(m_videoPipe);
-        return m_videoPipe;
+        return m_pipeline->videoPipe();
     }
 
 private Q_SLOTS:
     void getStreamInfo();
+    void getSubtitleInfo(int stream);
     void emitTick();
     void beginPlay();
-    void setVideoCaps(GstCaps *caps);
     void notifyStateChange(Phonon::State newstate, Phonon::State oldstate);
-    void pluginInstallComplete();
-    void pluginInstallFailure(const QString &msg);
-    void pluginInstallStarted();
+    void autoDetectSubtitle();
+
+    void handleEndOfStream();
+    void logWarning(const QString &);
+    void handleBuffering(int);
+    void handleStateChange(GstState oldState, GstState newState);
+    void handleDurationChange(qint64);
+
+    void handleMouseOverChange(bool active);
+    void handleAboutToFinish();
+    void handleStreamChange();
 
 private:
     // GStreamer specific :
-    void createPipeline();
-    bool addToPipeline(GstElement *elem);
     void setTotalTime(qint64 newTime);
-    void getStreamsInfo();
-    bool updateTotalTime();
-    void updateSeekable();
-    void updateNavigation();
     qint64 getPipelinePos() const;
 
     int _iface_availableTitles() const;
@@ -261,7 +221,11 @@ private:
     void _iface_setCurrentTitle(int title);
     QList<MediaController::NavigationMenu> _iface_availableMenus() const;
     void _iface_jumpToMenu(MediaController::NavigationMenu menu);
+    QList<SubtitleDescription> _iface_availableSubtitles() const;
+    SubtitleDescription _iface_currentSubtitle() const;
+    void _iface_setCurrentSubtitle(const SubtitleDescription &subtitle);
     void setTrack(int title);
+    void changeSubUri(const Mrl &mrl);
 
     bool m_resumeState;
     State m_oldState;
@@ -272,7 +236,6 @@ private:
     QTimer *m_tickTimer;
     qint32 m_tickInterval;
 
-    MediaSource m_source;
     MediaSource m_nextSource;
     qint32 m_prefinishMark;
     qint32 m_transitionTime;
@@ -283,38 +246,43 @@ private:
     bool m_prefinishMarkReachedNotEmitted;
     bool m_aboutToFinishEmitted;
     bool m_loading;
-    gulong m_capsHandler;
-
-    GstElement *m_datasource;
-    GstElement *m_decodebin;
-
-    GstElement *m_audioPipe;
-    GstElement *m_videoPipe;
 
     qint64 m_totalTime;
-    int m_bufferPercent;
-    bool m_hasVideo;
-    bool m_videoStreamFound;
-    bool m_hasAudio;
-    bool m_seekable;
-    bool m_atEndOfStream;
     bool m_atStartOfStream;
     Phonon::ErrorType m_error;
     QString m_errorString;
 
-    GstElement *m_pipeline;
-    GstElement *m_audioGraph;
-    GstElement *m_videoGraph;
-    int m_previousTickTime;
-    bool m_resetNeeded;
-    QMultiMap<QString, QString> m_metaData;
+    Pipeline *m_pipeline;
     bool m_autoplayTitles;
     int m_availableTitles;
     int m_currentTitle;
+    SubtitleDescription m_currentSubtitle;
     int m_pendingTitle;
-    bool m_installingPlugin;
-    PluginInstaller *m_installer;
-    QList<MediaController::NavigationMenu> m_menus;
+
+    // When we emit aboutToFinish(), libphonon calls setNextSource. To achive gapless playback,
+    // the pipeline is immediately told to start using that new source. This can break seeking
+    // since the aboutToFinish signal tends to be emitted around 15 seconds or so prior to actually
+    // ending the current track.
+    // If we seek backwards in time, we'd still have the 'next' source but now be a different
+    // position than the start. This flag tells us to reset the pipeline's source to the 'previous'
+    // one prior to seeking.
+    //
+    // It also causes currentSourceChanged() to be emitted once the duration changes, which happens
+    // when we actually *do* start hearing the new source.
+    bool m_waitingForNextSource;
+    bool m_waitingForPreviousSource;
+
+    // This keeps track of the source currently heard over the speakers.
+    // It can be different from the pipeline's current source due to how the
+    // almost-at-end gapless playback code works.
+    Phonon::MediaSource m_source;
+    QMultiMap<QString, QString> m_sourceMeta;
+
+    //This simply pauses the gst signal handler 'till we get something
+    QMutex m_aboutToFinishLock;
+    QWaitCondition m_aboutToFinishWait;
+
+    qint64 m_lastTime;
 };
 }
 } //namespace Phonon::Gstreamer

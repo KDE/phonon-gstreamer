@@ -1,6 +1,8 @@
-/*  This file is part of the KDE project
+/*
     Copyright (C) 2006 Matthias Kretz <kretz@kde.org>
     Copyright (C) 2009 Martin Sandsmark <sandsmark@samfundet.no>
+    Copyright (C) 2011 Harald Sitter <sitter@kde.org>
+    Copyright (C) 2011 Alessandro Siniscalchi <asiniscalchi@gmail.com>
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -45,7 +47,7 @@ class AudioDataOutput : public QObject,
     Q_INTERFACES(Phonon::AudioDataOutputInterface Phonon::Gstreamer::MediaNode)
 
 public:
-    AudioDataOutput(Backend *, QObject *);
+    AudioDataOutput(Backend *backend, QObject *parent);
     ~AudioDataOutput();
 
 public Q_SLOTS:
@@ -64,17 +66,17 @@ public:
 
 signals:
     void dataReady(const QMap<Phonon::AudioDataOutput::Channel, QVector<qint16> > &data);
-    void dataReady(const QMap<Phonon::AudioDataOutput::Channel, QVector<float> > &data);
     void endOfMedia(int remainingSamples);
 
 private:
-    void convertAndEmit(const QVector<qint16>&, const QVector<qint16>&);
+    void convertAndEmit();
 
     GstElement *m_queue;
-    int m_dataSize;
-    QVector<qint16> m_pendingData;
     Phonon::AudioDataOutput *m_frontend;
+    QVector<qint16> m_pendingData;
+    qint32 m_dataSize;
     int m_channels;
+    QVector<QVector<qint16> > m_channelBuffers;
 };
 } // namespace Gstreamer
 } // namespace Phonon
@@ -83,4 +85,4 @@ QT_END_NAMESPACE
 QT_END_HEADER
 
 // vim: sw=4 ts=4 tw=80
-#endif // Phonon_FAKE_AUDIODATAOUTPUT_H
+#endif // Phonon_GSTREAMER_AUDIODATAOUTPUT_H

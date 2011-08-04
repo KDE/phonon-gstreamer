@@ -60,7 +60,6 @@ public:
     void setHue(qreal);
     qreal saturation() const;
     void setSaturation(qreal);
-    void setMovieSize(const QSize &size);
     QSize sizeHint() const;
     QRect scaleToAspect(QRect srcRect, int w, int h) const;
     QRect calculateDrawFrameRect() const;
@@ -80,6 +79,11 @@ public:
     QWidget *widget() {
         return this;
     }
+
+    static void cb_capsChanged(GstPad *pad, GParamSpec *spec, gpointer data);
+
+public slots:
+    void setMovieSize(const QSize &size);
 
 protected:
     virtual void keyPressEvent(QKeyEvent *event);

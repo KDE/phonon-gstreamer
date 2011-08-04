@@ -128,6 +128,7 @@ void Effect::setupEffectParams()
                 }
             }
         }
+        g_free(property_specs);
     }
 }
 
@@ -146,7 +147,7 @@ QVariant Effect::parameterValue(const EffectParameter &p) const
         case QVariant::Int:
             {
                 gint val = 0;
-                g_object_get(G_OBJECT(m_effectElement), qPrintable(p.name()), &val, (const char*)NULL);
+                g_object_get(G_OBJECT(m_effectElement), qPrintable(p.name()), &val, NULL);
                 returnVal = val;
             }
             break;
@@ -154,7 +155,7 @@ QVariant Effect::parameterValue(const EffectParameter &p) const
         case QVariant::Bool:
             {
                 gboolean val = 0;
-                g_object_get(G_OBJECT(m_effectElement), qPrintable(p.name()), &val, (const char*)NULL);
+                g_object_get(G_OBJECT(m_effectElement), qPrintable(p.name()), &val, NULL);
                 returnVal = val;
             }
             break;
@@ -162,7 +163,7 @@ QVariant Effect::parameterValue(const EffectParameter &p) const
         case QVariant::String:
             {
                 gchar *val = 0;
-                g_object_get(G_OBJECT(m_effectElement), qPrintable(p.name()), &val, (const char*)NULL);
+                g_object_get(G_OBJECT(m_effectElement), qPrintable(p.name()), &val, NULL);
                 returnVal = QString::fromUtf8(val);
                 g_free(val);
             }
@@ -174,11 +175,11 @@ QVariant Effect::parameterValue(const EffectParameter &p) const
                 Q_ASSERT(spec);
                 if (spec && spec->value_type == G_TYPE_FLOAT) {
                     gfloat val = 0;
-                    g_object_get(G_OBJECT(m_effectElement), qPrintable(p.name()), &val, (const char*)NULL);
+                    g_object_get(G_OBJECT(m_effectElement), qPrintable(p.name()), &val, NULL);
                     returnVal = QVariant((float)val);
                 } else {
                     gdouble val = 0;
-                    g_object_get(G_OBJECT(m_effectElement), qPrintable(p.name()), &val, (const char*)NULL);
+                    g_object_get(G_OBJECT(m_effectElement), qPrintable(p.name()), &val, NULL);
                     returnVal = QVariant((float)val);
                 }
             }
@@ -204,7 +205,7 @@ void Effect::setParameterValue(const EffectParameter &p, const QVariant &v)
             // ### range values should really be checked by the front end, why isnt it working?
             case QVariant::Int:
                 if (v.toInt() >= p.minimumValue().toInt() && v.toInt() <= p.maximumValue().toInt())
-                    g_object_set(G_OBJECT(m_effectElement), qPrintable(p.name()), (gint)v.toInt(), (const char*)NULL);
+                    g_object_set(G_OBJECT(m_effectElement), qPrintable(p.name()), (gint)v.toInt(), NULL);
                 break;
 
             case QVariant::Double:
@@ -212,23 +213,23 @@ void Effect::setParameterValue(const EffectParameter &p, const QVariant &v)
                     GParamSpec* spec = g_object_class_find_property(G_OBJECT_GET_CLASS(m_effectElement), p.name().toLatin1().constData());
                     Q_ASSERT(spec);
                     if (spec && spec->value_type == G_TYPE_FLOAT)
-                        g_object_set(G_OBJECT(m_effectElement), qPrintable(p.name()), (gfloat)v.toDouble(), (const char*)NULL);
+                        g_object_set(G_OBJECT(m_effectElement), qPrintable(p.name()), (gfloat)v.toDouble(), NULL);
                     else
-                        g_object_set(G_OBJECT(m_effectElement), qPrintable(p.name()), (gdouble)v.toDouble(), (const char*)NULL);
+                        g_object_set(G_OBJECT(m_effectElement), qPrintable(p.name()), (gdouble)v.toDouble(), NULL);
                 }
                 break;
 
             case QVariant::UInt:
                 if (v.toUInt() >= p.minimumValue().toUInt() && v.toUInt() <= p.maximumValue().toUInt())
-                    g_object_set(G_OBJECT(m_effectElement), qPrintable(p.name()), v.toUInt(), (const char*)NULL);
+                    g_object_set(G_OBJECT(m_effectElement), qPrintable(p.name()), v.toUInt(), NULL);
                 break;
 
             case QVariant::String:
-                g_object_set(G_OBJECT(m_effectElement), qPrintable(p.name()), v.toString().toUtf8().constData(), (const char*)NULL);
+                g_object_set(G_OBJECT(m_effectElement), qPrintable(p.name()), v.toString().toUtf8().constData(), NULL);
                 break;
 
             case QVariant::Bool:
-                g_object_set(G_OBJECT(m_effectElement), qPrintable(p.name()), (gboolean)v.toBool(), (const char*)NULL);
+                g_object_set(G_OBJECT(m_effectElement), qPrintable(p.name()), (gboolean)v.toBool(), NULL);
                 break;
 
             default:

@@ -42,7 +42,6 @@ public:
     static QByteArray property(GstElement *elem, const char *propertyName);
     static QByteArray name(GstObject *elem);
     static QString stateName(GstState);
-    static void writePipelineDot(MediaObject *media, const QString &type);
 };
 
 } // ns Gstreamer
