@@ -413,6 +413,7 @@ void MediaObject::getSubtitleInfo(int stream)
             GlobalSubtitles::instance()->add(this, i, name);
         }
     }
+    emit availableSubtitlesChanged();
 }
 
 void MediaObject::setPrefinishMark(qint32 newPrefinishMark)
