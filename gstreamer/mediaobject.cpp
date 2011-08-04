@@ -349,6 +349,11 @@ void MediaObject::setSource(const MediaSource &source)
     if (!isValid())
         return;
 
+    if (source.type() == Phonon::MediaSource::Invalid) {
+        qWarning("Trying to set an invalid MediaSource -> ignoring.");
+        return;
+    }
+
     qDebug() << "Setting new source";
     m_source = source;
     autoDetectSubtitle();
@@ -699,7 +704,7 @@ void MediaObject::_iface_setCurrentSubtitle(const SubtitleDescription &subtitle)
         // because the pipeline has not been built with the subtitle element. A workaround
         // consists to restart the pipeline and set the suburi property (totem does exactly the same thing)
         // TODO: Harald suggests to insert a empty bin into the playbin2 pipeline and then insert a subtitle element
-        // on the fly into that bin when the subtitle feature is required... 
+        // on the fly into that bin when the subtitle feature is required...
         stop();
         changeSubUri(Mrl(filename));
         play();
