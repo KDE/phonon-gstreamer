@@ -51,7 +51,6 @@ if (BUILD_PHONON_GSTREAMER)
       effectmanager.cpp
       gsthelper.cpp
       medianode.cpp
-      medianodeevent.cpp
       mediaobject.cpp
       pipeline.cpp
       plugininstaller.cpp

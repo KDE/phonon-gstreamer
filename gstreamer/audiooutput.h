@@ -52,8 +52,6 @@ public:
         return m_audioBin;
     }
 
-    void mediaNodeEvent(const MediaNodeEvent *event);
-
 Q_SIGNALS:
     void volumeChanged(qreal newVolume);
     void audioDeviceFailed();

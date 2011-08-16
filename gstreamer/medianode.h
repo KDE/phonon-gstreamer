@@ -18,7 +18,6 @@
 #ifndef Phonon_GSTREAMER_MEDIANODE_H
 #define Phonon_GSTREAMER_MEDIANODE_H
 
-#include "medianodeevent.h"
 
 #include <QtCore/QObject>
 #include <QtCore/QList>
@@ -73,8 +72,6 @@ public:
         m_root = mediaObject;
     }
 
-    void notify(const MediaNodeEvent *event);
-
     Backend *backend() {
         return m_backend;
     }
@@ -90,13 +87,11 @@ public:
     virtual GstElement *videoElement() {
         return m_videoTee;
     }
-
 protected:
     bool connectToFakeSink(GstElement *tee, GstElement *sink, GstElement *bin);
     bool releaseFakeSinkIfConnected(GstElement *tee, GstElement *sink, GstElement *bin);
     bool linkMediaNodeList(QList<QObject *> &list, GstElement *bin, GstElement *tee, GstElement *sink, GstElement *src);
 
-    virtual void mediaNodeEvent(const MediaNodeEvent *event);
     QList<QObject *> m_audioSinkList;
     QList<QObject *> m_videoSinkList;
 

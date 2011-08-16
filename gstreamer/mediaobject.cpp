@@ -122,8 +122,6 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
 
         connect(m_tickTimer, SIGNAL(timeout()), SLOT(emitTick()));
     }
-    connect(this, SIGNAL(stateChanged(Phonon::State, Phonon::State)),
-            this, SLOT(notifyStateChange(Phonon::State, Phonon::State)));
 }
 
 MediaObject::~MediaObject()
@@ -367,10 +365,6 @@ void MediaObject::setSource(const MediaSource &source)
 // Called when we are ready to leave the loading state
 void MediaObject::loadingComplete()
 {
-    if (m_pipeline->videoIsAvailable()) {
-        MediaNodeEvent event(MediaNodeEvent::VideoAvailable);
-        notify(&event);
-    }
     link();
 }
 
@@ -546,14 +540,6 @@ void MediaObject::handleEndOfStream()
 
 void MediaObject::invalidateGraph()
 {
-}
-
-// Notifes the pipeline about state changes in the media object
-void MediaObject::notifyStateChange(Phonon::State newstate, Phonon::State oldstate)
-{
-    Q_UNUSED(oldstate);
-    MediaNodeEvent event(MediaNodeEvent::StateChanged, &newstate);
-    notify(&event);
 }
 
 #ifndef QT_NO_PHONON_MEDIACONTROLLER
@@ -767,12 +753,6 @@ QMultiMap<QString, QString> MediaObject::metaData()
 void MediaObject::setMetaData(QMultiMap<QString, QString> newData)
 {
     m_pipeline->setMetaData(newData);
-}
-
-void MediaObject::handleMouseOverChange(bool active)
-{
-    MediaNodeEvent mouseOverEvent(MediaNodeEvent::VideoMouseOver, &active);
-    notify(&mouseOverEvent);
 }
 
 void MediaObject::requestState(Phonon::State state)

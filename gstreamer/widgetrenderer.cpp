@@ -103,19 +103,6 @@ void WidgetRenderer::setNextFrame(const QByteArray &array, int w, int h)
     m_videoWidget->update();
 }
 
-void WidgetRenderer::handleMediaNodeEvent(const MediaNodeEvent *event)
-{
-    switch (event->type()) {
-    case MediaNodeEvent::SourceChanged:
-    {
-        clearFrame();
-        break;
-    }
-    default:
-        break;
-    }
-}
-
 void WidgetRenderer::clearFrame()
 {
     m_frame = QImage();

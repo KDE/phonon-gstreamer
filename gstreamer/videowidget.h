@@ -45,7 +45,6 @@ public:
 
     void setupVideoBin();
     void paintEvent(QPaintEvent *event);
-    void mediaNodeEvent(const MediaNodeEvent *event);
     void setVisible(bool);
 
     Phonon::VideoWidget::AspectRatio aspectRatio() const;

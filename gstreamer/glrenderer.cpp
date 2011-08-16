@@ -110,20 +110,6 @@ bool GLRenderer::eventFilter(QEvent * event)
     return false;
 }
 
-void GLRenderer::handleMediaNodeEvent(const MediaNodeEvent *event)
-{
-    switch (event->type()) {
-    case MediaNodeEvent::SourceChanged:
-    {
-        Q_ASSERT(m_glWindow);
-        m_glWindow->clearFrame();
-        break;
-    }
-    default:
-        break;
-    }
-}
-
 GstElement* GLRenderWidgetImplementation::createVideoSink()
 {
     if (hasYUVSupport())

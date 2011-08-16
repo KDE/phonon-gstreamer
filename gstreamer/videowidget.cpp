@@ -403,27 +403,6 @@ void VideoWidget::setMovieSize(const QSize &size)
         m_renderer->movieSizeChanged(m_movieSize);
 }
 
-void VideoWidget::mediaNodeEvent(const MediaNodeEvent *event)
-{
-    switch (event->type()) {
-    case MediaNodeEvent::VideoMouseOver: {
-        const gboolean active = *static_cast<const gboolean*>(event->data());
-        if (active) {
-            setCursor(Qt::PointingHandCursor);
-        } else {
-            setCursor(Qt::ArrowCursor);
-        }
-        break;
-    }
-    default:
-        break;
-    }
-
-    // Forward events to renderer
-    if (m_renderer)
-        m_renderer->handleMediaNodeEvent(event);
-}
-
 void VideoWidget::keyPressEvent(QKeyEvent *event)
 {
     GstElement *videosink = m_renderer->videoSink();

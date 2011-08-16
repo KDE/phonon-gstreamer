@@ -198,7 +198,6 @@ private Q_SLOTS:
     void getSubtitleInfo(int stream);
     void emitTick();
     void beginPlay();
-    void notifyStateChange(Phonon::State newstate, Phonon::State oldstate);
     void autoDetectSubtitle();
 
     void handleEndOfStream();
@@ -207,7 +206,6 @@ private Q_SLOTS:
     void handleStateChange(GstState oldState, GstState newState);
     void handleDurationChange(qint64);
 
-    void handleMouseOverChange(bool active);
     void handleAboutToFinish();
     void handleStreamChange();
 
