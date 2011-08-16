@@ -158,7 +158,8 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad*, gpo
     // 1) I empty the stored data
     if (that->m_pendingData.size() != 0) {
         for (int i = 0; i < that->m_pendingData.size(); i += that->m_channels) {
-            for (int j = 0; j < that->m_channels; ++j) {
+            //TODO: Figure out why it crashes without the second test (bug #279791)
+            for (int j = 0; (j < that->m_channels) && (i+j < that->m_pendingData.size()); ++j) {
                 that->m_channelBuffers[j].append(that->m_pendingData[i+j]);
             }
         }
