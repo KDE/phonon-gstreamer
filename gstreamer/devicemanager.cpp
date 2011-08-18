@@ -16,6 +16,7 @@
 */
 
 #include <gst/interfaces/propertyprobe.h>
+#include "phonon-config-gstreamer.h"
 #include "devicemanager.h"
 #include "backend.h"
 #include "gsthelper.h"
