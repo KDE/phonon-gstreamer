@@ -25,7 +25,6 @@
 #include "audiodataoutput.h"
 #include "gsthelper.h"
 #include "medianode.h"
-#include "medianodeevent.h"
 #include <QtCore/QVector>
 #include <QtCore/QMap>
 #include <phonon/audiooutput.h>

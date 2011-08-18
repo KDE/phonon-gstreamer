@@ -17,6 +17,7 @@
 
 #include "videowidget.h"
 #include <QtCore/QEvent>
+#include <QtCore/QDebug>
 #include <QtGui/QResizeEvent>
 #include <QtGui/QPalette>
 #include <QtGui/QImage>
@@ -72,6 +73,15 @@ VideoWidget::~VideoWidget()
         delete m_renderer;
 }
 
+void VideoWidget::finalizeLink()
+{
+    connect(root()->pipeline(), SIGNAL(mouseOverActive(bool)), this, SLOT(mouseOverActive(bool)));
+}
+
+void VideoWidget::prepareToUnlink()
+{
+    disconnect(root()->pipeline());
+}
 
 void VideoWidget::setupVideoBin()
 {
@@ -167,9 +177,6 @@ void VideoWidget::setVisible(bool val) {
         gst_element_link(m_videoplug, videoSink);
         gst_element_set_state (videoSink, GST_STATE_PAUSED);
 
-        // Request return to current state
-        root()->invalidateGraph();
-        //root()->setState(root()->state());
     }
     QWidget::setVisible(val);
 }
@@ -403,27 +410,6 @@ void VideoWidget::setMovieSize(const QSize &size)
         m_renderer->movieSizeChanged(m_movieSize);
 }
 
-void VideoWidget::mediaNodeEvent(const MediaNodeEvent *event)
-{
-    switch (event->type()) {
-    case MediaNodeEvent::VideoMouseOver: {
-        const gboolean active = *static_cast<const gboolean*>(event->data());
-        if (active) {
-            setCursor(Qt::PointingHandCursor);
-        } else {
-            setCursor(Qt::ArrowCursor);
-        }
-        break;
-    }
-    default:
-        break;
-    }
-
-    // Forward events to renderer
-    if (m_renderer)
-        m_renderer->handleMediaNodeEvent(event);
-}
-
 void VideoWidget::keyPressEvent(QKeyEvent *event)
 {
     GstElement *videosink = m_renderer->videoSink();
@@ -520,6 +506,14 @@ void VideoWidget::cb_capsChanged(GstPad *pad, GParamSpec *spec, gpointer data)
     if (gst_video_get_size(pad, &width, &height)) {
         QMetaObject::invokeMethod(that, "setMovieSize", Q_ARG(QSize, QSize(width, height)));
     }
+}
+
+void VideoWidget::mouseOverActive(bool active)
+{
+    if (active)
+        setCursor(Qt::PointingHandCursor);
+    else
+        setCursor(Qt::ArrowCursor);
 }
 
 }

@@ -411,7 +411,6 @@ bool Backend::connectNodes(QObject *source, QObject *sink)
         MediaNode *sinkNode = qobject_cast<MediaNode *>(sink);
         if (sourceNode && sinkNode) {
             if (sourceNode->connectNode(sink)) {
-                sourceNode->root()->invalidateGraph();
                 logMessage(QString("Backend connected %0 to %1").arg(source->metaObject()->className()).arg(sink->metaObject()->className()));
                 return true;
             }

@@ -31,7 +31,6 @@ namespace Phonon
 namespace Gstreamer
 {
 
-class MediaNodeEvent;
 
 class AbstractRenderer
 {
@@ -44,7 +43,6 @@ public:
     virtual void aspectRatioChanged(Phonon::VideoWidget::AspectRatio aspectRatio);
     virtual void scaleModeChanged(Phonon::VideoWidget::ScaleMode scaleMode);
     virtual void movieSizeChanged(const QSize &movieSize);
-    virtual void handleMediaNodeEvent(const MediaNodeEvent *event) = 0;
     virtual bool eventFilter(QEvent *) = 0;
     virtual void handlePaint(QPaintEvent *) {}
     virtual bool paintsOnWidget() { return true; } // Controls overlays

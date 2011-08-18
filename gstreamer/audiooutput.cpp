@@ -20,7 +20,6 @@
 #include "backend.h"
 #include "devicemanager.h"
 #include "mediaobject.h"
-#include "medianodeevent.h"
 #include "gsthelper.h"
 #include <phonon/audiooutput.h>
 
@@ -80,19 +79,6 @@ AudioOutput::AudioOutput(Backend *backend, QObject *parent)
         }
     }
 }
-
-void AudioOutput::mediaNodeEvent(const MediaNodeEvent *event)
-{
-    if (!m_audioBin)
-        return;
-
-    switch (event->type()) {
-
-    default:
-        break;
-    }
-}
-
 
 AudioOutput::~AudioOutput()
 {

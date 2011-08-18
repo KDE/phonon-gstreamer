@@ -16,7 +16,6 @@
 */
 
 #include "medianode.h"
-#include "medianodeevent.h"
 #include "mediaobject.h"
 #include "backend.h"
 
@@ -38,7 +37,8 @@ MediaNode::MediaNode(Backend *backend, NodeDescription description) :
         m_fakeAudioSink(0),
         m_fakeVideoSink(0),
         m_backend(backend),
-        m_description(description)
+        m_description(description),
+        m_finalized(false)
 {
     if ((description & AudioSink) && (description & VideoSink)) {
         Q_ASSERT(0); // A node cannot accept both audio and video
@@ -121,8 +121,12 @@ bool MediaNode::buildGraph()
         }
     }
 
-    if (!success)
+    if (!success) {
         unlink();
+    } else if (!m_finalized) {
+        finalizeLink();
+        m_finalized = true;
+    }
 
     return success;
 }
@@ -132,6 +136,10 @@ bool MediaNode::buildGraph()
  */
 bool MediaNode::breakGraph()
 {
+    if (m_finalized) {
+        prepareToUnlink();
+        m_finalized = false;
+    }
     for (int i=0; i<m_audioSinkList.size(); ++i) {
         MediaNode *node = qobject_cast<MediaNode*>(m_audioSinkList[i]);
         if (!node || !node->breakGraph())
@@ -169,23 +177,17 @@ bool MediaNode::connectNode(QObject *obj)
 
         if ((m_description & AudioSource) && (sink->m_description & AudioSink)) {
             m_audioSinkList << obj;
-            MediaNodeEvent event(MediaNodeEvent::AudioSinkAdded, sink);
-            root()->mediaNodeEvent(&event);
             success = true;
         }
 
         if ((m_description & VideoSource) && (sink->m_description & VideoSink)) {
             m_videoSinkList << obj;
-            MediaNodeEvent event(MediaNodeEvent::VideoSinkAdded, sink);
-            root()->mediaNodeEvent(&event);
             success = true;
         }
 
         // If we have a root source, and we are connected
         // try to link the gstreamer elements
         if (success && root()) {
-            MediaNodeEvent mediaObjectConnected(MediaNodeEvent::MediaObjectConnected, root());
-            notify(&mediaObjectConnected);
             root()->buildGraph();
         }
     }
@@ -238,40 +240,15 @@ bool MediaNode::disconnectNode(QObject *obj)
 
     if (sink->m_description & AudioSink) {
         // Remove sink from graph
-        MediaNodeEvent event(MediaNodeEvent::AudioSinkRemoved, sink);
-        mediaNodeEvent(&event);
         return true;
     }
 
     if ((m_description & VideoSource) && (sink->m_description & VideoSink)) {
         // Remove sink from graph
-        MediaNodeEvent event(MediaNodeEvent::VideoSinkRemoved, sink);
-        mediaNodeEvent(&event);
         return true;
     }
 
     return false;
-}
-
-void MediaNode::mediaNodeEvent(const MediaNodeEvent *) {}
-
-/**
- * Propagates an event down the graph
- * sender is responsible for deleting the event
- */
-void MediaNode::notify(const MediaNodeEvent *event)
-{
-    Q_ASSERT(event);
-    mediaNodeEvent(event);
-    for (int i=0; i<m_audioSinkList.size(); ++i) {
-        MediaNode *node = qobject_cast<MediaNode*>(m_audioSinkList[i]);
-        node->notify(event);
-    }
-
-    for (int i=0; i<m_videoSinkList.size(); ++i) {
-        MediaNode *node = qobject_cast<MediaNode*>(m_videoSinkList[i]);
-        node->notify(event);
-    }
 }
 
 /*
@@ -448,6 +425,14 @@ bool MediaNode::unlink()
         }
     }
     return true;
+}
+
+void MediaNode::prepareToUnlink()
+{
+}
+
+void MediaNode::finalizeLink()
+{
 }
 
 
