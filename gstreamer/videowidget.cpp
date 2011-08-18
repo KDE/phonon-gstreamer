@@ -17,6 +17,7 @@
 
 #include "videowidget.h"
 #include <QtCore/QEvent>
+#include <QtCore/QDebug>
 #include <QtGui/QResizeEvent>
 #include <QtGui/QPalette>
 #include <QtGui/QImage>
@@ -72,6 +73,15 @@ VideoWidget::~VideoWidget()
         delete m_renderer;
 }
 
+void VideoWidget::finalizeLink()
+{
+    connect(root()->pipeline(), SIGNAL(mouseOverActive(bool)), this, SLOT(mouseOverActive(bool)));
+}
+
+void VideoWidget::prepareToUnlink()
+{
+    disconnect(root()->pipeline());
+}
 
 void VideoWidget::setupVideoBin()
 {
@@ -499,6 +509,14 @@ void VideoWidget::cb_capsChanged(GstPad *pad, GParamSpec *spec, gpointer data)
     if (gst_video_get_size(pad, &width, &height)) {
         QMetaObject::invokeMethod(that, "setMovieSize", Q_ARG(QSize, QSize(width, height)));
     }
+}
+
+void VideoWidget::mouseOverActive(bool active)
+{
+    if (active)
+        setCursor(Qt::PointingHandCursor);
+    else
+        setCursor(Qt::ArrowCursor);
 }
 
 }

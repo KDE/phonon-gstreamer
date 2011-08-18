@@ -81,8 +81,12 @@ public:
 
     static void cb_capsChanged(GstPad *pad, GParamSpec *spec, gpointer data);
 
+    void finalizeLink();
+    void prepareToUnlink();
+
 public slots:
     void setMovieSize(const QSize &size);
+    void mouseOverActive(bool active);
 
 protected:
     virtual void keyPressEvent(QKeyEvent *event);

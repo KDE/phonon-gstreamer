@@ -37,7 +37,8 @@ MediaNode::MediaNode(Backend *backend, NodeDescription description) :
         m_fakeAudioSink(0),
         m_fakeVideoSink(0),
         m_backend(backend),
-        m_description(description)
+        m_description(description),
+        m_finalized(false)
 {
     if ((description & AudioSink) && (description & VideoSink)) {
         Q_ASSERT(0); // A node cannot accept both audio and video
@@ -120,8 +121,12 @@ bool MediaNode::buildGraph()
         }
     }
 
-    if (!success)
+    if (!success) {
         unlink();
+    } else if (!m_finalized) {
+        finalizeLink();
+        m_finalized = true;
+    }
 
     return success;
 }
@@ -131,6 +136,10 @@ bool MediaNode::buildGraph()
  */
 bool MediaNode::breakGraph()
 {
+    if (m_finalized) {
+        prepareToUnlink();
+        m_finalized = false;
+    }
     for (int i=0; i<m_audioSinkList.size(); ++i) {
         MediaNode *node = qobject_cast<MediaNode*>(m_audioSinkList[i]);
         if (!node || !node->breakGraph())
@@ -416,6 +425,14 @@ bool MediaNode::unlink()
         }
     }
     return true;
+}
+
+void MediaNode::prepareToUnlink()
+{
+}
+
+void MediaNode::finalizeLink()
+{
 }
 
 

@@ -87,6 +87,9 @@ public:
     virtual GstElement *videoElement() {
         return m_videoTee;
     }
+
+    virtual void prepareToUnlink();
+    virtual void finalizeLink();
 protected:
     bool connectToFakeSink(GstElement *tee, GstElement *sink, GstElement *bin);
     bool releaseFakeSinkIfConnected(GstElement *tee, GstElement *sink, GstElement *bin);
@@ -107,6 +110,9 @@ protected:
 private:
     bool addOutput(MediaNode *, GstElement *tee);
     NodeDescription m_description;
+
+    // Sometimes Phonon::Path::reconnect gets called for no good reason.
+    bool m_finalized;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(MediaNode::NodeDescription)
