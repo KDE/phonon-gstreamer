@@ -538,10 +538,6 @@ void MediaObject::handleEndOfStream()
     m_pipeline->setState(GST_STATE_READY);
 }
 
-void MediaObject::invalidateGraph()
-{
-}
-
 #ifndef QT_NO_PHONON_MEDIACONTROLLER
 //interface management
 bool MediaObject::hasInterface(Interface iface) const

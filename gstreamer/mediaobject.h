@@ -140,8 +140,6 @@ public:
         return m_pipeline;
     }
 
-    void invalidateGraph();
-
     void saveState();
     void resumeState();
 

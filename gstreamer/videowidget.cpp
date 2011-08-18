@@ -177,9 +177,6 @@ void VideoWidget::setVisible(bool val) {
         gst_element_link(m_videoplug, videoSink);
         gst_element_set_state (videoSink, GST_STATE_PAUSED);
 
-        // Request return to current state
-        root()->invalidateGraph();
-        //root()->setState(root()->state());
     }
     QWidget::setVisible(val);
 }
