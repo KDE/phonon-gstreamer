@@ -116,7 +116,6 @@ void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
     VideoFrame *frame = &that->m_frame;
     frame->width = that->m_sink->width;
     frame->height = that->m_sink->height;
-    frame->aspectRatio = static_cast<double>(frame->width / frame->height);
 
     switch (that->m_sink->format) {
     case NoFormat:
