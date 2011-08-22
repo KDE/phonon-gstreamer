@@ -27,6 +27,7 @@
 
 #include <phonon/videoframe.h>
 #include <phonon/videographicsobject.h>
+#include <phonon/videographicsobjectinterface.h>
 
 #include "medianode.h"
 #include "videosink.h"
