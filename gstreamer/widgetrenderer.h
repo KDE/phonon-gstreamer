@@ -38,7 +38,6 @@ public:
     WidgetRenderer(VideoWidget *videoWidget);
     bool eventFilter(QEvent * event);
     void handlePaint(QPaintEvent *paintEvent);
-    void handleMediaNodeEvent(const MediaNodeEvent *event);
     const QImage& currentFrame() const;
     QRect drawFrameRect() const { return m_drawFrameRect; }
     void setNextFrame(const QByteArray &array, int width, int height);

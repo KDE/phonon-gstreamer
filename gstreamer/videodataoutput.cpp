@@ -22,7 +22,6 @@
 
 #include "videodataoutput.h"
 #include <phonon/experimental/videoframe2.h>
-#include "medianodeevent.h"
 
 #include <gst/gstbin.h>
 #include <gst/gstghostpad.h>

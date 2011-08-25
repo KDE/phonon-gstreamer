@@ -112,18 +112,6 @@ GstElement* X11Renderer::createVideoSink()
     return videoSink;
 }
 
-void X11Renderer::handleMediaNodeEvent(const MediaNodeEvent *event)
-{
-    switch (event->type()) {
-    case MediaNodeEvent::SourceChanged:
-        setOverlay(); // We need to do this whenever the pipeline is reset
-        break;        // otherwise the videosink will open in its own window
-    default:
-        break;
-    }
-}
-
-
 void X11Renderer::aspectRatioChanged(Phonon::VideoWidget::AspectRatio)
 {
     if (m_renderWidget) {
