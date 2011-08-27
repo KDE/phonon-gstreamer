@@ -192,7 +192,7 @@ protected:
     }
 
 private Q_SLOTS:
-    void getStreamInfo();
+    void handleTrackCountChange(int tracks);
     void getSubtitleInfo(int stream);
     void emitTick();
     void beginPlay();
@@ -220,7 +220,7 @@ private:
     QList<SubtitleDescription> _iface_availableSubtitles() const;
     SubtitleDescription _iface_currentSubtitle() const;
     void _iface_setCurrentSubtitle(const SubtitleDescription &subtitle);
-    void setTrack(int title);
+    void changeTitle(const QString &format, int title);
     void changeSubUri(const Mrl &mrl);
 
     bool m_resumeState;

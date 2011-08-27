@@ -99,6 +99,7 @@ class Pipeline : public QObject
         void eos();
         void warning(const QString &message);
         void durationChanged(qint64 totalDuration);
+        void trackCountChanged(int tracks);
         void buffering(int);
         void stateChanged(GstState oldState, GstState newState);
         void videoAvailabilityChanged(bool);

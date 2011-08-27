@@ -581,6 +581,10 @@ gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
             }
         }
 
+        if (that->m_metaData.contains("TRACK-COUNT")) {
+            emit that->trackCountChanged(newTags.value("TRACK-COUNT").toInt());
+        }
+
         // For radio streams, if we get a metadata update where the title changes, we assume everything else is invalid.
         // If we don't already have a title, we don't do anything since we're actually just appending new data into that.
         if (that->m_isStream && oldMap.contains("TITLE") && that->m_metaData.value("TITLE") != oldMap.value("TITLE")) {
