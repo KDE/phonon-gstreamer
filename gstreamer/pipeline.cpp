@@ -138,6 +138,7 @@ GstElement *Pipeline::videoGraph()
 
 void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
 {
+    m_isStream = false;
     m_seeking = false;
     m_installer->reset();
     m_resumeAfterInstall = false;
