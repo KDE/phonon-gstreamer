@@ -583,7 +583,11 @@ gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
         }
 
         if (that->m_metaData.contains("TRACK-COUNT")) {
+            that->m_metaData.insert("TRACKNUMBER", newTags.value("TRACK-COUNT"));
             emit that->trackCountChanged(newTags.value("TRACK-COUNT").toInt());
+        }
+        if (that->m_metaData.contains("MUSICBRAINZ-DISCID")) {
+            that->m_metaData.insert("MUSICBRAINZ_DISCID", newTags.value("MUSICBRAINZ-DISCID"));
         }
 
         // For radio streams, if we get a metadata update where the title changes, we assume everything else is invalid.
@@ -644,7 +648,7 @@ gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
             // If not, this needs fixed in mediaobject.cpp.
             guint kbps;
             g_object_get(that->m_pipeline, "connection-speed", &kbps, NULL);
-            if (kbps != 0)
+            if (that->m_currentSource.discType() == Phonon::Cd || kbps != 0)
                 emit that->metaDataChanged(that->m_metaData);
         }
     }
