@@ -32,6 +32,7 @@
 #include <QtCore/QVariant>
 #include <QtCore/QWaitCondition>
 #include <QtCore/QMutex>
+#include <QtGui/QFont>
 
 #include "phonon-config-gstreamer.h"
 
@@ -220,6 +221,12 @@ private:
     QList<SubtitleDescription> _iface_availableSubtitles() const;
     SubtitleDescription _iface_currentSubtitle() const;
     void _iface_setCurrentSubtitle(const SubtitleDescription &subtitle);
+    bool _iface_subtitleAutodetect() const;
+    void _iface_setSubtitleAutodetect(bool enable);
+    QString _iface_subtitleEncoding() const;
+    void _iface_setSubtitleEncoding(const QString &encoding);
+    QFont _iface_subtitleFont() const;
+    void _iface_setSubtitleFont(const QFont &font);
     void changeTitle(const QString &format, int title);
     void changeSubUri(const Mrl &mrl);
 
@@ -253,6 +260,8 @@ private:
     int m_availableTitles;
     int m_currentTitle;
     SubtitleDescription m_currentSubtitle;
+    bool m_subtitleAutodetect;
+    QFont m_subtitleFont;
     int m_pendingTitle;
 
     // When we emit aboutToFinish(), libphonon calls setNextSource. To achive gapless playback,

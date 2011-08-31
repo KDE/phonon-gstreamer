@@ -72,7 +72,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_autoplayTitles(true)
         , m_availableTitles(0)
         , m_currentTitle(1)
-        , m_currentSubtitle(0, QHash<QByteArray, QVariant>())
+        , m_subtitleAutodetect(false)
         , m_pendingTitle(0)
         , m_waitingForNextSource(false)
         , m_waitingForPreviousSource(false)
@@ -92,6 +92,11 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         m_pipeline = new Pipeline(this);
         m_isValid = true;
         GlobalSubtitles::instance()->register_(this);
+
+        // Use UTF-8 by default (otherwise gst uses iso-8859-1)
+        _iface_setSubtitleEncoding("UTF-8");
+        // Use qapplication's font by default
+        _iface_setSubtitleFont(QFont());
 
         connect(m_pipeline, SIGNAL(aboutToFinish()),
                 this, SLOT(handleAboutToFinish()), Qt::DirectConnection);
@@ -287,22 +292,21 @@ MediaSource MediaObject::source() const
 
 void MediaObject::changeSubUri(const Mrl &mrl)
 {
-    QString fontDesc;
     QByteArray customFont = qgetenv("PHONON_SUBTITLE_FONT");
     QByteArray customEncoding = qgetenv("PHONON_SUBTITLE_ENCODING");
 
-    if (customFont.isNull()) {
-        QFont videoWidgetFont = QApplication::font("VideoWidget");
-        fontDesc = videoWidgetFont.family() + " " + QString::number(videoWidgetFont.pointSize());
-    }
-    //FIXME: Try to detect common encodings, like libvlc does
-    g_object_set(G_OBJECT(m_pipeline->element()), "suburi", mrl.toEncoded().constData(),
-        "subtitle-font-desc", customFont.isNull() ? fontDesc.toStdString().c_str() : customFont.constData(),
-        "subtitle-encoding", customEncoding.isNull() ? "UTF-8" : customEncoding.constData(), NULL);
+    g_object_set(m_pipeline->element(), "suburi", mrl.toEncoded().constData(), NULL);
+
+    if (! customFont.isNull())
+        g_object_set(m_pipeline->element(), "subtitle-font-desc", customFont.constData(), NULL);
+    if (! customEncoding.isNull())
+        g_object_set(m_pipeline->element(), "subtitle-encoding", customEncoding.constData(), NULL);
 }
 
 void MediaObject::autoDetectSubtitle()
 {
+    if (! m_subtitleAutodetect)
+        return;
     if (m_source.type() == MediaSource::LocalFile ||
        (m_source.type() == MediaSource::Url && m_source.mrl().scheme() == "file") ) {
 
@@ -581,6 +585,24 @@ QVariant MediaObject::interfaceCall(Interface iface, int command, const QList<QV
                     }
                     _iface_setCurrentSubtitle(params.first().value<SubtitleDescription>());
                     break;
+                case subtitleAutodetect:
+                    return QVariant::fromValue(_iface_subtitleAutodetect());
+                    break;
+                case setSubtitleAutodetect:
+                    _iface_setSubtitleAutodetect(params.first().toBool());
+                    break;
+                case subtitleEncoding:
+                    return QVariant::fromValue(_iface_subtitleEncoding());
+                    break;
+                case setSubtitleEncoding:
+                    _iface_setSubtitleEncoding(params.first().toString());
+                    break;
+                case subtitleFont:
+                    return QVariant::fromValue(_iface_subtitleFont());
+                    break;
+                case setSubtitleFont:
+                    _iface_setSubtitleFont(params.first().value<QFont>());
+                    break;
             }
             break;
         }
@@ -710,6 +732,44 @@ void MediaObject::_iface_setCurrentSubtitle(const SubtitleDescription &subtitle)
         g_object_set(G_OBJECT(m_pipeline->element()), "flags", flags, "current-text", localIndex, NULL);
         m_currentSubtitle = subtitle;
     }
+}
+
+bool MediaObject::_iface_subtitleAutodetect() const
+{
+    return m_subtitleAutodetect;
+}
+
+void MediaObject::_iface_setSubtitleAutodetect(bool enable)
+{
+    m_subtitleAutodetect = enable;
+}
+
+QString MediaObject::_iface_subtitleEncoding() const
+{
+    char *prop;
+    g_object_get(m_pipeline->element(), "subtitle-encoding", &prop, NULL);
+    QString encoding = prop;
+    g_free(prop);
+    return encoding;
+}
+
+void MediaObject::_iface_setSubtitleEncoding(const QString &encoding)
+{
+    g_object_set(m_pipeline->element(), "subtitle-encoding", encoding.toLocal8Bit().data(), NULL);
+}
+
+// The property "subtitle-font-desc" is WRITABLE only, so
+// m_subtitleFont caches the last font.
+QFont MediaObject::_iface_subtitleFont() const
+{
+   return m_subtitleFont;
+}
+
+void MediaObject::_iface_setSubtitleFont(const QFont &font)
+{
+    QString fontDesc = font.family() + " " + QString::number(font.pointSize());
+    g_object_set(m_pipeline->element(), "subtitle-font-desc", fontDesc.toLocal8Bit().data(), NULL);
+    m_subtitleFont = font;
 }
 
 void MediaObject::changeTitle(const QString &format, int title)
