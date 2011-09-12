@@ -82,7 +82,7 @@ float VolumeFaderEffect::volume() const
 
 void VolumeFaderEffect::setVolume(qreal volume)
 {
-    double gstVolume = 1 - volume * m_fadeFromVolume + volume * m_fadeToVolume;
+    double gstVolume = 1 - volume * (m_fadeFromVolume + m_fadeToVolume);
     g_object_set(G_OBJECT(m_effectElement), "volume", gstVolume, NULL);
     qDebug() << "Fading to" << gstVolume;
 }
