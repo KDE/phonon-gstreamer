@@ -23,6 +23,7 @@
 #include <phonon/volumefaderinterface.h>
 
 #include <QtCore/QTime>
+class QTimeLine;
 
 QT_BEGIN_NAMESPACE
 #ifndef QT_NO_PHONON_VOLUMEFADEREFFECT
@@ -41,22 +42,20 @@ namespace Gstreamer
 
             GstElement* createEffectBin();
             GstElement *audioElement() { return m_effectBin; }
-            bool event(QEvent *);
-            void updateFade();
 
             // VolumeFaderInterface:
             float volume() const;
-            void setVolume(float volume);
             Phonon::VolumeFaderEffect::FadeCurve fadeCurve() const;
             void setFadeCurve(Phonon::VolumeFaderEffect::FadeCurve fadeCurve);
             void fadeTo(float volume, int fadeTime);
+            void setVolume(float v);
 
             Phonon::VolumeFaderEffect::FadeCurve m_fadeCurve;
-            int m_fadeTimer;
-            int m_fadeDuration;
-            float m_fadeFromVolume;
-            float m_fadeToVolume;
-            QTime m_fadeStartTime;
+            gdouble m_fadeFromVolume;
+            gdouble m_fadeToVolume;
+            QTimeLine *m_fadeTimeline;
+        private slots:
+            void setVolume(qreal v);
     };
 }} //namespace Phonon::Gstreamer
 #endif //QT_NO_PHONON_VOLUMEFADEREFFECT
