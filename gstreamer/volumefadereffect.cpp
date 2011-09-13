@@ -82,9 +82,8 @@ float VolumeFaderEffect::volume() const
 
 void VolumeFaderEffect::setVolume(qreal volume)
 {
-    double gstVolume = 1 - volume * (m_fadeFromVolume + m_fadeToVolume);
-    g_object_set(G_OBJECT(m_effectElement), "volume", gstVolume, NULL);
-    qDebug() << "Fading to" << gstVolume;
+    float gstVolume = 1 - volume * (m_fadeFromVolume + m_fadeToVolume);
+    setVolume((float)gstVolume);
 }
 
 Phonon::VolumeFaderEffect::FadeCurve VolumeFaderEffect::fadeCurve() const
@@ -124,7 +123,8 @@ void VolumeFaderEffect::fadeTo(float targetVolume, int fadeTime)
 
 void VolumeFaderEffect::setVolume(float v)
 {
-    setVolume((qreal)v);
+    g_object_set(G_OBJECT(m_effectElement), "volume", (gdouble)v, NULL);
+    qDebug() << "Fading to" << v;
 }
 
 }} //namespace Phonon::Gstreamer
