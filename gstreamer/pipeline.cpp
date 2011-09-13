@@ -26,6 +26,7 @@
 #include <gst/pbutils/missing-plugins.h>
 #include <gst/interfaces/navigation.h>
 #include <gst/app/gstappsrc.h>
+#include <QtCore/QCoreApplication>
 #define MAX_QUEUE_TIME 20 * GST_SECOND
 
 QT_BEGIN_NAMESPACE
@@ -785,10 +786,10 @@ void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer d
 {
     Q_UNUSED(playbin);
     Q_UNUSED(param);
+    GstElement *phononSrc;
     Pipeline *that = static_cast<Pipeline*>(data);
+    g_object_get(that->m_pipeline, "source", &phononSrc, NULL);
     if (that->m_isStream) {
-        GstElement *phononSrc;
-        g_object_get(that->m_pipeline, "source", &phononSrc, NULL);
         StreamReader *reader = new StreamReader(that->m_currentSource, that);
         if (reader->streamSize() > 0)
             g_object_set(phononSrc, "size", reader->streamSize(), NULL);
@@ -801,6 +802,13 @@ void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer d
         g_object_set(phononSrc, "block", TRUE, NULL);
         g_signal_connect(phononSrc, "need-data", G_CALLBACK(cb_feedAppSrc), reader);
         g_signal_connect(phononSrc, "seek-data", G_CALLBACK(cb_seekAppSrc), reader);
+    } else {
+        if (that->currentSource().type() == MediaSource::Url &&
+                that->currentSource().mrl().scheme().startsWith("http")) {
+            QString userAgent = QCoreApplication::applicationName() + '/' + QCoreApplication::applicationVersion();
+            userAgent += QString(" (Phonon/%0; Phonon-GStreamer/%1)").arg(PHONON_VERSION_STR).arg(PHONON_GST_VERSION);
+            g_object_set(phononSrc, "user-agent", userAgent.toUtf8().constData(), NULL);
+        }
     }
 }
 
