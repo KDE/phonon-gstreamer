@@ -117,6 +117,13 @@ void VolumeFaderEffect::fadeTo(float targetVolume, int fadeTime)
     m_fadeToVolume = targetVolume;
     g_object_get(G_OBJECT(m_effectElement), "volume", &m_fadeFromVolume, NULL);
 
+    // Don't call QTimeLine::setDuration() with zero.
+    // It is not supported and breaks fading.
+    if (fadeTime == 0) {
+        setVolume(targetVolume);
+        return;
+    }
+
     m_fadeTimeline->setDuration(fadeTime);
     m_fadeTimeline->start();
 }
