@@ -40,7 +40,7 @@ VolumeFaderEffect::VolumeFaderEffect(Backend *backend, QObject *parent)
     if (m_effectElement)
         init();
     m_fadeTimeline = new QTimeLine(0, this);
-    connect(m_fadeTimeline, SIGNAL(valueChanged(qreal)), this, SLOT(setVolume(qreal)));
+    connect(m_fadeTimeline, SIGNAL(valueChanged(qreal)), this, SLOT(slotSetVolume(qreal)));
 }
 
 VolumeFaderEffect::~VolumeFaderEffect()
@@ -80,7 +80,7 @@ float VolumeFaderEffect::volume() const
     return (float)val;
 }
 
-void VolumeFaderEffect::setVolume(qreal volume)
+void VolumeFaderEffect::slotSetVolume(qreal volume)
 {
     float gstVolume = 1 - volume * (m_fadeFromVolume + m_fadeToVolume);
     setVolume((float)gstVolume);

@@ -55,7 +55,7 @@ namespace Gstreamer
             gdouble m_fadeToVolume;
             QTimeLine *m_fadeTimeline;
         private slots:
-            void setVolume(qreal v);
+            void slotSetVolume(qreal v);
     };
 }} //namespace Phonon::Gstreamer
 #endif //QT_NO_PHONON_VOLUMEFADEREFFECT
