@@ -315,6 +315,7 @@ gboolean Pipeline::cb_state(GstBus *bus, GstMessage *gstMessage, gpointer data)
     GstState oldState;
     GstState newState;
     GstState pendingState;
+    gchar *transitionName = NULL;
     Pipeline *that = static_cast<Pipeline*>(data);
     gst_message_parse_state_changed(gstMessage, &oldState, &newState, &pendingState);
 
@@ -334,6 +335,12 @@ gboolean Pipeline::cb_state(GstBus *bus, GstMessage *gstMessage, gpointer data)
         return true;
     }
     qDebug() << "State change";
+
+    transitionName = g_strdup_printf ("%s_%s", gst_element_state_get_name (oldState),
+        gst_element_state_get_name (newState));
+    GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS (GST_BIN (that->m_pipeline), GST_DEBUG_GRAPH_SHOW_ALL,
+        QByteArray("phonon-gstreamer.") + QByteArray(transitionName));
+    g_free(transitionName);
 
     if (newState == GST_STATE_READY) {
         that->m_installer->checkInstalledPlugins();
