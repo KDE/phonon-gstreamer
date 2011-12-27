@@ -18,7 +18,9 @@
 #include "backend.h"
 #include "audiooutput.h"
 #include "audiodataoutput.h"
+#ifdef PHONON_EXPERIMENTAL
 #include "videodataoutput.h"
+#endif
 #include "audioeffect.h"
 #include "mediaobject.h"
 #include "videowidget.h"
@@ -144,9 +146,11 @@ QObject *Backend::createObject(BackendInterface::Class c, QObject *parent, const
         return new AudioDataOutput(this, parent);
 
 #ifndef QT_NO_PHONON_VIDEO
+#ifdef PHONON_EXPERIMENTAL
     case VideoDataOutputClass:
         return new VideoDataOutput(this, parent);
         break;
+#endif
 
     case VideoWidgetClass: {
             QWidget *widget =  qobject_cast<QWidget*>(parent);
