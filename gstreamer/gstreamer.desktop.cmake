@@ -112,6 +112,7 @@ Comment[sr@latin]=GStreamer kao pozadina Phonona
 Comment[sv]=Phonon Gstreamer-gränssnitt
 Comment[th]=โปรแกรมเบื้องหลัง GStreamer ของ Phonon
 Comment[tr]=Phonon GStreamer arka ucu
+Comment[ug]=Phonon GStreamer نىڭ ئارقائۇچى
 Comment[uk]=Модуль використання GStreamer у Phonon
 Comment[x-test]=xxPhonon GStreamer backendxx
 Comment[zh_CN]=Phonon GStreamer 后端
