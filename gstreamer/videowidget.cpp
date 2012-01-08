@@ -173,6 +173,8 @@ void VideoWidget::setVisible(bool val) {
         // Use widgetRenderer as a fallback
         m_renderer = new WidgetRenderer(this);
         videoSink = m_renderer->videoSink();
+        GstPad *videoPad = gst_element_get_static_pad(videoSink, "sink");
+        g_signal_connect(videoPad, "notify::caps", G_CALLBACK(cb_capsChanged), this);
         gst_bin_add(GST_BIN(m_videoBin), videoSink);
         gst_element_link(m_videoplug, videoSink);
         gst_element_set_state (videoSink, GST_STATE_PAUSED);
