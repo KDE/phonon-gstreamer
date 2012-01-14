@@ -27,9 +27,6 @@ if (BUILD_PHONON_GSTREAMER)
           ${LIBXML2_INCLUDE_DIR}
           ${X11_X11_INCLUDE_PATH})
    add_definitions(-DPHONON_BACKEND_VERSION_4_2)
-   if (PHONON_FOUND_EXPERIMENTAL)
-      add_definitions(-DPHONON_EXPERIMENTAL)
-   endif (PHONON_FOUND_EXPERIMENTAL)
 
    # configure plugin api
    if(USE_INSTALL_PLUGIN)
@@ -56,13 +53,17 @@ if (BUILD_PHONON_GSTREAMER)
       plugininstaller.cpp
       qwidgetvideosink.cpp
       streamreader.cpp
-      videodataoutput.cpp
       videographicsobject.cpp
       videosink.c
       videowidget.cpp
       volumefadereffect.cpp
       widgetrenderer.cpp
       )
+
+    if(PHONON_FOUND_EXPERIMENTAL)
+        add_definitions(-DPHONON_EXPERIMENTAL)
+        list(APPEND phonon_gstreamer_SRCS videodataoutput.cpp)
+    endif(PHONON_FOUND_EXPERIMENTAL)
 
    if(OPENGL_FOUND)
         list(APPEND phonon_gstreamer_SRCS glrenderer.cpp)

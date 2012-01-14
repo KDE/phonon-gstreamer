@@ -67,7 +67,7 @@ AudioDataOutput::AudioDataOutput(Backend *backend, QObject *parent)
     gst_bin_add_many(GST_BIN(m_queue), sink, convert, queue, NULL);
     gst_element_link(queue, convert);
     gst_element_link_filtered(convert, sink, caps);
-    gst_object_unref(caps);
+    gst_caps_unref(caps);
 
     GstPad *inputpad = gst_element_get_static_pad(queue, "sink");
     gst_element_add_pad(m_queue, gst_ghost_pad_new("sink", inputpad));

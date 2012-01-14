@@ -72,7 +72,8 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_autoplayTitles(true)
         , m_availableTitles(0)
         , m_currentTitle(1)
-        , m_pendingTitle(1)
+        , m_currentSubtitle(0, QHash<QByteArray, QVariant>())
+        , m_pendingTitle(0)
         , m_waitingForNextSource(false)
         , m_waitingForPreviousSource(false)
 {
@@ -119,6 +120,8 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
 
         connect(m_pipeline, SIGNAL(textTagChanged(int)),
                 this, SLOT(getSubtitleInfo(int)));
+        connect(m_pipeline, SIGNAL(trackCountChanged(int)),
+                this, SLOT(handleTrackCountChange(int)));
 
         connect(m_tickTimer, SIGNAL(timeout()), SLOT(emitTick()));
     }
@@ -368,28 +371,6 @@ void MediaObject::loadingComplete()
     link();
 }
 
-void MediaObject::getStreamInfo()
-{
-    m_pipeline->updateNavigation();
-
-    if (m_source.discType() == Phonon::Cd) {
-        gint64 titleCount;
-        GstFormat format = gst_format_get_by_nick("track");
-        if (m_pipeline->queryDuration(&format, &titleCount)) {
-        //check if returned format is still "track",
-        //gstreamer sometimes returns the total time, if tracks information is not available.
-            if (qstrcmp(gst_format_get_name(format), "track") == 0)  {
-                int oldAvailableTitles = m_availableTitles;
-                m_availableTitles = (int)titleCount;
-                if (m_availableTitles != oldAvailableTitles) {
-                    emit availableTitlesChanged(m_availableTitles);
-                    m_backend->logMessage(QString("Available titles changed: %0").arg(m_availableTitles), Backend::Info, this);
-                }
-            }
-        }
-    }
-}
-
 void MediaObject::getSubtitleInfo(int stream)
 {
     int text_number = 0;
@@ -521,6 +502,9 @@ void MediaObject::handleStateChange(GstState oldState, GstState newState)
     qDebug() << "Moving from" << GstHelper::stateName(oldState) << prevPhononState << "to" << GstHelper::stateName(newState) << m_state;
     if (GST_STATE_TRANSITION(oldState, newState) == GST_STATE_CHANGE_NULL_TO_READY)
         loadingComplete();
+    if (GST_STATE_TRANSITION(oldState, newState) == GST_STATE_CHANGE_READY_TO_PAUSED && m_pendingTitle != 0) {
+        _iface_setCurrentTitle(m_pendingTitle);
+    }
     if (newState == GST_STATE_PLAYING)
         m_tickTimer->start();
     else
@@ -643,6 +627,17 @@ void MediaObject::_iface_jumpToMenu(MediaController::NavigationMenu menu)
 #endif
 }
 
+void MediaObject::handleTrackCountChange(int tracks)
+{
+    m_backend->logMessage(QString("handleTrackCountChange %0").arg(tracks), Backend::Info, this);
+
+    int old_availableTitles = m_availableTitles;
+    m_availableTitles = tracks;
+    if (old_availableTitles != m_availableTitles) {
+        emit availableTitlesChanged(m_availableTitles);
+    }
+}
+
 int MediaObject::_iface_availableTitles() const
 {
     return m_availableTitles;
@@ -655,17 +650,23 @@ int MediaObject::_iface_currentTitle() const
 
 void MediaObject::_iface_setCurrentTitle(int title)
 {
-    /*m_backend->logMessage(QString("setCurrentTitle %0").arg(title), Backend::Info, this);
-    if ((title == m_currentTitle) || (title == m_pendingTitle))
+    if (m_source.discType() == Phonon::NoDisc || title == m_currentTitle) {
         return;
-
+    }
+    m_backend->logMessage(QString("setCurrentTitle %0").arg(title), Backend::Info, this);
+    QString format = m_source.discType() == Phonon::Cd ? "track" : "title";
     m_pendingTitle = title;
 
-    if (m_state == Phonon::PlayingState || m_state == Phonon::StoppedState) {
-        setTrack(m_pendingTitle);
-    } else {
-        setState(Phonon::StoppedState);
-    }*/
+    switch (m_state) {
+        case Phonon::PlayingState:
+        case Phonon::PausedState:
+            changeTitle(format, m_pendingTitle);
+            break;
+        default:
+            break;
+    }
+    if (m_currentTitle == m_pendingTitle)
+        m_pendingTitle = 0;
 }
 
 QList<SubtitleDescription> MediaObject::_iface_availableSubtitles() const
@@ -711,15 +712,19 @@ void MediaObject::_iface_setCurrentSubtitle(const SubtitleDescription &subtitle)
     }
 }
 
-void MediaObject::setTrack(int title)
+void MediaObject::changeTitle(const QString &format, int title)
 {
-    if (((m_state != Phonon::PlayingState) && (m_state != Phonon::StoppedState)) || (title < 1) || (title > m_availableTitles))
+    if ((title < 1) || (title > m_availableTitles))
         return;
 
     //let's seek to the beginning of the song
-    GstFormat trackFormat = gst_format_get_by_nick("track");
-    m_backend->logMessage(QString("setTrack %0").arg(title), Backend::Info, this);
-    if (gst_element_seek_simple(m_pipeline->element(), trackFormat, GST_SEEK_FLAG_FLUSH, title - 1)) {
+    GstFormat titleFormat = gst_format_get_by_nick(format.toLocal8Bit().constData());
+
+    if (!titleFormat)
+        return;
+
+    m_backend->logMessage(QString("changeTitle %0 %1").arg(format).arg(title), Backend::Info, this);
+    if (gst_element_seek_simple(m_pipeline->element(), titleFormat, GST_SEEK_FLAG_FLUSH, title - 1)) {
         m_currentTitle = title;
         emit titleChanged(title);
         emit totalTimeChanged(totalTime());

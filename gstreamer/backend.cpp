@@ -18,7 +18,9 @@
 #include "backend.h"
 #include "audiooutput.h"
 #include "audiodataoutput.h"
+#ifdef PHONON_EXPERIMENTAL
 #include "videodataoutput.h"
+#endif
 #include "audioeffect.h"
 #include "mediaobject.h"
 #include "videographicsobject.h"
@@ -69,7 +71,7 @@ Backend::Backend(QObject *parent, const QVariantList &)
 
     QByteArray appFilePath = qApp->applicationFilePath().toUtf8();
     QByteArray gstDebugLevel("--gst-debug-level=");
-    gstDebugLevel.append(qgetenv("PHONON_GST_GST_DEBUG"));
+    gstDebugLevel.append(qgetenv("PHONON_SUBSYSTEM_DEBUG"));
 
     const char *args[] = {
         appFilePath.constData(),
@@ -94,7 +96,7 @@ Backend::Backend(QObject *parent, const QVariantList &)
 #endif //QT_NO_PROPERTIES
 
     //check if we should enable debug output
-    QString debugLevelString = qgetenv("PHONON_GST_DEBUG");
+    QString debugLevelString = qgetenv("PHONON_BACKEND_DEBUG");
     int debugLevel = debugLevelString.toInt();
     if (debugLevel > 3) //3 is maximum
         debugLevel = 3;
@@ -145,9 +147,11 @@ QObject *Backend::createObject(BackendInterface::Class c, QObject *parent, const
         return new AudioDataOutput(this, parent);
 
 #ifndef QT_NO_PHONON_VIDEO
+#ifdef PHONON_EXPERIMENTAL
     case VideoDataOutputClass:
         return new VideoDataOutput(this, parent);
         break;
+#endif
 
     case VideoWidgetClass: {
             QWidget *widget =  qobject_cast<QWidget*>(parent);
@@ -465,7 +469,7 @@ EffectManager* Backend::effectManager() const
 
 /**
  * Returns a debuglevel that is determined by the
- * PHONON_GST_DEBUG environment variable.
+ * PHONON_BACKEND_DEBUG environment variable.
  *
  *  Warning - important warnings
  *  Info    - general info

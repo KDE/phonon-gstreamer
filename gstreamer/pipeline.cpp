@@ -26,6 +26,7 @@
 #include <gst/pbutils/missing-plugins.h>
 #include <gst/interfaces/navigation.h>
 #include <gst/app/gstappsrc.h>
+#include <QtCore/QCoreApplication>
 #define MAX_QUEUE_TIME 20 * GST_SECOND
 
 QT_BEGIN_NAMESPACE
@@ -314,6 +315,7 @@ gboolean Pipeline::cb_state(GstBus *bus, GstMessage *gstMessage, gpointer data)
     GstState oldState;
     GstState newState;
     GstState pendingState;
+    gchar *transitionName = NULL;
     Pipeline *that = static_cast<Pipeline*>(data);
     gst_message_parse_state_changed(gstMessage, &oldState, &newState, &pendingState);
 
@@ -333,6 +335,12 @@ gboolean Pipeline::cb_state(GstBus *bus, GstMessage *gstMessage, gpointer data)
         return true;
     }
     qDebug() << "State change";
+
+    transitionName = g_strdup_printf ("%s_%s", gst_element_state_get_name (oldState),
+        gst_element_state_get_name (newState));
+    GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS (GST_BIN (that->m_pipeline), GST_DEBUG_GRAPH_SHOW_ALL,
+        QByteArray("phonon-gstreamer.") + QByteArray(transitionName));
+    g_free(transitionName);
 
     if (newState == GST_STATE_READY) {
         that->m_installer->checkInstalledPlugins();
@@ -582,6 +590,14 @@ gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
             }
         }
 
+        if (that->m_metaData.contains("TRACK-COUNT")) {
+            that->m_metaData.insert("TRACKNUMBER", newTags.value("TRACK-COUNT"));
+            emit that->trackCountChanged(newTags.value("TRACK-COUNT").toInt());
+        }
+        if (that->m_metaData.contains("MUSICBRAINZ-DISCID")) {
+            that->m_metaData.insert("MUSICBRAINZ_DISCID", newTags.value("MUSICBRAINZ-DISCID"));
+        }
+
         // For radio streams, if we get a metadata update where the title changes, we assume everything else is invalid.
         // If we don't already have a title, we don't do anything since we're actually just appending new data into that.
         if (that->m_isStream && oldMap.contains("TITLE") && that->m_metaData.value("TITLE") != oldMap.value("TITLE")) {
@@ -640,7 +656,7 @@ gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
             // If not, this needs fixed in mediaobject.cpp.
             guint kbps;
             g_object_get(that->m_pipeline, "connection-speed", &kbps, NULL);
-            if (kbps != 0)
+            if (that->m_currentSource.discType() == Phonon::Cd || kbps != 0)
                 emit that->metaDataChanged(that->m_metaData);
         }
     }
@@ -777,10 +793,10 @@ void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer d
 {
     Q_UNUSED(playbin);
     Q_UNUSED(param);
+    GstElement *phononSrc;
     Pipeline *that = static_cast<Pipeline*>(data);
+    g_object_get(that->m_pipeline, "source", &phononSrc, NULL);
     if (that->m_isStream) {
-        GstElement *phononSrc;
-        g_object_get(that->m_pipeline, "source", &phononSrc, NULL);
         StreamReader *reader = new StreamReader(that->m_currentSource, that);
         if (reader->streamSize() > 0)
             g_object_set(phononSrc, "size", reader->streamSize(), NULL);
@@ -793,6 +809,13 @@ void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer d
         g_object_set(phononSrc, "block", TRUE, NULL);
         g_signal_connect(phononSrc, "need-data", G_CALLBACK(cb_feedAppSrc), reader);
         g_signal_connect(phononSrc, "seek-data", G_CALLBACK(cb_seekAppSrc), reader);
+    } else {
+        if (that->currentSource().type() == MediaSource::Url &&
+                that->currentSource().mrl().scheme().startsWith("http")) {
+            QString userAgent = QCoreApplication::applicationName() + '/' + QCoreApplication::applicationVersion();
+            userAgent += QString(" (Phonon/%0; Phonon-GStreamer/%1)").arg(PHONON_VERSION_STR).arg(PHONON_GST_VERSION);
+            g_object_set(phononSrc, "user-agent", userAgent.toUtf8().constData(), NULL);
+        }
     }
 }
 

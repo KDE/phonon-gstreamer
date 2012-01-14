@@ -21,7 +21,7 @@
 #include <gst/gstghostpad.h>
 #include <gst/gstutils.h>
 
-#include <QtCore/QEvent>
+#include <QtCore/QTimeLine>
 
 QT_BEGIN_NAMESPACE
 
@@ -33,20 +33,18 @@ namespace Gstreamer
 VolumeFaderEffect::VolumeFaderEffect(Backend *backend, QObject *parent)
     : Effect(backend, parent, AudioSource | AudioSink)
     , m_fadeCurve(Phonon::VolumeFaderEffect::Fade3Decibel)
-    , m_fadeTimer(0)
-    , m_fadeDuration(0)
     , m_fadeFromVolume(0)
     , m_fadeToVolume(0)
 {
     m_effectElement = gst_element_factory_make ("volume", NULL);
     if (m_effectElement)
         init();
+    m_fadeTimeline = new QTimeLine(0, this);
+    connect(m_fadeTimeline, SIGNAL(valueChanged(qreal)), this, SLOT(slotSetVolume(qreal)));
 }
 
 VolumeFaderEffect::~VolumeFaderEffect()
 {
-    if (m_fadeTimer)
-        killTimer(m_fadeTimer);
 }
 
 GstElement* VolumeFaderEffect::createEffectBin()
@@ -76,15 +74,16 @@ GstElement* VolumeFaderEffect::createEffectBin()
 
 float VolumeFaderEffect::volume() const
 {
-    gdouble val = 0.0;
+    gdouble val = 1.0;
     if (m_effectElement)
         g_object_get(G_OBJECT(m_effectElement), "volume", &val, NULL);
     return (float)val;
 }
 
-void VolumeFaderEffect::setVolume(float volume)
+void VolumeFaderEffect::slotSetVolume(qreal volume)
 {
-    g_object_set(G_OBJECT(m_effectElement), "volume", volume, NULL);
+    float gstVolume = 1 - volume * (m_fadeFromVolume + m_fadeToVolume);
+    setVolume((float)gstVolume);
 }
 
 Phonon::VolumeFaderEffect::FadeCurve VolumeFaderEffect::fadeCurve() const
@@ -92,71 +91,47 @@ Phonon::VolumeFaderEffect::FadeCurve VolumeFaderEffect::fadeCurve() const
     return m_fadeCurve;
 }
 
-void VolumeFaderEffect::setFadeCurve(Phonon::VolumeFaderEffect::FadeCurve fadeCurve)
+void VolumeFaderEffect::setFadeCurve(Phonon::VolumeFaderEffect::FadeCurve pFadeCurve)
 {
-    m_fadeCurve = fadeCurve;
+    m_fadeCurve = pFadeCurve;
+    QEasingCurve fadeCurve;
+    switch(pFadeCurve) {
+        case Phonon::VolumeFaderEffect::Fade3Decibel:
+            fadeCurve = QEasingCurve::InQuad;
+            break;
+        case Phonon::VolumeFaderEffect::Fade6Decibel:
+            fadeCurve = QEasingCurve::Linear;
+            break;
+        case Phonon::VolumeFaderEffect::Fade9Decibel:
+            fadeCurve = QEasingCurve::OutCubic;
+            break;
+        case Phonon::VolumeFaderEffect::Fade12Decibel:
+            fadeCurve = QEasingCurve::OutQuart;
+            break;
+    }
+    m_fadeTimeline->setEasingCurve(fadeCurve);
 }
 
 void VolumeFaderEffect::fadeTo(float targetVolume, int fadeTime)
 {
     m_fadeToVolume = targetVolume;
-    m_fadeDuration = fadeTime;
-    m_fadeFromVolume = volume();
-    m_fadeStartTime.start();
+    g_object_get(G_OBJECT(m_effectElement), "volume", &m_fadeFromVolume, NULL);
 
-    if (m_fadeTimer)
-        killTimer(m_fadeTimer);
-    m_fadeTimer = startTimer(30);
+    // Don't call QTimeLine::setDuration() with zero.
+    // It is not supported and breaks fading.
+    if (fadeTime == 0) {
+        setVolume(targetVolume);
+        return;
+    }
+
+    m_fadeTimeline->setDuration(fadeTime);
+    m_fadeTimeline->start();
 }
 
-void VolumeFaderEffect::updateFade()
+void VolumeFaderEffect::setVolume(float v)
 {
-    double currVal = 0.0;
-    float step = float(m_fadeStartTime.elapsed()) / float(m_fadeDuration);
-    if (step > 1){
-        step = 1;
-        if (m_fadeTimer) {
-            killTimer(m_fadeTimer);
-            m_fadeTimer = 0;
-        }
-    }
-    // This is a very loose and interpretation of the API
-    // But in fact when fading between arbitrary values, the decibel values make no sense
-    // Note : seems like we will change the API to re-use names from QTimeline for this
-    switch (fadeCurve()) {
-        case Phonon::VolumeFaderEffect::Fade3Decibel: // Slow in the beginning
-            currVal = step * step;
-            break;
-        case Phonon::VolumeFaderEffect::Fade6Decibel: // Linear fade
-            currVal = step;
-            break;
-        case Phonon::VolumeFaderEffect::Fade9Decibel: // Fast in the beginning / Linear
-            currVal = step * 0.5 + (1.0-(1.0-step)*(1.0-step)) * 0.5;
-            break;
-        case Phonon::VolumeFaderEffect::Fade12Decibel: // Fast in the beginning
-            currVal = 1.0 - (1.0-step) * (1.0-step);
-            break;
-        default:
-            break;
-    }
-    const double volume = (1.0 - currVal) * m_fadeFromVolume + currVal * m_fadeToVolume;
-    setVolume(volume);
-}
-
-bool VolumeFaderEffect::event(QEvent *event)
-{
-    switch (event->type()){
-        case QEvent::Timer:
-        {
-            QTimerEvent *timerEvent = static_cast<QTimerEvent *>(event);
-            if (timerEvent->timerId() == m_fadeTimer)
-                updateFade();
-            break;
-        }
-        default:
-            break;
-    }
-    return QObject::event(event);
+    g_object_set(G_OBJECT(m_effectElement), "volume", (gdouble)v, NULL);
+    qDebug() << "Fading to" << v;
 }
 
 }} //namespace Phonon::Gstreamer
