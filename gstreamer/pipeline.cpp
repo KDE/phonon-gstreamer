@@ -432,6 +432,8 @@ gboolean Pipeline::cb_element(GstBus *bus, GstMessage *gstMessage, gpointer data
         if (!that->m_resetting)
             emit that->streamChanged();
     }
+    if (gst_structure_has_name(str, "prepare-xwindow-id"))
+        emit that->windowIDNeeded();
     return true;
 }
 
