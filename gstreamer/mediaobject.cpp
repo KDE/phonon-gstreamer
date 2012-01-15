@@ -76,6 +76,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_pendingTitle(0)
         , m_waitingForNextSource(false)
         , m_waitingForPreviousSource(false)
+        , m_skippingEOS(false)
 {
     qRegisterMetaType<GstCaps*>("GstCaps*");
     qRegisterMetaType<State>("State");
@@ -328,10 +329,12 @@ void MediaObject::autoDetectSubtitle()
 void MediaObject::setNextSource(const MediaSource &source)
 {
     qDebug() << "Got next source. Waiting for end of current.";
+    m_aboutToFinishLock.lock();
     m_waitingForNextSource = true;
     m_waitingForPreviousSource = false;
     m_pipeline->setSource(source);
     m_aboutToFinishWait.wakeAll();
+    m_aboutToFinishLock.unlock();
 }
 
 qint64 MediaObject::getPipelinePos() const
@@ -518,8 +521,16 @@ void MediaObject::handleStateChange(GstState oldState, GstState newState)
 
 void MediaObject::handleEndOfStream()
 {
-    emit finished();
-    m_pipeline->setState(GST_STATE_READY);
+    if (!m_skippingEOS) {
+        emit finished();
+        m_pipeline->setState(GST_STATE_READY);
+    } else {
+        GstState state = m_pipeline->state();
+        m_pipeline->setState(GST_STATE_READY);
+        m_pipeline->state();
+        m_pipeline->setState(state);
+    }
+    m_skippingEOS = false;
 }
 
 #ifndef QT_NO_PHONON_MEDIACONTROLLER
@@ -783,10 +794,15 @@ void MediaObject::handleAboutToFinish()
     qDebug() << "About to finish";
     m_aboutToFinishLock.lock();
     emit aboutToFinish();
+    bool skip = true;
     // Three seconds should be more than enough for any application to get their act together.
     // Any longer than that and they have bigger issues.
-    m_aboutToFinishWait.wait(&m_aboutToFinishLock, 3000);
+    if (!m_waitingForNextSource)
+        if (!m_aboutToFinishWait.wait(&m_aboutToFinishLock, 3000)) {
+            skip = false;
+        }
     qDebug() << "Finally got a source";
+    m_skippingEOS = skip;
     m_aboutToFinishLock.unlock();
 }
 
