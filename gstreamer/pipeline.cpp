@@ -797,6 +797,7 @@ void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer d
     Q_UNUSED(param);
     GstElement *phononSrc;
     Pipeline *that = static_cast<Pipeline*>(data);
+    gst_object_ref(that->m_pipeline);
     g_object_get(that->m_pipeline, "source", &phononSrc, NULL);
     if (that->m_isStream) {
         StreamReader *reader = new StreamReader(that->m_currentSource, that);
@@ -819,6 +820,7 @@ void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer d
             g_object_set(phononSrc, "user-agent", userAgent.toUtf8().constData(), NULL);
         }
     }
+    gst_object_unref(that->m_pipeline);
 }
 
 void Pipeline::cb_aboutToFinish(GstElement *appSrc, gpointer data)
