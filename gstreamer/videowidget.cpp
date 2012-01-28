@@ -32,6 +32,7 @@
 #include "backend.h"
 #include "devicemanager.h"
 #include "mediaobject.h"
+#include "x11renderer.h"
 
 #include "widgetrenderer.h"
 
@@ -73,9 +74,17 @@ VideoWidget::~VideoWidget()
         delete m_renderer;
 }
 
+void VideoWidget::updateWindowID()
+{
+    X11Renderer *render = dynamic_cast<X11Renderer*>(m_renderer);
+    if (render)
+        render->setOverlay();
+}
+
 void VideoWidget::finalizeLink()
 {
     connect(root()->pipeline(), SIGNAL(mouseOverActive(bool)), this, SLOT(mouseOverActive(bool)));
+    connect(root()->pipeline(), SIGNAL(windowIDNeeded()), this, SLOT(updateWindowID()));
 }
 
 void VideoWidget::prepareToUnlink()

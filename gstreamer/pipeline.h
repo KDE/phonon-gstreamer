@@ -96,6 +96,7 @@ class Pipeline : public QObject
         QByteArray captureDeviceURI(const MediaSource &source) const;
 
     signals:
+        void windowIDNeeded();
         void eos();
         void warning(const QString &message);
         void durationChanged(qint64 totalDuration);

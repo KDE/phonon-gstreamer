@@ -99,6 +99,9 @@ protected:
     QSize m_movieSize;
     AbstractRenderer *m_renderer;
 
+private slots:
+    void updateWindowID();
+
 private:
     Phonon::VideoWidget::AspectRatio m_aspectRatio;
     qreal m_brightness, m_hue, m_contrast, m_saturation;

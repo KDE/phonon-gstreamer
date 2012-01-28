@@ -268,6 +268,8 @@ private:
     bool m_waitingForNextSource;
     bool m_waitingForPreviousSource;
 
+    bool m_skippingEOS;
+
     // This keeps track of the source currently heard over the speakers.
     // It can be different from the pipeline's current source due to how the
     // almost-at-end gapless playback code works.
