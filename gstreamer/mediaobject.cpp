@@ -329,7 +329,18 @@ void MediaObject::autoDetectSubtitle()
 void MediaObject::setNextSource(const MediaSource &source)
 {
     qDebug() << "Got next source. Waiting for end of current.";
+
     m_aboutToFinishLock.lock();
+
+    // If next source is valid and is not empty (an empty source is sent by Phonon if
+    // there are no more sources) skip EOS for the current source in order to seamlessly
+    // pass to the next source.
+    if (source.type() == Phonon::MediaSource::Invalid ||
+        source.type() == Phonon::MediaSource::Empty)
+        m_skippingEOS = false;
+    else
+        m_skippingEOS = true;
+
     m_waitingForNextSource = true;
     m_waitingForPreviousSource = false;
     m_pipeline->setSource(source);
@@ -529,8 +540,8 @@ void MediaObject::handleEndOfStream()
         m_pipeline->setState(GST_STATE_READY);
         m_pipeline->state();
         m_pipeline->setState(state);
+        m_skippingEOS = false;
     }
-    m_skippingEOS = false;
 }
 
 #ifndef QT_NO_PHONON_MEDIACONTROLLER
@@ -794,15 +805,13 @@ void MediaObject::handleAboutToFinish()
     qDebug() << "About to finish";
     m_aboutToFinishLock.lock();
     emit aboutToFinish();
-    bool skip = true;
     // Three seconds should be more than enough for any application to get their act together.
-    // Any longer than that and they have bigger issues.
-    if (!m_waitingForNextSource)
-        if (!m_aboutToFinishWait.wait(&m_aboutToFinishLock, 3000)) {
-            skip = false;
-        }
-    qDebug() << "Finally got a source";
-    m_skippingEOS = skip;
+    // Any longer than that and they have bigger issues.  If Phonon does no supply a next source
+    // within 3 seconds, treat as if there is no next source to come, and finish the current source.
+    if (m_aboutToFinishWait.wait(&m_aboutToFinishLock, 3000))
+        qDebug() << "Finally got a source";
+    else
+        m_skippingEOS = false;
     m_aboutToFinishLock.unlock();
 }
 
