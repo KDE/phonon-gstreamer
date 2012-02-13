@@ -100,7 +100,7 @@ void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
         return;
 
     VideoGraphicsObject *that = reinterpret_cast<VideoGraphicsObject *>(userData);
-    if (!that || !that->videoGraphicsObject())
+    if (!that)
         return;
 
     // Frontend could hold lock on data

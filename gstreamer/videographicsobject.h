@@ -26,7 +26,6 @@
 #include <QtCore/QObject>
 
 #include <phonon/videoframe.h>
-#include <phonon/videographicsobject.h>
 #include <phonon/videographicsobjectinterface.h>
 
 #include "medianode.h"
@@ -45,9 +44,6 @@ public:
     explicit VideoGraphicsObject(Backend *backend, QObject *parent = 0);
     ~VideoGraphicsObject();
 
-    virtual Phonon::VideoGraphicsObject *videoGraphicsObject() { return m_frontendObject; }
-    virtual void setVideoGraphicsObject(Phonon::VideoGraphicsObject *object) { m_frontendObject = object; }
-
     static void renderCallback(GstBuffer *buffer, void *userData);
     static void stop(void *userData);
 
@@ -65,7 +61,6 @@ signals:
 
 private:
     Phonon::VideoFrame m_frame;
-    Phonon::VideoGraphicsObject *m_frontendObject;
 
     PGstVideoSink *m_sink;
 
