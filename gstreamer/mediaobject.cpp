@@ -534,6 +534,7 @@ void MediaObject::handleEndOfStream()
 {
     if (!m_skippingEOS) {
         emit finished();
+        m_aboutToFinishWait.wakeAll();
         m_pipeline->setState(GST_STATE_READY);
     } else {
         GstState state = m_pipeline->state();
