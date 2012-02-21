@@ -130,12 +130,20 @@ bool AudioOutput::setOutputDevice(int newDevice)
             return false;
     }
 
+    const DeviceInfo *device = m_backend->deviceManager()->device(newDevice);
+    if (!device) {
+        m_backend->logMessage(Q_FUNC_INFO %
+                              QLatin1Literal(" Unable to find the output device"),
+                              Backend::Info, this);
+        return false;
+    }
+
     bool success = false;
-    if (m_audioSink &&  newDevice >= 0) {
+    if (m_audioSink) {
         // Save previous state
         GstState oldState = GST_STATE(m_audioSink);
         const QByteArray oldDeviceValue = GstHelper::property(m_audioSink, "device");
-        const QByteArray deviceId = m_backend->deviceManager()->gstId(newDevice);
+        const QByteArray deviceId = device->name();    // device "name" is the Gstreamer id
         m_device = newDevice;
 
         // We test if the device can be opened by checking if it can go from NULL to READY state

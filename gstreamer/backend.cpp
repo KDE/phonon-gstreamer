@@ -296,21 +296,11 @@ QList<int> Backend::objectDescriptionIndexes(ObjectDescriptionType type) const
         return list;
 
     switch (type) {
-    case Phonon::AudioOutputDeviceType: {
-            QList<AudioDevice> deviceList = deviceManager()->audioOutputDevices();
-            for (int dev = 0 ; dev < deviceList.size() ; ++dev)
-                list.append(deviceList[dev].id);
-            break;
-        }
+    case Phonon::AudioOutputDeviceType:
+    case Phonon::AudioCaptureDeviceType:
+    case Phonon::VideoCaptureDeviceType:
+        list = deviceManager()->deviceIds(type);
         break;
-    case Phonon::VideoCaptureDeviceType: {
-            QList<VideoCaptureDevice> deviceList = deviceManager()->videoCaptureDevices();
-            for(int dev = 0 ; dev < deviceList.size() ; ++dev)
-                list.append(deviceList[dev].id);
-            break;
-        }
-        break;
-
     case Phonon::EffectType: {
             QList<EffectInfo*> effectList = effectManager()->audioEffects();
             for (int eff = 0 ; eff < effectList.size() ; ++eff)
@@ -318,9 +308,8 @@ QList<int> Backend::objectDescriptionIndexes(ObjectDescriptionType type) const
             break;
         }
         break;
-    case Phonon::SubtitleType: {
-            list << GlobalSubtitles::instance()->globalIndexes();
-        }
+    case Phonon::SubtitleType:
+        list << GlobalSubtitles::instance()->globalIndexes();
         break;
     default:
         break;
@@ -333,34 +322,17 @@ QList<int> Backend::objectDescriptionIndexes(ObjectDescriptionType type) const
  */
 QHash<QByteArray, QVariant> Backend::objectDescriptionProperties(ObjectDescriptionType type, int index) const
 {
-
     QHash<QByteArray, QVariant> ret;
 
     if (!isValid())
         return ret;
 
     switch (type) {
-    case Phonon::AudioOutputDeviceType: {
-            AudioDevice* ad;
-            if ((ad = deviceManager()->audioDevice(index))) {
-                ret.insert("name", ad->gstId);
-                ret.insert("description", ad->description);
-                ret.insert("icon", ad->icon);
-            }
-        }
-        break;
-    case Phonon::VideoCaptureDeviceType: {
-            VideoCaptureDevice* dev;
-            if ((dev = deviceManager()->videoCaptureDevice(index))) {
-                ret.insert("name", dev->gstId);
-                ret.insert("description", dev->description);
-                ret.insert("icon", dev->icon);
-                DeviceAccessList devlist;
-                devlist << DeviceAccess("v4l2", dev->gstId);
-                ret.insert("deviceAccessList", QVariant::fromValue<Phonon::DeviceAccessList>(devlist));
-                ret.insert("hasvideo", true);
-            }
-        }
+    case Phonon::AudioOutputDeviceType:
+    case Phonon::AudioCaptureDeviceType:
+    case Phonon::VideoCaptureDeviceType:
+        // Index should be unique, even for different categories
+        ret = deviceManager()->deviceProperties(index);
         break;
 
     case Phonon::EffectType: {

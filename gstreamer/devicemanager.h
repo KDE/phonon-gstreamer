@@ -35,40 +35,66 @@ class DeviceManager;
 class AbstractRenderer;
 class VideoWidget;
 
-class AudioDevice {
-public :
-    AudioDevice(DeviceManager *s, const QByteArray &deviceId);
-    int id;
-    QByteArray gstId;
-    QByteArray description;
-    QString icon;
-};
-
-class VideoCaptureDevice {
+/** \brief Container for information about devices supported by Gstreamer
+ *
+ * It includes an unique device identifier, a name identifier, a
+ * description, a hardware identifier (may be a platform dependent device name),
+ * and other relevant info.
+ */
+class DeviceInfo
+{
 public:
-    VideoCaptureDevice(DeviceManager *s, const QByteArray &deviceId);
-    int id;
-    QByteArray gstId;
-    QByteArray description;
-    QString icon;
+    enum Capability {
+        None            = 0x0000,
+        AudioOutput     = 0x0001,
+        AudioCapture    = 0x0002,  // TODO
+        VideoCapture    = 0x0004
+    };
+public:
+    /**
+     * Constructs a device info object and sets it's device identifiers.
+     */
+    explicit DeviceInfo(DeviceManager *, const QByteArray &name,
+                        quint16 caps, bool isAdvanced = true);
+
+    int id() const;
+    const QByteArray& name() const;
+    const QString& description() const;
+    bool isAdvanced() const;
+    void setAdvanced(bool advanced);
+    const DeviceAccessList& accessList() const;
+    void addAccess(const DeviceAccess &access);
+    quint16 capabilities() const;
+    void setCapabilities(quint16 cap);
+
+private:
+    int m_id;
+    QByteArray m_name;        // this will be the Gstreamer id, unique
+    QString m_description;    // this will be the Gstreamer device name
+    bool m_isAdvanced;
+    DeviceAccessList m_accessList;
+    quint16 m_capabilities;
 };
 
+/** \brief Keeps track of audio/video devices
+ *
+ * The device manager provides information about devices usable
+ * with Gstreamer.
+ *
+ * It also provides methods for creating specific objects depending on
+ * categories (audo sink, video renderer)
+ */
 class DeviceManager : public QObject {
     Q_OBJECT
 public:
     DeviceManager(Backend *parent);
     virtual ~DeviceManager();
-    const QList<AudioDevice> audioOutputDevices() const;
-    const QList<VideoCaptureDevice> videoCaptureDevices() const;
-    GstPad *requestPad(int device) const;
-    int allocateDeviceId();
-    int deviceId(const QByteArray &gstId) const;
-    const QByteArray gstId(int id);
-    AudioDevice* audioDevice(int id);
-    VideoCaptureDevice* videoCaptureDevice(int id);
     GstElement *createGNOMEAudioSink(Category category);
     GstElement *createAudioSink(Category category = NoCategory);
     AbstractRenderer *createVideoRenderer(VideoWidget *parent);
+    QList<int> deviceIds(ObjectDescriptionType type);
+    QHash<QByteArray, QVariant> deviceProperties(int id);
+    const DeviceInfo *device(int id) const;
 
 signals:
     void deviceAdded(int);
@@ -78,11 +104,12 @@ public slots:
     void updateDeviceList();
 
 private:
+    static bool listContainsDevice(const QList<DeviceInfo> &list, int id);
     bool canOpenDevice(GstElement *element) const;
+
+private:
     Backend *m_backend;
-    QList <AudioDevice> m_audioDeviceList;
-    QList <VideoCaptureDevice> m_videoCaptureDeviceList;
-    int m_audioDeviceCounter;
+    QList<DeviceInfo> m_devices;
     QTimer m_devicePollTimer;
     QByteArray m_audioSink;
     QByteArray m_videoSinkWidget;
