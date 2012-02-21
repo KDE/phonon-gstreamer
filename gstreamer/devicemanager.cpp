@@ -399,6 +399,7 @@ QHash<QByteArray, QVariant> DeviceManager::deviceProperties(int id)
             properties.insert("description", device.description());
             properties.insert("isAdvanced", device.isAdvanced());
             properties.insert("deviceAccessList", QVariant::fromValue<Phonon::DeviceAccessList>(device.accessList()));
+            properties.insert("discovererIcon", QLatin1String("phonon-gstreamer"));
 
             if (device.capabilities() & DeviceInfo::AudioOutput) {
                 properties.insert("icon", QLatin1String("audio-card"));
