@@ -231,6 +231,7 @@ void MediaObject::setTickInterval(qint32 newTickInterval)
  */
 void MediaObject::play()
 {
+    DEBUG_BLOCK;
     requestState(Phonon::PlayingState);
 }
 
@@ -331,7 +332,8 @@ void MediaObject::autoDetectSubtitle()
 
 void MediaObject::setNextSource(const MediaSource &source)
 {
-    qDebug() << "Got next source. Waiting for end of current.";
+    DEBUG_BLOCK;
+    debug() << "Got next source. Waiting for end of current.";
 
     m_aboutToFinishLock.lock();
 
@@ -368,6 +370,8 @@ void MediaObject::setSource(const MediaSource &source)
 {
     if (!isValid())
         return;
+
+    DEBUG_BLOCK;
 
     if (source.type() == Phonon::MediaSource::Invalid) {
         qWarning("Trying to set an invalid MediaSource -> ignoring.");
@@ -427,6 +431,7 @@ void MediaObject::pause()
 
 void MediaObject::stop()
 {
+    DEBUG_BLOCK;
     requestState(Phonon::StoppedState);
 }
 
@@ -434,6 +439,8 @@ void MediaObject::seek(qint64 time)
 {
     if (!isValid())
         return;
+
+    DEBUG_BLOCK;
 
     if (m_waitingForNextSource) {
         qDebug() << "Seeking back within old source";
@@ -516,6 +523,8 @@ Phonon::State MediaObject::translateState(GstState state) const
 
 void MediaObject::handleStateChange(GstState oldState, GstState newState)
 {
+    DEBUG_BLOCK;
+
     Phonon::State prevPhononState = m_state;
     prevPhononState = translateState(oldState);
     m_state = translateState(newState);
