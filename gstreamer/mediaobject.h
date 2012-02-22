@@ -197,9 +197,9 @@ private Q_SLOTS:
     void emitTick();
     void beginPlay();
     void autoDetectSubtitle();
+    void logWarning(const QString &);
 
     void handleEndOfStream();
-    void logWarning(const QString &);
     void handleBuffering(int);
     void handleStateChange(GstState oldState, GstState newState);
     void handleDurationChange(qint64);

@@ -19,6 +19,7 @@
 #include "phonon-config-gstreamer.h"
 #include "devicemanager.h"
 #include "backend.h"
+#include "debug.h"
 #include "gsthelper.h"
 #include "videowidget.h"
 #ifdef OPENGL_FOUND
@@ -268,7 +269,7 @@ GstElement *DeviceManager::createAudioSink(Category category)
             if (!qgetenv("GNOME_DESKTOP_SESSION_ID").isEmpty()) {
                 sink = createGNOMEAudioSink(category);
                 if (canOpenDevice(sink))
-                    m_backend->logMessage("AudioOutput using gconf audio sink");
+                    debug() << "AudioOutput using gconf audio sink";
                 else if (sink) {
                     gst_object_unref(sink);
                     sink = 0;
@@ -278,7 +279,7 @@ GstElement *DeviceManager::createAudioSink(Category category)
             if (!sink) {
                 sink = gst_element_factory_make ("alsasink", NULL);
                 if (canOpenDevice(sink))
-                    m_backend->logMessage("AudioOutput using alsa audio sink");
+                    debug() << "AudioOutput using alsa audio sink";
                 else if (sink) {
                     gst_object_unref(sink);
                     sink = 0;
@@ -288,7 +289,7 @@ GstElement *DeviceManager::createAudioSink(Category category)
             if (!sink) {
                 sink = gst_element_factory_make ("autoaudiosink", NULL);
                 if (canOpenDevice(sink))
-                    m_backend->logMessage("AudioOutput using auto audio sink");
+                    debug() << "AudioOutput using auto audio sink";
                 else if (sink) {
                     gst_object_unref(sink);
                     sink = 0;
@@ -298,7 +299,7 @@ GstElement *DeviceManager::createAudioSink(Category category)
             if (!sink) {
                 sink = gst_element_factory_make ("osssink", NULL);
                 if (canOpenDevice(sink))
-                    m_backend->logMessage("AudioOutput using oss audio sink");
+                    debug() << "AudioOutput using oss audio sink";
                 else if (sink) {
                     gst_object_unref(sink);
                     sink = 0;
@@ -309,7 +310,7 @@ GstElement *DeviceManager::createAudioSink(Category category)
         } else if (!m_audioSink.isEmpty()) { //Use a custom sink
             sink = gst_element_factory_make (m_audioSink, NULL);
             if (canOpenDevice(sink))
-                m_backend->logMessage(QString("AudioOutput using %0").arg(QString::fromUtf8(m_audioSink)));
+                debug() << "AudioOutput using" << QString::fromUtf8(m_audioSink);
             else {
                 if (sink) {
                     gst_object_unref(sink);
@@ -318,7 +319,7 @@ GstElement *DeviceManager::createAudioSink(Category category)
                 if ("pulsesink" == m_audioSink) {
                     // We've tried to use PulseAudio support, but the GST plugin
                     // doesn't exits. Let's try again, but not use PA support this time.
-                    m_backend->logMessage("PulseAudio support failed. Falling back to 'auto'");
+                    warning() << "PulseAudio support failed. Falling back to 'auto'";
                     PulseSupport::getInstance()->enable(false);
                     m_audioSink = "auto";
                     sink = createAudioSink();
@@ -330,7 +331,7 @@ GstElement *DeviceManager::createAudioSink(Category category)
     if (!sink) { //no suitable sink found so we'll make a fake one
         sink = gst_element_factory_make("fakesink", NULL);
         if (sink) {
-            m_backend->logMessage("AudioOutput Using fake audio sink");
+            warning() << "AudioOutput Using fake audio sink";
             //without sync the sink will pull the pipeline as fast as the CPU allows
             g_object_set (G_OBJECT (sink), "sync", TRUE, NULL);
         }
@@ -492,8 +493,7 @@ void DeviceManager::updateDeviceList()
             m_devices.append(newDeviceList[i]);
             emit deviceAdded(id);
 
-            m_backend->logMessage(QString("Found new device %0").arg(
-                QString::fromUtf8(newDeviceList[i].name())), Backend::Debug, this);
+            debug() << "Found new device" << QString::fromUtf8(newDeviceList[i].name());
         }
     }
 
@@ -501,8 +501,7 @@ void DeviceManager::updateDeviceList()
     for (int i = m_devices.count() - 1; i >= 0; --i) {
         int id = m_devices[i].id();
         if (!listContainsDevice(newDeviceList, id)) {
-            m_backend->logMessage(QString("Lost device %0").arg(
-                QString::fromUtf8(m_devices[i].name())), Backend::Debug, this);
+            debug() << "Lost device" << QString::fromUtf8(m_devices[i].name());
 
             emit deviceRemoved(id);
             m_devices.removeAt(i);

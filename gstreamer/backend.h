@@ -43,7 +43,6 @@ class Backend : public QObject, public BackendInterface
 
 public:
 
-    enum DebugLevel {NoDebug, Warning, Info, Debug};
     Backend(QObject *parent = 0, const QVariantList & = QVariantList());
     virtual ~Backend();
 
@@ -64,9 +63,6 @@ public:
     bool disconnectNodes(QObject *, QObject *);
     bool endConnectionChange(QSet<QObject *>);
 
-    DebugLevel debugLevel() const;
-
-    void logMessage(const QString &message, int priority = 2, QObject *obj = 0) const;
     // 'retry' indicates that we'd like to check the deps after a registry rebuild
     bool checkDependencies(bool retry = false) const;
 
@@ -76,7 +72,6 @@ Q_SIGNALS:
 private:
     DeviceManager *m_deviceManager;
     EffectManager *m_effectManager;
-    DebugLevel m_debugLevel;
     bool m_isValid;
 };
 

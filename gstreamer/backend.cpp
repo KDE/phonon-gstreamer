@@ -22,6 +22,7 @@
 #include "videodataoutput.h"
 #endif
 #include "audioeffect.h"
+#include "debug.h"
 #include "mediaobject.h"
 #include "videowidget.h"
 #include "devicemanager.h"
@@ -53,7 +54,6 @@ Backend::Backend(QObject *parent, const QVariantList &)
         : QObject(parent)
         , m_deviceManager(0)
         , m_effectManager(0)
-        , m_debugLevel(Warning)
         , m_isValid(false)
 {
     // Initialise PulseAudio support
@@ -94,17 +94,16 @@ Backend::Backend(QObject *parent, const QVariantList &)
     setProperty("backendWebsite", QLatin1String("http://phonon.kde.org/"));
 #endif //QT_NO_PROPERTIES
 
-    //check if we should enable debug output
-    QString debugLevelString = qgetenv("PHONON_BACKEND_DEBUG");
-    int debugLevel = debugLevelString.toInt();
-    if (debugLevel > 3) //3 is maximum
+    // Check if we should enable debug output
+    int debugLevel = qgetenv("PHONON_BACKEND_DEBUG").toInt();
+    if (debugLevel > 3) // 3 is maximum
         debugLevel = 3;
-    m_debugLevel = (DebugLevel)debugLevel;
+    Debug::setMinimumDebugLevel((Debug::DebugLevel)((int) Debug::DEBUG_NONE - 1 - debugLevel));
 
     if (wasInit) {
         m_isValid = checkDependencies();
         gchar *versionString = gst_version_string();
-        logMessage(QString("Using %0").arg(versionString));
+        debug() << "Using" << versionString;
         g_free(versionString);
     }
     if (!m_isValid)
@@ -164,7 +163,7 @@ QObject *Backend::createObject(BackendInterface::Class c, QObject *parent, const
 
     case VisualizationClass:  //Fall through
     default:
-        logMessage("createObject() : Backend object not available");
+        warning() << "Backend class" << c << "is not supported by Phonon GST :(";
     }
     return 0;
 }
@@ -198,16 +197,15 @@ bool Backend::checkDependencies(bool retry) const
                 gst_update_registry();
                 checkDependencies(true);
             }
-            QString message = tr("Warning: You do not seem to have the package gstreamer0.10-plugins-good installed.\n"
-                                 "          Some video features have been disabled.");
-            qDebug() << message;
+            warning() << tr("Warning: You do not seem to have the package gstreamer0.10-plugins-good installed.\n"
+                            "          Some video features have been disabled.");
         }
     } else {
         if (!retry) {
             gst_update_registry();
             checkDependencies(true);
         }
-        qWarning() << tr("Warning: You do not seem to have the base GStreamer plugins installed.\n"
+        warning() << tr("Warning: You do not seem to have the base GStreamer plugins installed.\n"
                          "          All audio and video support has been disabled");
     }
     return success;
@@ -387,12 +385,12 @@ bool Backend::connectNodes(QObject *source, QObject *sink)
         MediaNode *sinkNode = qobject_cast<MediaNode *>(sink);
         if (sourceNode && sinkNode) {
             if (sourceNode->connectNode(sink)) {
-                logMessage(QString("Backend connected %0 to %1").arg(source->metaObject()->className()).arg(sink->metaObject()->className()));
+                debug() << "Backend connected" << source->metaObject()->className() << "to" << sink->metaObject()->className();
                 return true;
             }
         }
     }
-    logMessage(QString("Linking %0 to %1 failed").arg(source->metaObject()->className()).arg(sink->metaObject()->className()), Warning);
+    warning() << "Linking" << source->metaObject()->className() << "to" << sink->metaObject()->className() << "failed";
     return false;
 }
 
@@ -434,56 +432,6 @@ DeviceManager* Backend::deviceManager() const
 EffectManager* Backend::effectManager() const
 {
     return m_effectManager;
-}
-
-/**
- * Returns a debuglevel that is determined by the
- * PHONON_BACKEND_DEBUG environment variable.
- *
- *  Warning - important warnings
- *  Info    - general info
- *  Debug   - gives extra info
- */
-Backend::DebugLevel Backend::debugLevel() const
-{
-    return m_debugLevel;
-}
-
-/***
- * Prints a conditional debug message based on the current debug level
- * If obj is provided, classname and objectname will be printed as well
- *
- * see debugLevel()
- */
-void Backend::logMessage(const QString &message, int priority, QObject *obj) const
-{
-    // Backend is a singleton, so this is just fine.
-    static QString lastLogMessage = QString();
-    static int logMessageSkipCount = 0;
-    
-    if (debugLevel() > 0) {
-        QString output;
-        if (obj) {
-            // Strip away namespace from className
-            QString className(obj->metaObject()->className());
-            int nameLength = className.length() - className.lastIndexOf(':') - 1;
-            className = className.right(nameLength);
-            output.sprintf("%s %s (%s %p)", message.toLatin1().constData(),
-                                          obj->objectName().toLatin1().constData(),
-                                          className.toLatin1().constData(), obj);
-        }
-        else {
-            output = message;
-        }
-        if (priority <= (int)debugLevel() && lastLogMessage != output) {
-            if (logMessageSkipCount != 0) 
-                qDebug() << "  PGST: Last message repeated" << logMessageSkipCount << "time(s)";
-            qDebug() << QString("PGST(%1): %2").arg(priority).arg(output);
-            lastLogMessage = output;
-            logMessageSkipCount = 0;
-        } else
-            ++logMessageSkipCount;
-    }
 }
 
 }

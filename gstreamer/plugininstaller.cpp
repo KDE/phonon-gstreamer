@@ -23,7 +23,6 @@
 #include <QtCore/QLibrary>
 #include <QtCore/QPointer>
 #include <QtCore/QMetaType>
-#include <QtCore/QDebug>
 
 #ifdef PLUGIN_INSTALL_API
 #include <gst/pbutils/pbutils.h>

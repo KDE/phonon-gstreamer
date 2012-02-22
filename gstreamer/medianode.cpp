@@ -18,6 +18,7 @@
 #include "medianode.h"
 #include "mediaobject.h"
 #include "backend.h"
+#include "debug.h"
 
 #include <gst/gstbin.h>
 #include <gst/gstutils.h>
@@ -166,12 +167,12 @@ bool MediaNode::connectNode(QObject *obj)
     if (sink) {
 
         if (!sink->isValid()) {
-            m_backend->logMessage(QString("Trying to link to an invalid node (%0)").arg(sink->name()), Backend::Warning);
+            warning() << "Trying to link to an invalid node" << sink->name();
             return false;
         }
 
         if (sink->root()) {
-            m_backend->logMessage("Trying to link a node that is already linked to a different mediasource ", Backend::Warning);
+            warning() << "Trying to link a node that is already linked to a different mediasource";
             return false;
         }
 

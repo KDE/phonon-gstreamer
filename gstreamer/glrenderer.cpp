@@ -21,6 +21,7 @@
 #ifndef QT_NO_OPENGL
 
 #include "backend.h"
+#include "debug.h"
 #include "mediaobject.h"
 #include "qwidgetvideosink.h"
 #include "glrenderer.h"
@@ -72,7 +73,7 @@ GLRenderer::GLRenderer(VideoWidget* videoWidget) :
     AbstractRenderer(videoWidget)
     , m_glWindow(0)
 {
-    videoWidget->backend()->logMessage("Creating OpenGL renderer");
+    debug() << "Creating OpenGL renderer";
     QGLFormat format = QGLFormat::defaultFormat();
     format.setSwapInterval(1);    // Enable vertical sync on draw to avoid tearing
     m_glWindow = new GLRenderWidgetImplementation(videoWidget, format);

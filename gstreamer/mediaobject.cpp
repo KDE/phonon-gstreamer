@@ -328,7 +328,7 @@ void MediaObject::autoDetectSubtitle()
 
 void MediaObject::setNextSource(const MediaSource &source)
 {
-    qDebug() << "Got next source. Waiting for end of current.";
+    debug() << "Got next source. Waiting for end of current.";
 
     m_aboutToFinishLock.lock();
 
@@ -371,7 +371,7 @@ void MediaObject::setSource(const MediaSource &source)
         return;
     }
 
-    qDebug() << "Setting new source";
+    debug() << "Setting new source";
     m_source = source;
     autoDetectSubtitle();
     m_pipeline->setSource(source);
@@ -430,7 +430,7 @@ void MediaObject::seek(qint64 time)
         return;
 
     if (m_waitingForNextSource) {
-        qDebug() << "Seeking back within old source";
+        debug() << "Seeking back within old source";
         m_waitingForNextSource = false;
         m_waitingForPreviousSource = true;
         m_pipeline->setSource(m_source, true);
@@ -513,7 +513,7 @@ void MediaObject::handleStateChange(GstState oldState, GstState newState)
     Phonon::State prevPhononState = m_state;
     prevPhononState = translateState(oldState);
     m_state = translateState(newState);
-    qDebug() << "Moving from" << GstHelper::stateName(oldState) << prevPhononState << "to" << GstHelper::stateName(newState) << m_state;
+    debug() << "Moving from" << GstHelper::stateName(oldState) << prevPhononState << "to" << GstHelper::stateName(newState) << m_state;
     if (GST_STATE_TRANSITION(oldState, newState) == GST_STATE_CHANGE_NULL_TO_READY)
         loadingComplete();
     if (GST_STATE_TRANSITION(oldState, newState) == GST_STATE_CHANGE_READY_TO_PAUSED && m_pendingTitle != 0) {
@@ -652,7 +652,7 @@ void MediaObject::_iface_jumpToMenu(MediaController::NavigationMenu menu)
 
 void MediaObject::handleTrackCountChange(int tracks)
 {
-    m_backend->logMessage(QString("handleTrackCountChange %0").arg(tracks), Backend::Info, this);
+    debug() << Q_FUNC_INFO << tracks;
 
     int old_availableTitles = m_availableTitles;
     m_availableTitles = tracks;
@@ -676,7 +676,7 @@ void MediaObject::_iface_setCurrentTitle(int title)
     if (m_source.discType() == Phonon::NoDisc || title == m_currentTitle) {
         return;
     }
-    m_backend->logMessage(QString("setCurrentTitle %0").arg(title), Backend::Info, this);
+    debug() << Q_FUNC_INFO << title;
     QString format = m_source.discType() == Phonon::Cd ? "track" : "title";
     m_pendingTitle = title;
 
@@ -746,7 +746,7 @@ void MediaObject::changeTitle(const QString &format, int title)
     if (!titleFormat)
         return;
 
-    m_backend->logMessage(QString("changeTitle %0 %1").arg(format).arg(title), Backend::Info, this);
+    debug() << Q_FUNC_INFO << format << title;
     if (gst_element_seek_simple(m_pipeline->element(), titleFormat, GST_SEEK_FLAG_FLUSH, title - 1)) {
         m_currentTitle = title;
         emit titleChanged(title);
@@ -756,13 +756,13 @@ void MediaObject::changeTitle(const QString &format, int title)
 
 void MediaObject::logWarning(const QString &msg)
 {
-    m_backend->logMessage(msg, Backend::Warning);
+    warning() << msg;
 }
 
 void MediaObject::handleBuffering(int percent)
 {
     Q_ASSERT(0);
-    m_backend->logMessage(QString("Stream buffering %0").arg(percent), Backend::Debug, this);
+    debug() << Q_FUNC_INFO << percent;
     if (m_state != Phonon::BufferingState)
         emit stateChanged(m_state, Phonon::BufferingState);
     else if (percent == 100)
@@ -803,14 +803,14 @@ void MediaObject::requestState(Phonon::State state)
 
 void MediaObject::handleAboutToFinish()
 {
-    qDebug() << "About to finish";
+    debug() << "About to finish";
     m_aboutToFinishLock.lock();
     emit aboutToFinish();
     // Three seconds should be more than enough for any application to get their act together.
     // Any longer than that and they have bigger issues.  If Phonon does no supply a next source
     // within 3 seconds, treat as if there is no next source to come, and finish the current source.
     if (m_aboutToFinishWait.wait(&m_aboutToFinishLock, 3000))
-        qDebug() << "Finally got a source";
+        debug() << "Finally got a source";
     else
         m_skippingEOS = false;
     m_aboutToFinishLock.unlock();

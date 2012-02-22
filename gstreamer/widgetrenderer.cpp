@@ -17,6 +17,7 @@
 
 #include <gst/gst.h>
 #include "backend.h"
+#include "debug.h"
 #include "mediaobject.h"
 #include "qwidgetvideosink.h"
 #include "widgetrenderer.h"
@@ -67,7 +68,7 @@ WidgetRenderer::WidgetRenderer(VideoWidget *videoWidget)
         , m_width(0)
         , m_height(0)
 {
-    videoWidget->backend()->logMessage("Creating QWidget renderer");
+    debug() << "Creating QWidget renderer";
     if ((m_videoSink = GST_ELEMENT(g_object_new(get_type_RGB(), NULL)))) {
         gst_object_ref (GST_OBJECT (m_videoSink)); //Take ownership
         gst_object_sink (GST_OBJECT (m_videoSink));

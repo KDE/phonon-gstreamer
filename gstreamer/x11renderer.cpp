@@ -21,6 +21,7 @@
 #ifndef Q_WS_QWS
 
 #include "backend.h"
+#include "debug.h"
 #include "mediaobject.h"
 #include <QtGui/QPalette>
 #include <QtGui/QApplication>
@@ -62,7 +63,7 @@ X11Renderer::X11Renderer(VideoWidget *videoWidget)
         : AbstractRenderer(videoWidget)
 {
     m_renderWidget = new OverlayWidget(videoWidget, this);
-    videoWidget->backend()->logMessage("Creating X11 overlay renderer");
+    debug() << "Creating X11 overlay renderer";
     QPalette palette;
     palette.setColor(QPalette::Background, Qt::black);
     m_videoWidget->setPalette(palette);

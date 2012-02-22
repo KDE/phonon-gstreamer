@@ -20,6 +20,7 @@
 #include "pipeline.h"
 #include "mediaobject.h"
 #include "backend.h"
+#include "debug.h"
 #include "plugininstaller.h"
 #include "streamreader.h"
 #include "gsthelper.h"
@@ -145,7 +146,7 @@ void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
     m_resumeAfterInstall = false;
     m_metaData.clear();
 
-    qDebug() << "New source:" << source.mrl();
+    debug() << "New source:" << source.mrl();
     QByteArray gstUri;
     switch(source.type()) {
         case MediaSource::Url:
@@ -191,7 +192,7 @@ void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
     GstState oldState = state();
 
     if (reset && oldState > GST_STATE_READY) {
-        qDebug() << "Resetting pipeline for reverse seek";
+        debug() << "Resetting pipeline for reverse seek";
         m_resetting = true;
         m_posAtReset = position();
         gst_element_set_state(GST_ELEMENT(m_pipeline), GST_STATE_READY);
@@ -218,7 +219,7 @@ GstElement *Pipeline::element() const
 GstStateChangeReturn Pipeline::setState(GstState state)
 {
     m_resumeAfterInstall = true;
-    qDebug() << "Transitioning to state" << GstHelper::stateName(state);
+    debug() << "Transitioning to state" << GstHelper::stateName(state);
 
     return gst_element_set_state(GST_ELEMENT(m_pipeline), state);
 }
@@ -227,9 +228,9 @@ void Pipeline::writeToDot(MediaObject *media, const QString &type)
 {
     GstBin *bin = GST_BIN(m_pipeline);
     if (media)
-        media->backend()->logMessage(QString("Dumping %0.dot").arg(type), Backend::Debug, media);
+        debug() << media << "Dumping" << QString("%0.dot").arg(type);
     else {
-        qDebug() << type;
+        debug() << type;
     }
     GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS(bin, GST_DEBUG_GRAPH_SHOW_ALL, QString("phonon-%0").arg(type).toUtf8().constData());
 }
@@ -275,7 +276,7 @@ gboolean Pipeline::cb_duration(GstBus *bus, GstMessage *gstMessage, gpointer dat
     gint64 duration;
     GstFormat format;
     Pipeline *that = static_cast<Pipeline*>(data);
-    qDebug() << "Duration message";
+    debug() << "Duration message";
     if (that->m_resetting)
         return true;
     gst_message_parse_duration(gstMessage, &format, &duration);
@@ -334,7 +335,7 @@ gboolean Pipeline::cb_state(GstBus *bus, GstMessage *gstMessage, gpointer data)
             that->m_seeking = false;
         return true;
     }
-    qDebug() << "State change";
+    debug() << "State change";
 
     transitionName = g_strdup_printf ("%s_%s", gst_element_state_get_name (oldState),
         gst_element_state_get_name (newState));
@@ -427,7 +428,7 @@ gboolean Pipeline::cb_element(GstBus *bus, GstMessage *gstMessage, gpointer data
     if (gst_structure_has_name(str, "playbin2-stream-changed")) {
         gchar *uri;
         g_object_get(that->m_pipeline, "uri", &uri, NULL);
-        qDebug() << "Stream changed to" << uri;
+        debug() << "Stream changed to" << uri;
         g_free(uri);
         if (!that->m_resetting)
             emit that->streamChanged();
@@ -452,7 +453,7 @@ void Pipeline::pluginInstallStarted()
 
 void Pipeline::pluginInstallComplete()
 {
-    qDebug() << "Install complete." << m_resumeAfterInstall;
+    debug() << "Install complete." << m_resumeAfterInstall;
     if (m_resumeAfterInstall) {
         setSource(m_currentSource);
         setState(GST_STATE_PLAYING);
@@ -464,7 +465,7 @@ gboolean Pipeline::cb_error(GstBus *bus, GstMessage *gstMessage, gpointer data)
     Q_UNUSED(bus)
     Pipeline *that = static_cast<Pipeline*>(data);
     PluginInstaller::InstallStatus status = that->m_installer->checkInstalledPlugins();
-    qDebug() << status;
+    debug() << status;
 
     if (status == PluginInstaller::Missing) {
         Phonon::ErrorType type = (that->audioIsAvailable() || that->videoIsAvailable()) ? Phonon::NormalError : Phonon::FatalError;
@@ -532,7 +533,7 @@ void foreach_tag_function(const GstTagList *list, const gchar *tag, gpointer use
         break;
 
     default:
-        //qDebug("Unsupported tag type: %s", g_type_name(type));
+        //debug() << "Unsupported tag type:" << g_type_name(type);
         break;
     }
 
@@ -606,7 +607,7 @@ gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
             that->m_metaData.clear();
         }
 
-        //m_backend->logMessage("Meta tags found", Backend::Info, this);
+        //debug() << this << "Meta tags found";
         if (oldMap != that->m_metaData) {
             // This is a bit of a hack to ensure that stream metadata is
             // returned. We get as much as we can from the Shoutcast server's

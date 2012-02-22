@@ -17,7 +17,6 @@
 
 #include "videowidget.h"
 #include <QtCore/QEvent>
-#include <QtCore/QDebug>
 #include <QtGui/QResizeEvent>
 #include <QtGui/QPalette>
 #include <QtGui/QImage>
@@ -30,6 +29,7 @@
 #include <gst/video/video.h>
 #include "abstractrenderer.h"
 #include "backend.h"
+#include "debug.h"
 #include "devicemanager.h"
 #include "mediaobject.h"
 #include "x11renderer.h"
@@ -170,7 +170,7 @@ void VideoWidget::setVisible(bool val) {
 
     // Disable overlays for graphics view
     if (root() && window() && window()->testAttribute(Qt::WA_DontShowOnScreen) && !m_renderer->paintsOnWidget()) {
-        m_backend->logMessage(QString("Widget rendering forced"), Backend::Info, this);
+        debug() << this << "Widget rendering forced";
         GstElement *videoSink = m_renderer->videoSink();
         Q_ASSERT(videoSink);
 
@@ -410,7 +410,7 @@ void VideoWidget::setSaturation(qreal newValue)
 
 void VideoWidget::setMovieSize(const QSize &size)
 {
-    m_backend->logMessage(QString("New video size %0 x %1").arg(size.width()).arg(size.height()), Backend::Info);
+    debug() << "New video size" << size;
     if (size == m_movieSize)
         return;
     m_movieSize = size;

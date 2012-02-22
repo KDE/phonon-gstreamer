@@ -17,6 +17,8 @@
 
 #include "volumefadereffect.h"
 
+#include "debug.h"
+
 #include <gst/gstbin.h>
 #include <gst/gstghostpad.h>
 #include <gst/gstutils.h>
@@ -131,7 +133,7 @@ void VolumeFaderEffect::fadeTo(float targetVolume, int fadeTime)
 void VolumeFaderEffect::setVolume(float v)
 {
     g_object_set(G_OBJECT(m_effectElement), "volume", (gdouble)v, NULL);
-    qDebug() << "Fading to" << v;
+    debug() << "Fading to" << v;
 }
 
 }} //namespace Phonon::Gstreamer
