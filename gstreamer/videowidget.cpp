@@ -1,6 +1,7 @@
 /*  This file is part of the KDE project.
 
     Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+    Copyright (C) 2012 Anssi Hannula <anssi.hannula@iki.fi>
 
     This library is free software: you can redistribute it and/or modify
     it under the terms of the GNU Lesser General Public License as published by
@@ -26,6 +27,7 @@
 #include <gst/gst.h>
 #include <gst/interfaces/navigation.h>
 #include <gst/interfaces/propertyprobe.h>
+#include <gst/pbutils/gstpluginsbaseversion.h>
 #include <gst/video/video.h>
 #include "abstractrenderer.h"
 #include "backend.h"
@@ -291,6 +293,62 @@ QRect VideoWidget::calculateDrawFrameRect() const
     drawFrameRect.moveTo(int((widgetWidth - frameWidth) / 2.0f),
                            int((widgetHeight - frameHeight) / 2.0f));
     return drawFrameRect;
+}
+
+QImage VideoWidget::snapshot() const
+{
+    // for gst_video_convert_frame()
+#if GST_CHECK_PLUGINS_BASE_VERSION(0,10,31)
+    GstElement *videosink = m_renderer->videoSink();
+    GstBuffer *videobuffer = NULL;
+
+    // in case we get called just after a flush (e.g. seeking), wait for the
+    // pipeline state change to complete first (with a timeout) so that
+    // last-buffer will be populated
+    gst_element_get_state(videosink, NULL, NULL, GST_SECOND);
+
+    g_object_get(G_OBJECT(videosink), "last-buffer", &videobuffer, NULL);
+
+    if (videobuffer) {
+        GstCaps *snapcaps = gst_caps_new_simple("video/x-raw-rgb",
+                                                "bpp", G_TYPE_INT, 24,
+                                                "depth", G_TYPE_INT, 24,
+                                                "endianness", G_TYPE_INT, G_BIG_ENDIAN,
+                                                "red_mask", G_TYPE_INT, 0xff0000,
+                                                "green_mask", G_TYPE_INT, 0x00ff00,
+                                                "blue_mask", G_TYPE_INT, 0x0000ff,
+                                                NULL);
+
+        GstBuffer *snapbuffer = gst_video_convert_frame(videobuffer, snapcaps, GST_SECOND, NULL);
+
+        gst_buffer_unref(videobuffer);
+        gst_caps_unref(snapcaps);
+
+        if (snapbuffer) {
+            gint width, height;
+            gboolean ret;
+            GstStructure *s = gst_caps_get_structure(GST_BUFFER_CAPS(snapbuffer), 0);
+
+            ret  = gst_structure_get_int(s, "width", &width);
+            ret &= gst_structure_get_int(s, "height", &height);
+
+            if (ret && width > 0 && height > 0) {
+                QImage snapimage(width, height, QImage::Format_RGB888);
+
+                for (int i = 0; i < height; ++i)
+                    memcpy(snapimage.scanLine(i),
+                           GST_BUFFER_DATA(snapbuffer) + i * GST_ROUND_UP_4(width * 3),
+                           width * 3);
+
+                gst_buffer_unref(snapbuffer);
+                return snapimage;
+            }
+
+            gst_buffer_unref(snapbuffer);
+        }
+    }
+#endif // gst_video_convert_frame()
+    return QImage();
 }
 
 void VideoWidget::setScaleMode(Phonon::VideoWidget::ScaleMode scaleMode)

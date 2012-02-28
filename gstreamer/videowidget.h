@@ -1,6 +1,7 @@
 /*  This file is part of the KDE project.
 
     Copyright (C) 2    //Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).007 Nokia Corporation and/or its subsidiary(-ies).
+    Copyright (C) 2012 Anssi Hannula <anssi.hannula@iki.fi>
 
     This library is free software: you can redistribute it and/or modify
     it under the terms of the GNU Lesser General Public License as published by
@@ -35,10 +36,10 @@ namespace Gstreamer
 class AbstractRenderer;
 class Backend;
 
-class VideoWidget : public QWidget, public Phonon::VideoWidgetInterface, public MediaNode
+class VideoWidget : public QWidget, public Phonon::VideoWidgetInterface44, public MediaNode
 {
     Q_OBJECT
-    Q_INTERFACES(Phonon::VideoWidgetInterface Phonon::Gstreamer::MediaNode)
+    Q_INTERFACES(Phonon::VideoWidgetInterface44 Phonon::Gstreamer::MediaNode)
 public:
     VideoWidget(Backend *backend, QWidget *parent = 0);
     ~VideoWidget();
@@ -62,6 +63,7 @@ public:
     QSize sizeHint() const;
     QRect scaleToAspect(QRect srcRect, int w, int h) const;
     QRect calculateDrawFrameRect() const;
+    QImage snapshot() const;
 
     GstElement *videoElement()
     {
