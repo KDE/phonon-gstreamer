@@ -118,56 +118,17 @@ void AudioOutput::setVolume(qreal newVolume)
     emit volumeChanged(newVolume);
 }
 
+/*
+ * Reimp
+ */
 bool AudioOutput::setOutputDevice(int newDevice)
 {
-    debug() << Q_FUNC_INFO << QString::number(newDevice);
-
-    if (newDevice == m_device)
-        return true;
-
-    if (root()) {
-        root()->saveState();
-        if (root()->pipeline()->setState(GST_STATE_READY) == GST_STATE_CHANGE_FAILURE)
-            return false;
-    }
-
-    const DeviceInfo *device = m_backend->deviceManager()->device(newDevice);
-    if (!device) {
+    const AudioOutputDevice device = AudioOutputDevice::fromIndex(newDevice);
+    if (!device.isValid()) {
         error() << Q_FUNC_INFO << "Unable to find the output device with index" << newDevice;
         return false;
     }
-
-    bool success = false;
-    if (m_audioSink) {
-        // Save previous state
-        GstState oldState = GST_STATE(m_audioSink);
-        const QByteArray oldDeviceValue = GstHelper::property(m_audioSink, "device");
-        const QByteArray deviceId = device->name();    // device "name" is the Gstreamer id
-        m_device = newDevice;
-
-        // We test if the device can be opened by checking if it can go from NULL to READY state
-        gst_element_set_state(m_audioSink, GST_STATE_NULL);
-        success = GstHelper::setProperty(m_audioSink, "device", deviceId);
-        if (success) {
-            success = (gst_element_set_state(m_audioSink, oldState) == GST_STATE_CHANGE_SUCCESS);
-        }
-        if (!success) { // Revert state
-            error() << Q_FUNC_INFO << "Failed to change device" << deviceId;
-
-            GstHelper::setProperty(m_audioSink, "device", oldDeviceValue);
-            gst_element_set_state(m_audioSink, oldState);
-        } else {
-            debug() << Q_FUNC_INFO << "Successfully changed device";
-        }
-
-        // Note the stopped state should not really be necessary, but seems to be required to
-        // properly reset after changing the audio state
-        if (root()) {
-            QMetaObject::invokeMethod(root(), "setState", Qt::QueuedConnection, Q_ARG(State, StoppedState));
-            root()->resumeState();
-        }
-    }
-    return success;
+    return setOutputDevice(device);
 }
 
 #if (PHONON_VERSION >= PHONON_VERSION_CHECK(4, 2, 0))
