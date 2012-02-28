@@ -177,13 +177,16 @@ bool AudioOutput::setOutputDevice(const AudioOutputDevice &newDevice)
     if (!m_audioSink || !newDevice.isValid()) {
         return false;
     }
-    const QVariant driver = newDevice.property("driver");
-    if (!driver.isValid()) {
-        return setOutputDevice(newDevice.index());
-    }
-    if (newDevice.index() == m_device) {
+
+    const QVariant dalProperty = newDevice.property("deviceAccessList");
+    if (!dalProperty.isValid())
+        return false;
+    const DeviceAccessList deviceAccessList = qVariantValue<DeviceAccessList>(dalProperty);
+    if (deviceAccessList.isEmpty())
+        return false;
+
+    if (newDevice.index() == m_device)
         return true;
-    }
 
     if (root()) {
         root()->saveState();
@@ -195,43 +198,13 @@ bool AudioOutput::setOutputDevice(const AudioOutputDevice &newDevice)
     const GstState oldState = GST_STATE(m_audioSink);
     const QByteArray oldDeviceValue = GstHelper::property(m_audioSink, "device");
 
-    const QByteArray sinkName = GstHelper::property(m_audioSink, "name");
-    if (sinkName == QByteArray("alsasink")) {
-        if (driver.toByteArray() != QByteArray("alsa")) {
-            return false;
+    foreach (const DeviceAccess &deviceAccess, deviceAccessList) {
+        if (setOutputDevice(deviceAccess.first, deviceAccess.second, oldState)) {
+            m_device = newDevice.index();
+            return true;
         }
     }
 
-    const QVariant deviceIdsProperty = newDevice.property("deviceIds");
-    QStringList deviceIds;
-    if (deviceIdsProperty.type() == QVariant::StringList) {
-        deviceIds = deviceIdsProperty.toStringList();
-    } else if (deviceIdsProperty.type() == QVariant::String) {
-        deviceIds += deviceIdsProperty.toString();
-    }
-
-    // We test if the device can be opened by checking if it can go from NULL to READY state
-    foreach (const QString &deviceId, deviceIds) {
-        gst_element_set_state(m_audioSink, GST_STATE_NULL);
-        if (GstHelper::setProperty(m_audioSink, "device", deviceId.toUtf8())) {
-            debug() << Q_FUNC_INFO << "setProperty( device," << deviceId << ") succeeded";
-            if (gst_element_set_state(m_audioSink, oldState) == GST_STATE_CHANGE_SUCCESS) {
-                debug() << Q_FUNC_INFO << "go to old state on device" << deviceId << "succeeded";
-                m_device = newDevice.index();
-                if (root()) {
-                    QMetaObject::invokeMethod(root(), "setState",
-                                              Qt::QueuedConnection,
-                                              Q_ARG(State, StoppedState));
-                    root()->resumeState();
-                }
-                return true;
-            } else {
-                error() << Q_FUNC_INFO << "go to old state on device" << deviceId << "failed";
-            }
-        } else {
-            error() << Q_FUNC_INFO << "setProperty( device," << deviceId << ") failed";
-        }
-    }
     // Revert state
     GstHelper::setProperty(m_audioSink, "device", oldDeviceValue);
     gst_element_set_state(m_audioSink, oldState);
@@ -240,6 +213,38 @@ bool AudioOutput::setOutputDevice(const AudioOutputDevice &newDevice)
         QMetaObject::invokeMethod(root(), "setState",
                                   Qt::QueuedConnection, Q_ARG(State, StoppedState));
         root()->resumeState();
+    }
+
+    return false;
+}
+
+bool AudioOutput::setOutputDevice(const QByteArray &driver, const QString &deviceId, const GstState oldState)
+{
+    const QByteArray sinkName = GstHelper::property(m_audioSink, "name");
+    if (sinkName == QByteArray("alsasink")) {
+        if (driver != QByteArray("alsa")) {
+            return false;
+        }
+    }
+
+    // We test if the device can be opened by checking if it can go from NULL to READY state
+    gst_element_set_state(m_audioSink, GST_STATE_NULL);
+    if (GstHelper::setProperty(m_audioSink, "device", deviceId.toUtf8())) {
+        debug() << Q_FUNC_INFO << "setProperty( device," << deviceId << ") succeeded";
+        if (gst_element_set_state(m_audioSink, oldState) == GST_STATE_CHANGE_SUCCESS) {
+            debug() << Q_FUNC_INFO << "go to old state on device" << deviceId << "succeeded";
+            if (root()) {
+                QMetaObject::invokeMethod(root(), "setState",
+                                            Qt::QueuedConnection,
+                                            Q_ARG(State, StoppedState));
+                root()->resumeState();
+            }
+            return true;
+        } else {
+            error() << Q_FUNC_INFO << "go to old state on device" << deviceId << "failed";
+        }
+    } else {
+        error() << Q_FUNC_INFO << "setProperty( device," << deviceId << ") failed";
     }
 
     return false;

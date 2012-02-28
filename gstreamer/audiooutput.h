@@ -57,6 +57,9 @@ Q_SIGNALS:
     void audioDeviceFailed();
 
 private:
+    bool setOutputDevice(const QByteArray &, const QString &, const GstState);
+
+private:
 
     qreal m_volumeLevel;
     int m_device;
