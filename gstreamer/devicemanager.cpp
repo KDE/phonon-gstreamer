@@ -455,8 +455,23 @@ void DeviceManager::updateDeviceList()
             names.prepend("default");
         }
 
-        for (int i = 0; i < names.size(); ++i)
-            newDeviceList.append(DeviceInfo(this, names[i], DeviceInfo::AudioOutput));
+        /* Determine what factory was used to create the sink, to know what to put in the
+         * device access list */
+        GstElementFactory *factory = gst_element_get_factory(audioSink);
+        const gchar *factoryName = gst_plugin_feature_get_name(GST_PLUGIN_FEATURE(factory));
+        QByteArray driver; // means sound system
+        if (!g_strcmp0(factoryName, "alsasink"))       driver = "alsa";
+        if (!g_strcmp0(factoryName, "pulsesink"))      driver = "pulse";
+        if (!g_strcmp0(factoryName, "osssink"))        driver = "oss";
+        if (!g_strcmp0(factoryName, "fakesink"))       driver = "fake";
+        if (driver.isEmpty() && !names.isEmpty())
+            warning() << "Unknown sound system for device" << names.first();
+
+        for (int i = 0; i < names.size(); ++i) {
+            DeviceInfo deviceInfo(this, names[i], DeviceInfo::AudioOutput);
+            deviceInfo.addAccess(DeviceAccess(driver, names[i]));
+            newDeviceList.append(deviceInfo);
+        }
 
         gst_element_set_state(audioSink, GST_STATE_NULL);
         gst_object_unref(audioSink);
