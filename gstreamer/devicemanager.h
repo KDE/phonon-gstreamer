@@ -54,11 +54,11 @@ public:
     /**
      * Constructs a device info object and sets it's device identifiers.
      */
-    explicit DeviceInfo(DeviceManager *, const QByteArray &name,
+    explicit DeviceInfo(DeviceManager *, const QByteArray &deviceId,
                         quint16 caps, bool isAdvanced = true);
 
     int id() const;
-    const QByteArray& name() const;
+    const QString& name() const;
     const QString& description() const;
     bool isAdvanced() const;
     void setAdvanced(bool advanced);
@@ -68,9 +68,11 @@ public:
     void setCapabilities(quint16 cap);
 
 private:
+    void useGstElement(GstElement *element, const QByteArray &deviceId);
+
     int m_id;
-    QByteArray m_name;        // this will be the Gstreamer id, unique
-    QString m_description;    // this will be the Gstreamer device name
+    QString m_name;           // the preferred name for the device
+    QString m_description;    // describes how to access the device (factory name, gst id)
     bool m_isAdvanced;
     DeviceAccessList m_accessList;
     quint16 m_capabilities;

@@ -47,33 +47,22 @@ namespace Gstreamer
  * Device Info
  */
 
-DeviceInfo::DeviceInfo(DeviceManager *manager, const QByteArray &name,
+DeviceInfo::DeviceInfo(DeviceManager *manager, const QByteArray &deviceId,
                        quint16 caps, bool isAdvanced)
-        : m_name(name), m_isAdvanced(isAdvanced), m_capabilities(caps)
+        : m_isAdvanced(isAdvanced), m_capabilities(caps)
 {
     // Get an unique integer id for each device
     static int deviceCounter = 0;
     m_id = deviceCounter ++;
 
     if (caps & VideoCapture) {
-        // Get a description from the device
-        if (name == "default") {
+        // Get a preferred name from the device
+        if (deviceId == "default") {
+            m_name = "Default";
             m_description = "Default video capture device";
         } else {
             GstElement *dev = gst_element_factory_make("v4l2src", NULL);
-
-            if (dev) {
-                gchar *deviceDescription = NULL;
-
-                if (GST_IS_PROPERTY_PROBE(dev) && gst_property_probe_get_property( GST_PROPERTY_PROBE(dev), "device" ) ) {
-                    g_object_set (G_OBJECT(dev), "device", name.constData(), NULL);
-                    g_object_get (G_OBJECT(dev), "device-name", &deviceDescription, NULL);
-                    m_description = QByteArray(deviceDescription);
-                    g_free (deviceDescription);
-                    gst_element_set_state(dev, GST_STATE_NULL);
-                    gst_object_unref (dev);
-                }
-            }
+            useGstElement(dev, deviceId);
         }
     }
 
@@ -81,30 +70,43 @@ DeviceInfo::DeviceInfo(DeviceManager *manager, const QByteArray &name,
         // This should never be called when PulseAudio is active.
         Q_ASSERT(!PulseSupport::getInstance()->isActive());
 
-        // Get a description from the device
-        if (name == "default") {
+        // Get a preferred name from the device
+        if (deviceId == "default") {
+            m_name = "Default";
             m_description = "Default audio device";
         } else {
             GstElement *aSink = manager->createAudioSink();
-
-            if (aSink) {
-                gchar *deviceDescription = NULL;
-
-                if (GST_IS_PROPERTY_PROBE(aSink) && gst_property_probe_get_property( GST_PROPERTY_PROBE(aSink), "device" ) ) {
-                    g_object_set (G_OBJECT(aSink), "device", name.constData(), NULL);
-                    g_object_get (G_OBJECT(aSink), "device-name", &deviceDescription, NULL);
-                    m_description = QByteArray(deviceDescription);
-                    g_free (deviceDescription);
-                    gst_element_set_state(aSink, GST_STATE_NULL);
-                    gst_object_unref (aSink);
-                }
-            }
+            useGstElement(aSink, deviceId);
         }
     }
 
     // A default device should never be advanced
-    if (name == "default")
+    if (deviceId == "default")
         m_isAdvanced = false;
+}
+
+void DeviceInfo::useGstElement(GstElement *element, const QByteArray &deviceId)
+{
+    if (!element)
+        return;
+
+    gchar *deviceName = NULL;
+    if (GST_IS_PROPERTY_PROBE(element) && gst_property_probe_get_property(GST_PROPERTY_PROBE(element), "device")) {
+        g_object_set(G_OBJECT(element), "device", deviceId.constData(), NULL);
+        g_object_get(G_OBJECT(element), "device-name", &deviceName, NULL);
+        m_name = QString(deviceName);
+
+        if (m_description.isEmpty()) {
+            // Construct a description by using the factory name and the device id
+            GstElementFactory *factory = gst_element_get_factory(element);
+            const gchar *factoryName = gst_element_factory_get_longname(factory);
+            m_description = QString(factoryName) + ": " + deviceId;
+        }
+
+        g_free(deviceName);
+        gst_element_set_state(element, GST_STATE_NULL);
+        gst_object_unref(element);
+    }
 }
 
 int DeviceInfo::id() const
@@ -112,7 +114,7 @@ int DeviceInfo::id() const
     return m_id;
 }
 
-const QByteArray& DeviceInfo::name() const
+const QString& DeviceInfo::name() const
 {
     return m_name;
 }
@@ -508,7 +510,7 @@ void DeviceManager::updateDeviceList()
             m_devices.append(newDeviceList[i]);
             emit deviceAdded(id);
 
-            debug() << "Found new device" << QString::fromUtf8(newDeviceList[i].name());
+            debug() << "Found new device" << newDeviceList[i].name();
         }
     }
 
@@ -516,7 +518,7 @@ void DeviceManager::updateDeviceList()
     for (int i = m_devices.count() - 1; i >= 0; --i) {
         int id = m_devices[i].id();
         if (!listContainsDevice(newDeviceList, id)) {
-            debug() << "Lost device" << QString::fromUtf8(m_devices[i].name());
+            debug() << "Lost device" << m_devices[i].name();
 
             emit deviceRemoved(id);
             m_devices.removeAt(i);
