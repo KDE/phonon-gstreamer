@@ -387,20 +387,23 @@ void MediaObject::loadingComplete()
 
 void MediaObject::getSubtitleInfo(int stream)
 {
-    int text_number = 0;
-    g_object_get(G_OBJECT(m_pipeline->element()), "n-text", &text_number, NULL);
-    if (text_number)
-        GlobalSubtitles::instance()->add(this, -1, "Disable", "");
-    for (gint i = 0; i < text_number; ++i) {
-        GstTagList *tags = NULL;
+    gint spuCount = 0; // Sub picture units.
+    g_object_get(G_OBJECT(m_pipeline->element()), "n-text", &spuCount, NULL);
+    if (spuCount)
+        GlobalSubtitles::instance()->add(this, -1, tr("Disable"), "");
+    for (gint i = 0; i < spuCount; ++i) {
+        GstTagList *tags = 0;
         g_signal_emit_by_name (G_OBJECT(m_pipeline->element()), "get-text-tags",
                                i, &tags);
 
         if (tags) {
-            gchar *tlc;
-
-            gst_tag_list_get_string (tags, GST_TAG_LANGUAGE_CODE, &tlc);
-            QString name = QString("Subtitle %1 - [%2]").arg(i).arg(tlc);
+            gchar *tagLangCode = 0;
+            gst_tag_list_get_string (tags, GST_TAG_LANGUAGE_CODE, &tagLangCode);
+            QString name;
+            if (tagLangCode)
+                name = QLatin1String(tagLangCode); // Language code is ISO -> always Latin1
+            else
+                name = tr("Unknown");
             GlobalSubtitles::instance()->add(this, i, name);
         }
     }
@@ -502,7 +505,7 @@ Phonon::State MediaObject::translateState(GstState state) const
             return Phonon::StoppedState;
         case GST_STATE_NULL:
             return Phonon::LoadingState;
-        case GST_STATE_VOID_PENDING: //Quiet GCC
+        case GST_STATE_VOID_PENDING: // Quiet GCC
             break;
     }
     return Phonon::ErrorState;
