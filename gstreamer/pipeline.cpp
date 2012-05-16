@@ -39,6 +39,7 @@ Pipeline::Pipeline(QObject *parent)
     : QObject(parent)
     , m_bufferPercent(0)
     , m_isStream(false)
+    , m_isHttpUrl(false)
     , m_installer(new PluginInstaller(this))
     , m_resetting(false)
 {
@@ -143,6 +144,7 @@ void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
     m_seeking = false;
     m_installer->reset();
     m_resumeAfterInstall = false;
+    m_isHttpUrl = false;
     m_metaData.clear();
 
     qDebug() << "New source:" << source.mrl();
@@ -151,6 +153,8 @@ void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
         case MediaSource::Url:
         case MediaSource::LocalFile:
             gstUri = source.mrl().toEncoded();
+            if(source.mrl().scheme() == QLatin1String("http"))
+                m_isHttpUrl = true;
             break;
         case MediaSource::Invalid:
             emit errorMessage("Invalid source specified", Phonon::FatalError);
@@ -546,6 +550,8 @@ gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
 {
     Q_UNUSED(bus)
     Pipeline *that = static_cast<Pipeline*>(data);
+
+    bool isStream = that->m_isStream || that->m_isHttpUrl;
     GstTagList* tag_list = 0;
     gst_message_parse_tag(msg, &tag_list);
     if (tag_list) {
@@ -561,7 +567,7 @@ gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
         // have a commonly available tag (ORGANIZATION) or we have a
         // change in title
         bool fake_it =
-           (that->m_isStream
+           (isStream
             && ((!newTags.contains("TITLE")
                  && newTags.contains("ORGANIZATION"))
                 || (newTags.contains("TITLE")
@@ -577,7 +583,7 @@ gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
         QList<QString> keys = newTags.keys();
         for (QList<QString>::iterator i = keys.begin(); i != keys.end(); ++i) {
             QString key = *i;
-            if (that->m_isStream) {
+            if (isStream) {
                 // If we're streaming, we need to remove data in m_metaData
                 // in order to stop it filling up indefinitely (as it's a multimap)
                 that->m_metaData.remove(key);
@@ -606,13 +612,12 @@ gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
             that->m_metaData.clear();
         }
 
-        //m_backend->logMessage("Meta tags found", Backend::Info, this);
         if (oldMap != that->m_metaData) {
             // This is a bit of a hack to ensure that stream metadata is
             // returned. We get as much as we can from the Shoutcast server's
             // StreamTitle= header. If further info is decoded from the stream
             // itself later, then it will overwrite this info.
-            if (that->m_isStream && fake_it) {
+            if (fake_it) {
                 that->m_metaData.remove("ALBUM");
                 that->m_metaData.remove("ARTIST");
 
@@ -658,7 +663,8 @@ gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
             // If not, this needs fixed in mediaobject.cpp.
             guint kbps;
             g_object_get(that->m_pipeline, "connection-speed", &kbps, NULL);
-            if (that->m_currentSource.discType() == Phonon::Cd || kbps != 0)
+	    // This hack does not work now.
+            // if (that->m_currentSource.discType() == Phonon::Cd || kbps != 0)
                 emit that->metaDataChanged(that->m_metaData);
         }
     }

@@ -124,6 +124,7 @@ class Pipeline : public QObject
         bool m_resumeAfterInstall;
         // Determines if we're using an QIODevice stream
         bool m_isStream;
+        bool m_isHttpUrl;
         QMultiMap<QString, QString> m_metaData;
         QList<MediaController::NavigationMenu> m_menus;
         Phonon::MediaSource m_currentSource;
