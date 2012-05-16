@@ -399,7 +399,6 @@ bool Backend::startConnectionChange(QSet<QObject *> objects)
         MediaObject *media = sourceNode->root();
         if (media) {
             media->saveState();
-            return true;
         }
     }
     return true;
@@ -448,7 +447,6 @@ bool Backend::endConnectionChange(QSet<QObject *> objects)
         MediaObject *media = sourceNode->root();
         if (media) {
             media->resumeState();
-            return true;
         }
     }
     return true;
