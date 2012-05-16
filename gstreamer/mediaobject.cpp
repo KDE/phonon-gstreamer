@@ -144,17 +144,20 @@ void MediaObject::saveState()
     if (m_resumeState)
         return;
 
-    if (m_pendingState == Phonon::PlayingState || m_pendingState == Phonon::PausedState) {
+    if (m_state == Phonon::PlayingState || m_state == Phonon::PausedState) {
         m_resumeState = true;
-        m_oldState = m_pendingState;
+        m_oldState = m_state;
         m_oldPos = getPipelinePos();
     }
 }
 
 void MediaObject::resumeState()
 {
-    if (m_resumeState)
-        QMetaObject::invokeMethod(this, "setState", Qt::QueuedConnection, Q_ARG(State, m_oldState));
+    if (m_resumeState) {
+        m_resumeState = false;
+        requestState(m_oldState);
+        seek(m_oldPos);
+    }
 }
 
 /**
