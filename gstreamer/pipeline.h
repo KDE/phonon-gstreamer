@@ -22,6 +22,7 @@
 #include <gst/gst.h>
 #include <phonon/MediaSource>
 #include <phonon/MediaController>
+#include <QtCore/QMutex>
 
 QT_BEGIN_NAMESPACE
 
@@ -137,6 +138,7 @@ class Pipeline : public QObject
         bool m_seeking;
         bool m_resetting;
         qint64 m_posAtReset;
+        QMutex m_tagLock;
 
     private Q_SLOTS:
         void pluginInstallFailure(const QString &msg);

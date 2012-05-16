@@ -27,6 +27,7 @@
 #include <gst/interfaces/navigation.h>
 #include <gst/app/gstappsrc.h>
 #include <QtCore/QCoreApplication>
+#include <QtCore/QMutexLocker>
 #define MAX_QUEUE_TIME 20 * GST_SECOND
 
 QT_BEGIN_NAMESPACE
@@ -550,6 +551,7 @@ gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
 {
     Q_UNUSED(bus)
     Pipeline *that = static_cast<Pipeline*>(data);
+    QMutexLocker lock(&that->m_tagLock);
 
     bool isStream = that->m_isStream || that->m_isHttpUrl;
     GstTagList* tag_list = 0;
