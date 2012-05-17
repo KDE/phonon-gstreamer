@@ -182,11 +182,6 @@ bool AudioOutput::setOutputDevice(const AudioOutputDevice &newDevice)
 bool AudioOutput::setOutputDevice(const QByteArray &driver, const QString &deviceId, const GstState oldState)
 {
     const QByteArray sinkName = GstHelper::property(m_audioSink, "name");
-    if (sinkName == QByteArray("alsasink")) {
-        if (driver != QByteArray("alsa")) {
-            return false;
-        }
-    }
 
     // We test if the device can be opened by checking if it can go from NULL to READY state
     gst_element_set_state(m_audioSink, GST_STATE_NULL);

@@ -91,7 +91,6 @@ class DeviceManager : public QObject {
 public:
     DeviceManager(Backend *parent);
     virtual ~DeviceManager();
-    GstElement *createGNOMEAudioSink(Category category);
     GstElement *createAudioSink(Category category = NoCategory);
     AbstractRenderer *createVideoRenderer(VideoWidget *parent);
     QList<int> deviceIds(ObjectDescriptionType type);
@@ -113,7 +112,6 @@ private:
     Backend *m_backend;
     QList<DeviceInfo> m_devices;
     QTimer m_devicePollTimer;
-    QByteArray m_audioSink;
     QByteArray m_videoSinkWidget;
 };
 }

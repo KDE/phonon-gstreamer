@@ -167,22 +167,6 @@ DeviceManager::DeviceManager(Backend *backend)
     settings.beginGroup(QLatin1String("Qt"));
 
     PulseSupport *pulse = PulseSupport::getInstance();
-    m_audioSink = qgetenv("PHONON_GST_AUDIOSINK");
-    if (m_audioSink.isEmpty())
-        m_audioSink = settings.value(QLatin1String("audiosink"), "Auto").toByteArray().toLower();
-
-    if ("pulsesink" == m_audioSink && !pulse->isActive()) {
-        // If pulsesink is specifically requested, but not active, then
-        // fall back to auto.
-        m_audioSink = "auto";
-    } else if (m_audioSink == "auto" && pulse->isActive()) {
-        // We favour specific PA support if it's active and we're in 'auto' mode
-        // (although it may still be disabled if the pipeline cannot be made)
-        m_audioSink = "pulsesink";
-    } else if (m_audioSink != "pulsesink") {
-        // Otherwise, PA should not be used.
-        pulse->enable(false);
-    }
 
     m_videoSinkWidget = qgetenv("PHONON_GST_VIDEOMODE");
     if (m_videoSinkWidget.isEmpty()) {
@@ -196,35 +180,6 @@ DeviceManager::DeviceManager(Backend *backend)
 DeviceManager::~DeviceManager()
 {
 }
-
-/***
-* Returns a Gst Audiosink based on GNOME configuration settings,
-* or 0 if the element is not available.
-*/
-GstElement *DeviceManager::createGNOMEAudioSink(Category category)
-{
-    GstElement *sink = gst_element_factory_make ("gconfaudiosink", NULL);
-
-    if (sink) {
-
-        // set profile property on the gconfaudiosink to "music and movies"
-        if (g_object_class_find_property (G_OBJECT_GET_CLASS (sink), "profile")) {
-            switch (category) {
-            case NotificationCategory:
-                g_object_set (G_OBJECT (sink), "profile", 0, NULL); // 0 = 'sounds'
-                break;
-            case CommunicationCategory:
-                g_object_set (G_OBJECT (sink), "profile", 2, NULL); // 2 = 'chat'
-                break;
-            default:
-                g_object_set (G_OBJECT (sink), "profile", 1, NULL); // 1 = 'music and movies'
-                break;
-            }
-        }
-    }
-    return sink;
-}
-
 
 bool DeviceManager::canOpenDevice(GstElement *element) const
 {
@@ -241,8 +196,6 @@ bool DeviceManager::canOpenDevice(GstElement *element) const
             return true;
         }
     }
-    // FIXME: the above can still fail for a valid alsasink because list only contains entries of
-    // the form "hw:X,Y". Would be better to use "default:X" or "dmix:X,Y"
 
     gst_element_set_state(element, GST_STATE_NULL);
     return false;
@@ -250,13 +203,10 @@ bool DeviceManager::canOpenDevice(GstElement *element) const
 
 /*
 *
-* Returns a GstElement with a valid audio sink
-* based on the current value of PHONON_GSTREAMER_DRIVER
+* Returns an audio sink.
 *
-* Allowed values are auto (default), alsa, oss and ess
-* does not exist
+* If pulse is active, we use pulse. Otherwise, we find something else suitable.
 *
-* If no real sound sink is available a fakesink will be returned
 */
 GstElement *DeviceManager::createAudioSink(Category category)
 {
@@ -264,79 +214,14 @@ GstElement *DeviceManager::createAudioSink(Category category)
 
     if (m_backend && m_backend->isValid())
     {
-        if (m_audioSink == "auto") //this is the default value
-        {
-            //### TODO : get equivalent KDE settings here
-
-            if (!qgetenv("GNOME_DESKTOP_SESSION_ID").isEmpty()) {
-                sink = createGNOMEAudioSink(category);
-                if (canOpenDevice(sink))
-                    debug() << "AudioOutput using gconf audio sink";
-                else if (sink) {
-                    gst_object_unref(sink);
-                    sink = 0;
-                }
-            }
-
-            if (!sink) {
-                sink = gst_element_factory_make ("alsasink", NULL);
-                if (canOpenDevice(sink))
-                    debug() << "AudioOutput using alsa audio sink";
-                else if (sink) {
-                    gst_object_unref(sink);
-                    sink = 0;
-                }
-            }
-
-            if (!sink) {
-                sink = gst_element_factory_make ("autoaudiosink", NULL);
-                if (canOpenDevice(sink))
-                    debug() << "AudioOutput using auto audio sink";
-                else if (sink) {
-                    gst_object_unref(sink);
-                    sink = 0;
-                }
-            }
-
-            if (!sink) {
-                sink = gst_element_factory_make ("osssink", NULL);
-                if (canOpenDevice(sink))
-                    debug() << "AudioOutput using oss audio sink";
-                else if (sink) {
-                    gst_object_unref(sink);
-                    sink = 0;
-                }
-            }
-        } else if (m_audioSink == "fake") {
-            //do nothing as a fakesink will be created by default
-        } else if (!m_audioSink.isEmpty()) { //Use a custom sink
-            sink = gst_element_factory_make (m_audioSink, NULL);
-            if (canOpenDevice(sink))
-                debug() << "AudioOutput using" << QString::fromUtf8(m_audioSink);
-            else {
-                if (sink) {
-                    gst_object_unref(sink);
-                    sink = 0;
-                }
-                if ("pulsesink" == m_audioSink) {
-                    // We've tried to use PulseAudio support, but the GST plugin
-                    // doesn't exits. Let's try again, but not use PA support this time.
-                    warning() << "PulseAudio support failed. Falling back to 'auto'";
-                    PulseSupport::getInstance()->enable(false);
-                    m_audioSink = "auto";
-                    sink = createAudioSink();
-                }
-            }
-        }
-    }
-
-    if (!sink) { //no suitable sink found so we'll make a fake one
-        sink = gst_element_factory_make("fakesink", NULL);
-        if (sink) {
-            warning() << "AudioOutput Using fake audio sink";
-            //without sync the sink will pull the pipeline as fast as the CPU allows
-            g_object_set (G_OBJECT (sink), "sync", TRUE, NULL);
-        }
+      if (PulseSupport::getInstance()->isActive()) {
+        sink = gst_element_factory_make("pulsesink", NULL);
+        qDebug() << "Congrats! You're using pulseaudio!";
+      } else {
+        // FIXME: Implement audio sink discovery through registry searching
+        sink = gst_element_factory_make("alsasink", NULL);
+        qDebug() << "Well, you're stuck with ALSA.";
+      }
     }
     Q_ASSERT(sink);
     return sink;
@@ -349,7 +234,7 @@ AbstractRenderer *DeviceManager::createVideoRenderer(VideoWidget *parent)
     if (m_videoSinkWidget == "opengl") {
         return new GLRenderer(parent);
     } else
-#endif
+ #endif
     if (m_videoSinkWidget == "software") {
         return new WidgetRenderer(parent);
     }
@@ -462,16 +347,10 @@ void DeviceManager::updateDeviceList()
         GstElementFactory *factory = gst_element_get_factory(audioSink);
         const gchar *factoryName = gst_plugin_feature_get_name(GST_PLUGIN_FEATURE(factory));
         QByteArray driver; // means sound system
-        if (!g_strcmp0(factoryName, "alsasink"))       driver = "alsa";
-        if (!g_strcmp0(factoryName, "pulsesink"))      driver = "pulse";
-        if (!g_strcmp0(factoryName, "osssink"))        driver = "oss";
-        if (!g_strcmp0(factoryName, "fakesink"))       driver = "fake";
-        if (driver.isEmpty() && !names.isEmpty())
-            warning() << "Unknown sound system for device" << names.first();
 
         for (int i = 0; i < names.size(); ++i) {
             DeviceInfo deviceInfo(this, names[i], DeviceInfo::AudioOutput);
-            deviceInfo.addAccess(DeviceAccess(driver, names[i]));
+            deviceInfo.addAccess(DeviceAccess("pulse", names[i]));
             newDeviceList.append(deviceInfo);
         }
 
