@@ -58,7 +58,7 @@ Backend::Backend(QObject *parent, const QVariantList &)
 {
     // Initialise PulseAudio support
     PulseSupport *pulse = PulseSupport::getInstance();
-    pulse->enable();
+    pulse->enable(true);
     connect(pulse, SIGNAL(objectDescriptionChanged(ObjectDescriptionType)), SIGNAL(objectDescriptionChanged(ObjectDescriptionType)));
 
     // In order to support reloading, we only set the app name once...

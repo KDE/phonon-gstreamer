@@ -166,12 +166,12 @@ DeviceManager::DeviceManager(Backend *backend)
     QSettings settings(QLatin1String("Trolltech"));
     settings.beginGroup(QLatin1String("Qt"));
 
-    PulseSupport *pulse = PulseSupport::getInstance();
-
     m_videoSinkWidget = qgetenv("PHONON_GST_VIDEOMODE");
     if (m_videoSinkWidget.isEmpty()) {
         m_videoSinkWidget = settings.value(QLatin1String("videomode"), "Auto").toByteArray().toLower();
     }
+
+    findAudioSink();
 
     if (m_backend->isValid())
         updateDeviceList();
@@ -181,24 +181,54 @@ DeviceManager::~DeviceManager()
 {
 }
 
-bool DeviceManager::canOpenDevice(GstElement *element) const
+static int compare_sinks(GstPluginFeature *f1, GstPluginFeature *f2)
 {
-    if (!element)
-        return false;
+    int diff = gst_plugin_feature_get_rank(f2) - gst_plugin_feature_get_rank(f1);
+    if (diff != 0)
+        return diff;
+    return strcmp(gst_plugin_feature_get_name(f2), gst_plugin_feature_get_name(f1));
+}
 
-    if (gst_element_set_state(element, GST_STATE_READY) == GST_STATE_CHANGE_SUCCESS)
-        return true;
-
-    const QList<QByteArray> &list = GstHelper::extractProperties(element, "device");
-    foreach (const QByteArray &gstId, list) {
-        GstHelper::setProperty(element, "device", gstId);
-        if (gst_element_set_state(element, GST_STATE_READY) == GST_STATE_CHANGE_SUCCESS) {
-            return true;
+void DeviceManager::findAudioSink()
+{
+    QByteArray audioSink = qgetenv("PHONON_GST_AUDIOSINK");
+    if (audioSink.isEmpty()) {
+        if (PulseSupport::getInstance()->isActive()) {
+            m_audioFactory = gst_element_factory_find("pulsesink");
+        } else {
+            GList *factoryList;
+            GList *item;
+            // Find any elements that have an autoplug rank of non-zero.
+            factoryList = gst_element_factory_list_get_elements(GST_ELEMENT_FACTORY_TYPE_SINK | GST_ELEMENT_FACTORY_TYPE_MEDIA_AUDIO, (GstRank)1);
+            factoryList = g_list_sort(factoryList, (GCompareFunc) compare_sinks);
+            for(item = factoryList; item != NULL; item = item->next) {
+                GstElementFactory *factory = GST_ELEMENT_FACTORY(item->data);
+                GstElement *el;
+                if ((el = gst_element_factory_create(factory, NULL))) {
+                    GstStateChangeReturn ret;
+                    // Test if the sink will even start
+                    ret = gst_element_set_state(el, GST_STATE_READY);
+                    gst_element_set_state(el, GST_STATE_NULL);
+                    gst_object_unref(el);
+                    if (ret == GST_STATE_CHANGE_SUCCESS) {
+                        m_audioFactory = factory;
+                        break;
+                    }
+                }
+            }
+            if (!m_audioFactory) {
+                m_audioFactory = gst_element_factory_find("fakesink");
+                debug() << "Your audio is fscked. Falling back to fakesink.";
+            }
+            gst_plugin_feature_list_free(factoryList);
+        }
+    } else {
+        m_audioFactory = gst_element_factory_find(audioSink.constData());
+        if (!m_audioFactory) {
+            m_audioFactory = gst_element_factory_find("fakesink");
+            debug() << "PHONON_GST_AUDIOSINK =" << audioSink << ", which does not exist. Falling back to fakesink.";
         }
     }
-
-    gst_element_set_state(element, GST_STATE_NULL);
-    return false;
 }
 
 /*
@@ -208,23 +238,11 @@ bool DeviceManager::canOpenDevice(GstElement *element) const
 * If pulse is active, we use pulse. Otherwise, we find something else suitable.
 *
 */
-GstElement *DeviceManager::createAudioSink(Category category)
+//FIXME: This really should just go away, leaving the audioutput in charge of handling all this.
+GstElement *DeviceManager::createAudioSink()
 {
-    GstElement *sink = 0;
-
-    if (m_backend && m_backend->isValid())
-    {
-      if (PulseSupport::getInstance()->isActive()) {
-        sink = gst_element_factory_make("pulsesink", NULL);
-        qDebug() << "Congrats! You're using pulseaudio!";
-      } else {
-        // FIXME: Implement audio sink discovery through registry searching
-        sink = gst_element_factory_make("alsasink", NULL);
-        qDebug() << "Well, you're stuck with ALSA.";
-      }
-    }
-    Q_ASSERT(sink);
-    return sink;
+    Q_ASSERT(m_audioFactory);
+    return gst_element_factory_create(m_audioFactory, NULL);
 }
 
 #ifndef QT_NO_PHONON_VIDEO
@@ -334,30 +352,21 @@ void DeviceManager::updateDeviceList()
     /*
      * Audio output
      */
-    GstElement *audioSink = createAudioSink();
-    if (audioSink) {
-        if (!PulseSupport::getInstance()->isActive()) {
-            // If we're using pulse, the PulseSupport class takes care of things for us.
-            names = GstHelper::extractProperties(audioSink, "device");
-            names.prepend("default");
-        }
+    if (!PulseSupport::getInstance()->isActive()) {
+        // If we're using pulse, the PulseSupport class takes care of things for us.
+        GstElement *audioSink = createAudioSink();
+        names = GstHelper::extractProperties(audioSink, "device");
+        names.prepend("default");
+        gst_object_unref(audioSink);
 
-        /* Determine what factory was used to create the sink, to know what to put in the
-         * device access list */
-        GstElementFactory *factory = gst_element_get_factory(audioSink);
-        const gchar *factoryName = gst_plugin_feature_get_name(GST_PLUGIN_FEATURE(factory));
-        QByteArray driver; // means sound system
+        const gchar *factoryName = gst_plugin_feature_get_name(GST_PLUGIN_FEATURE(m_audioFactory));
 
         for (int i = 0; i < names.size(); ++i) {
             DeviceInfo deviceInfo(this, names[i], DeviceInfo::AudioOutput);
-            deviceInfo.addAccess(DeviceAccess("pulse", names[i]));
+            deviceInfo.addAccess(DeviceAccess(factoryName, names[i]));
             newDeviceList.append(deviceInfo);
         }
-
-        gst_element_set_state(audioSink, GST_STATE_NULL);
-        gst_object_unref(audioSink);
     }
-
     /*
      * Video capture
      */

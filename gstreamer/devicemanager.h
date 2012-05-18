@@ -91,7 +91,7 @@ class DeviceManager : public QObject {
 public:
     DeviceManager(Backend *parent);
     virtual ~DeviceManager();
-    GstElement *createAudioSink(Category category = NoCategory);
+    GstElement *createAudioSink();
     AbstractRenderer *createVideoRenderer(VideoWidget *parent);
     QList<int> deviceIds(ObjectDescriptionType type);
     QHash<QByteArray, QVariant> deviceProperties(int id);
@@ -106,13 +106,14 @@ public slots:
 
 private:
     static bool listContainsDevice(const QList<DeviceInfo> &list, int id);
-    bool canOpenDevice(GstElement *element) const;
 
 private:
+    void findAudioSink();
     Backend *m_backend;
     QList<DeviceInfo> m_devices;
     QTimer m_devicePollTimer;
     QByteArray m_videoSinkWidget;
+    GstElementFactory *m_audioFactory;
 };
 }
 } // namespace Phonon::Gstreamer

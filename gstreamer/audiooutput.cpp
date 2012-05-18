@@ -55,12 +55,7 @@ AudioOutput::AudioOutput(Backend *backend, QObject *parent)
 
         m_conv = gst_element_factory_make ("audioconvert", NULL);
 
-        // Get category from parent
-        Phonon::Category category = Phonon::NoCategory;
-        if (Phonon::AudioOutput *audioOutput = qobject_cast<Phonon::AudioOutput *>(parent))
-            category = audioOutput->category();
-
-        m_audioSink = m_backend->deviceManager()->createAudioSink(category);
+        m_audioSink = m_backend->deviceManager()->createAudioSink();
         m_volumeElement = gst_element_factory_make ("volume", NULL);
         GstElement *queue = gst_element_factory_make ("queue", NULL);
         GstElement *audioresample = gst_element_factory_make ("audioresample", NULL);
@@ -181,6 +176,7 @@ bool AudioOutput::setOutputDevice(const AudioOutputDevice &newDevice)
 
 bool AudioOutput::setOutputDevice(const QByteArray &driver, const QString &deviceId, const GstState oldState)
 {
+    //FIXME: Add support for handling other drivers
     const QByteArray sinkName = GstHelper::property(m_audioSink, "name");
 
     // We test if the device can be opened by checking if it can go from NULL to READY state
