@@ -105,6 +105,7 @@ inline void AudioDataOutput::convertAndEmit()
 
     for (int i = 0 ; i < m_channels ; ++i) {
         map.insert(static_cast<Phonon::AudioDataOutput::Channel>(i), m_channelBuffers[i]);
+        Q_ASSERT(i == 0 || m_channelBuffers[i - 1].size() == m_channelBuffers[i].size());
     }
 
     emit dataReady(map);
