@@ -147,9 +147,10 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad*, gpo
 
     if (nBlockToSend == 0) { // add data to pending buffer
         for (quint32 i = 0; i < gstBufferSize ; ++i) {
+#warning should be QBA, so we can work with append(buffer, size)
             that->m_pendingData.append(gstBufferData[i]);
-            return;
         }
+        return;
     }
 
     // SENDING DATA
@@ -157,8 +158,7 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad*, gpo
     // 1) I empty the stored data
     if (that->m_pendingData.size() != 0) {
         for (int i = 0; i < that->m_pendingData.size(); i += that->m_channels) {
-            //TODO: Figure out why it crashes without the second test (bug #279791)
-            for (int j = 0; (j < that->m_channels) && (i+j < that->m_pendingData.size()); ++j) {
+            for (int j = 0; j < that->m_channels; ++j) {
                 that->m_channelBuffers[j].append(that->m_pendingData[i+j]);
             }
         }
