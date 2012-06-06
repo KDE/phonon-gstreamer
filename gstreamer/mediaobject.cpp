@@ -378,7 +378,7 @@ void MediaObject::setSource(const MediaSource &source)
         return;
     }
 
-    qDebug() << "Setting new source";
+    debug() << "Setting new source";
     m_source = source;
     autoDetectSubtitle();
     m_pipeline->setSource(source);
@@ -443,7 +443,7 @@ void MediaObject::seek(qint64 time)
     DEBUG_BLOCK;
 
     if (m_waitingForNextSource) {
-        qDebug() << "Seeking back within old source";
+        debug() << "Seeking back within old source";
         m_waitingForNextSource = false;
         m_waitingForPreviousSource = true;
         m_pipeline->setSource(m_source, true);
@@ -528,7 +528,7 @@ void MediaObject::handleStateChange(GstState oldState, GstState newState)
     Phonon::State prevPhononState = m_state;
     prevPhononState = translateState(oldState);
     m_state = translateState(newState);
-    qDebug() << "Moving from" << GstHelper::stateName(oldState) << prevPhononState << "to" << GstHelper::stateName(newState) << m_state;
+    debug() << "Moving from" << GstHelper::stateName(oldState) << prevPhononState << "to" << GstHelper::stateName(newState) << m_state;
     if (GST_STATE_TRANSITION(oldState, newState) == GST_STATE_CHANGE_NULL_TO_READY)
         loadingComplete();
     if (GST_STATE_TRANSITION(oldState, newState) == GST_STATE_CHANGE_READY_TO_PAUSED && m_pendingTitle != 0) {
@@ -818,14 +818,14 @@ void MediaObject::requestState(Phonon::State state)
 
 void MediaObject::handleAboutToFinish()
 {
-    qDebug() << "About to finish";
+    debug() << "About to finish";
     m_aboutToFinishLock.lock();
     emit aboutToFinish();
     // Three seconds should be more than enough for any application to get their act together.
     // Any longer than that and they have bigger issues.  If Phonon does no supply a next source
     // within 3 seconds, treat as if there is no next source to come, and finish the current source.
     if (m_aboutToFinishWait.wait(&m_aboutToFinishLock, 3000))
-        qDebug() << "Finally got a source";
+        debug() << "Finally got a source";
     else
         m_skippingEOS = false;
     m_aboutToFinishLock.unlock();

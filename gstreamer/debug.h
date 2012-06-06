@@ -107,10 +107,10 @@ using Debug::error;
 using Debug::fatal;
 
 /// Standard function announcer
-#define DEBUG_FUNC_INFO { Debug::mutex.lock(); qDebug() << Debug::indent() ; Debug::mutex.unlock(); }
+#define DEBUG_FUNC_INFO { Debug::mutex.lock(); debug() << Debug::indent() ; Debug::mutex.unlock(); }
 
 /// Announce a line
-#define DEBUG_LINE_INFO { Debug::mutex.lock(); qDebug() << Debug::indent() << "Line: " << __LINE__; Debug::mutex.unlock(); }
+#define DEBUG_LINE_INFO { Debug::mutex.lock(); debug() << Debug::indent() << "Line: " << __LINE__; Debug::mutex.unlock(); }
 
 /// Convenience macro for making a standard Debug::Block
 #define DEBUG_BLOCK Debug::Block uniquelyNamedStackAllocatedStandardBlock( __PRETTY_FUNCTION__ );

@@ -16,6 +16,7 @@
 */
 
 #include "backend.h"
+#include "debug.h"
 #include "audiooutput.h"
 #include "audiodataoutput.h"
 #ifdef PHONON_EXPERIMENTAL
@@ -100,6 +101,7 @@ Backend::Backend(QObject *parent, const QVariantList &)
     if (debugLevel > 3) //3 is maximum
         debugLevel = 3;
     m_debugLevel = (DebugLevel)debugLevel;
+    Debug::setMinimumDebugLevel((Debug::DebugLevel)((int) Debug::DEBUG_NONE - 1 - debugLevel));
 
     if (wasInit) {
         m_isValid = checkDependencies();
@@ -200,7 +202,7 @@ bool Backend::checkDependencies(bool retry) const
             }
             QString message = tr("Warning: You do not seem to have the package gstreamer0.10-plugins-good installed.\n"
                                  "          Some video features have been disabled.");
-            qDebug() << message;
+            debug() << message;
         }
     } else {
         if (!retry) {
@@ -503,8 +505,8 @@ void Backend::logMessage(const QString &message, int priority, QObject *obj) con
         }
         if (priority <= (int)debugLevel() && lastLogMessage != output) {
             if (logMessageSkipCount != 0) 
-                qDebug() << "  PGST: Last message repeated" << logMessageSkipCount << "time(s)";
-            qDebug() << QString("PGST(%1): %2").arg(priority).arg(output);
+                debug() << "  PGST: Last message repeated" << logMessageSkipCount << "time(s)";
+            debug() << QString("PGST(%1): %2").arg(priority).arg(output);
             lastLogMessage = output;
             logMessageSkipCount = 0;
         } else
