@@ -755,10 +755,12 @@ bool Pipeline::isSeekable() const
         gboolean seekable;
         GstFormat format;
         gst_query_parse_seeking(query, &format, &seekable, &start, &stop);
+        gst_query_unref (query);
         return seekable;
     } else {
         //TODO: Log failure
     }
+    gst_query_unref (query);
     return false;
 }
 
