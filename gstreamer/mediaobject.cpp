@@ -412,6 +412,7 @@ void MediaObject::getSubtitleInfo(int stream)
                 name = QLatin1String(tagLangCode); // Language code is ISO -> always Latin1
             else
                 name = tr("Unknown");
+            g_free(tagLangCode);
             GlobalSubtitles::instance()->add(this, i, name);
         }
     }
