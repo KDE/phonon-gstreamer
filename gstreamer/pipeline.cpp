@@ -747,6 +747,7 @@ bool Pipeline::seekToMSec(qint64 time)
 
 bool Pipeline::isSeekable() const
 {
+    gboolean seekable = 0;
     GstQuery *query;
     gboolean result;
     gint64 start, stop;
@@ -756,13 +757,11 @@ bool Pipeline::isSeekable() const
         gboolean seekable;
         GstFormat format;
         gst_query_parse_seeking(query, &format, &seekable, &start, &stop);
-        gst_query_unref (query);
-        return seekable;
     } else {
         //TODO: Log failure
     }
     gst_query_unref (query);
-    return false;
+    return seekable;
 }
 
 Phonon::State Pipeline::phononState() const
