@@ -67,6 +67,7 @@ Pipeline::Pipeline(QObject *parent)
     g_signal_connect(bus, "sync-message::element", G_CALLBACK(cb_element), this);
     g_signal_connect(bus, "sync-message::error", G_CALLBACK(cb_error), this);
     g_signal_connect(bus, "sync-message::tag", G_CALLBACK(cb_tag), this);
+    gst_object_unref(bus);
 
     // Set up audio graph
     m_audioGraph = gst_bin_new("audioGraph");
