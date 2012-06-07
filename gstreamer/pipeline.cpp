@@ -754,7 +754,6 @@ bool Pipeline::isSeekable() const
     query = gst_query_new_seeking(GST_FORMAT_TIME);
     result = gst_element_query (GST_ELEMENT(m_pipeline), query);
     if (result) {
-        gboolean seekable;
         GstFormat format;
         gst_query_parse_seeking(query, &format, &seekable, &start, &stop);
     } else {
