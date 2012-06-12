@@ -62,6 +62,7 @@ qint64 StreamReader::streamSize() const
     return m_size;
 }
 
+#warning convert to streamtype query
 bool StreamReader::streamSeekable() const
 {
     return m_seekable;

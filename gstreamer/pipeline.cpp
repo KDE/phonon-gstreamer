@@ -798,6 +798,7 @@ static void cb_feedAppSrc(GstAppSrc *appSrc, guint buffsize, gpointer data)
     DEBUG_BLOCK;
     StreamReader *reader = static_cast<StreamReader*>(data);
     GstBuffer *buf = gst_buffer_new_and_alloc(buffsize);
+#warning ret not used!!! WHOOPWHOOPWHOOP
     reader->read(reader->currentPos(), buffsize, (char*)GST_BUFFER_DATA(buf));
     gst_app_src_push_buffer(appSrc, buf);
 }
