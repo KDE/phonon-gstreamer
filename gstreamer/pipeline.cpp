@@ -29,6 +29,7 @@
 #include <gst/app/gstappsrc.h>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QMutexLocker>
+#include "debug.h"
 #define MAX_QUEUE_TIME 20 * GST_SECOND
 
 QT_BEGIN_NAMESPACE
@@ -224,6 +225,7 @@ GstElement *Pipeline::element() const
 
 GstStateChangeReturn Pipeline::setState(GstState state)
 {
+    DEBUG_BLOCK;
     m_resumeAfterInstall = true;
     debug() << "Transitioning to state" << GstHelper::stateName(state);
 

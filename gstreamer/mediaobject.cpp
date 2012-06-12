@@ -800,6 +800,7 @@ void MediaObject::setMetaData(QMultiMap<QString, QString> newData)
 
 void MediaObject::requestState(Phonon::State state)
 {
+    DEBUG_BLOCK;
     switch (state) {
         case Phonon::PlayingState:
             m_pipeline->setState(GST_STATE_PLAYING);
@@ -822,6 +823,7 @@ void MediaObject::requestState(Phonon::State state)
 
 void MediaObject::handleAboutToFinish()
 {
+    DEBUG_BLOCK;
     debug() << "About to finish";
     m_aboutToFinishLock.lock();
     emit aboutToFinish();
