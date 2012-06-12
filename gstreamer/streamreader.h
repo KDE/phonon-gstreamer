@@ -56,7 +56,6 @@ public:
     void endOfData();
     void start();
     void stop();
-    void unlock();
 
     void setCurrentPos(qint64 pos);
     quint64 currentPos() const;

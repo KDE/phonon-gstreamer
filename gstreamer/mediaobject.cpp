@@ -254,6 +254,8 @@ Phonon::ErrorType MediaObject::errorType() const
 
 void MediaObject::setError(const QString &errorString, Phonon::ErrorType error)
 {
+    DEBUG_BLOCK;
+    debug() << errorString;
     m_errorString = errorString;
     m_error = error;
     // Perform this asynchronously because this is also called from within the pipeline's cb_error
@@ -390,6 +392,7 @@ void MediaObject::setSource(const MediaSource &source)
 // Called when we are ready to leave the loading state
 void MediaObject::loadingComplete()
 {
+    DEBUG_BLOCK;
     link();
 }
 
@@ -430,6 +433,7 @@ void MediaObject::setPrefinishMark(qint32 newPrefinishMark)
 
 void MediaObject::pause()
 {
+    DEBUG_BLOCK;
     requestState(Phonon::PausedState);
 }
 
@@ -805,6 +809,7 @@ void MediaObject::requestState(Phonon::State state)
     m_skipGapless = true;
     m_aboutToFinishWait.wakeAll();
     m_aboutToFinishLock.unlock();
+    debug() << state;
     switch (state) {
         case Phonon::PlayingState:
             m_pipeline->setState(GST_STATE_PLAYING);

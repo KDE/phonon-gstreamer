@@ -35,6 +35,7 @@ namespace Gstreamer
 
 class MediaObject;
 class PluginInstaller;
+class StreamReader;
 
 class Pipeline : public QObject
 {
@@ -130,6 +131,7 @@ class Pipeline : public QObject
         QList<MediaController::NavigationMenu> m_menus;
         Phonon::MediaSource m_currentSource;
         PluginInstaller *m_installer;
+        StreamReader *m_reader;
         GstElement *m_audioGraph;
         GstElement *m_videoGraph;
         GstElement *m_audioPipe;
