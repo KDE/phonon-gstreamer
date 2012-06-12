@@ -281,6 +281,7 @@ private:
     QWaitCondition m_aboutToFinishWait;
 
     qint64 m_lastTime;
+    bool m_skipGapless;
 };
 }
 } //namespace Phonon::Gstreamer

@@ -801,6 +801,10 @@ void MediaObject::setMetaData(QMultiMap<QString, QString> newData)
 void MediaObject::requestState(Phonon::State state)
 {
     DEBUG_BLOCK;
+    m_aboutToFinishLock.tryLock();
+    m_skipGapless = true;
+    m_aboutToFinishWait.wakeAll();
+    m_aboutToFinishLock.unlock();
     switch (state) {
         case Phonon::PlayingState:
             m_pipeline->setState(GST_STATE_PLAYING);
@@ -830,10 +834,15 @@ void MediaObject::handleAboutToFinish()
     // Three seconds should be more than enough for any application to get their act together.
     // Any longer than that and they have bigger issues.  If Phonon does no supply a next source
     // within 3 seconds, treat as if there is no next source to come, and finish the current source.
-    if (m_aboutToFinishWait.wait(&m_aboutToFinishLock, 3000))
-        debug() << "Finally got a source";
-    else
-        m_skippingEOS = false;
+    if (!m_skipGapless) {
+      if (m_aboutToFinishWait.wait(&m_aboutToFinishLock, 3000)) {
+          debug() << "Finally got a source";
+      } else {
+          m_skippingEOS = false;
+      }
+    } else {
+      debug() << "Skipping gapless audio";
+    }
     m_aboutToFinishLock.unlock();
 }
 
