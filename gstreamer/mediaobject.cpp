@@ -77,6 +77,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_waitingForNextSource(false)
         , m_waitingForPreviousSource(false)
         , m_skippingEOS(false)
+        , m_doingEOS(false)
 {
     qRegisterMetaType<GstCaps*>("GstCaps*");
     qRegisterMetaType<State>("State");
@@ -568,19 +569,28 @@ void MediaObject::handleStateChange(GstState oldState, GstState newState)
         }
     }
 
+    // Avoid signal emission while processing EOS to avoid bogus UI updates.
+    if (!m_doingEOS)
         emit stateChanged(m_state, prevPhononState);
 }
 
 void MediaObject::handleEndOfStream()
 {
+    DEBUG_BLOCK;
     if (!m_skippingEOS) {
-        emit finished();
-        m_aboutToFinishWait.wakeAll();
-        m_pipeline->setState(GST_STATE_READY);
+        debug() << "not skipping EOS";
+        m_doingEOS = true;
+        { // When working on EOS we do not want signals emitted to avoid bogus UI updates.
+            emit stateChanged(Phonon::StoppedState, m_state);
+            m_aboutToFinishWait.wakeAll();m_aboutToFinishLock.unlock();
+            m_pipeline->setState(GST_STATE_READY);
+            emit finished();
+        }
+        m_doingEOS = false;
     } else {
+        debug() << "skipping EOS";
         GstState state = m_pipeline->state();
         m_pipeline->setState(GST_STATE_READY);
-        m_pipeline->state();
         m_pipeline->setState(state);
         m_skippingEOS = false;
     }
