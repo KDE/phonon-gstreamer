@@ -60,11 +60,11 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_state(Phonon::StoppedState)
         , m_pendingState(Phonon::LoadingState)
         , m_tickTimer(new QTimer(this))
+        , m_nextSource()
         , m_prefinishMark(0)
         , m_transitionTime(0)
         , m_isStream(false)
         , m_prefinishMarkReachedNotEmitted(true)
-        , m_aboutToFinishEmitted(false)
         , m_loading(false)
         , m_totalTime(-1)
         , m_error(Phonon::NoError)
@@ -336,9 +336,15 @@ void MediaObject::autoDetectSubtitle()
 void MediaObject::setNextSource(const MediaSource &source)
 {
     DEBUG_BLOCK;
-    debug() << "Got next source. Waiting for end of current.";
 
     m_aboutToFinishLock.lock();
+    if (m_skipGapless) {
+        m_nextSource = source;
+        debug() << "skipping gapless audio, making a pending source change";
+        return;
+    }
+
+    debug() << "Got next source. Waiting for end of current.";
 
     // If next source is valid and is not empty (an empty source is sent by Phonon if
     // there are no more sources) skip EOS for the current source in order to seamlessly
@@ -440,6 +446,7 @@ void MediaObject::pause()
 void MediaObject::stop()
 {
     DEBUG_BLOCK;
+    m_nextSource = MediaSource(); // make sure we don't have anything queued up.
     requestState(Phonon::StoppedState);
 }
 
@@ -550,7 +557,18 @@ void MediaObject::handleStateChange(GstState oldState, GstState newState)
     if (newState == GST_STATE_READY)
         emit tick(0);
 
-    emit stateChanged(m_state, prevPhononState);
+    // Process pending source change due to delayed setNextSource call.
+    if (m_state == Phonon::StoppedState || m_state == Phonon::ErrorState) {
+        if (m_nextSource.type() != Phonon::MediaSource::Invalid &&
+                m_nextSource.type() != Phonon::MediaSource::Empty) {
+            debug() << "applying pending next source";
+            setSource(m_nextSource);
+            m_nextSource = MediaSource();
+            return; // Don't tell our overlords about this hickup...
+        }
+    }
+
+        emit stateChanged(m_state, prevPhononState);
 }
 
 void MediaObject::handleEndOfStream()
@@ -833,22 +851,24 @@ void MediaObject::requestState(Phonon::State state)
 void MediaObject::handleAboutToFinish()
 {
     DEBUG_BLOCK;
-    debug() << "About to finish";
-    m_aboutToFinishLock.lock();
+    QMutexLocker lock(&m_aboutToFinishLock);
     emit aboutToFinish();
     // Three seconds should be more than enough for any application to get their act together.
     // Any longer than that and they have bigger issues.  If Phonon does no supply a next source
     // within 3 seconds, treat as if there is no next source to come, and finish the current source.
-    if (!m_skipGapless) {
-      if (m_aboutToFinishWait.wait(&m_aboutToFinishLock, 3000)) {
-          debug() << "Finally got a source";
-      } else {
-          m_skippingEOS = false;
-      }
+    m_skipGapless = false;
+    if (m_aboutToFinishWait.wait(&m_aboutToFinishLock, 3000)) {
+        debug() << "Finally got a source";
+        return;
     } else {
-      debug() << "Skipping gapless audio";
+        debug() << "aboutToFinish time out - cannot set gapless!";
     }
-    m_aboutToFinishLock.unlock();
+    debug() << "Skipping gapless audio";
+    m_skipGapless = true;
+    m_skippingEOS = false;
+    // Once we return any following setNextSource can not be gapless as Gstreamer
+    // will ignore URI changes at this point. The pipeline needs to stop and
+    // only then will we be able to set the new source.
 }
 
 } // ns Gstreamer

@@ -240,7 +240,6 @@ private:
     qint64 m_posAtSeek;
 
     bool m_prefinishMarkReachedNotEmitted;
-    bool m_aboutToFinishEmitted;
     bool m_loading;
 
     qint64 m_totalTime;
