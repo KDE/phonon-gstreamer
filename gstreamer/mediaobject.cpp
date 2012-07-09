@@ -77,6 +77,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_waitingForNextSource(false)
         , m_waitingForPreviousSource(false)
         , m_skippingEOS(false)
+        , m_skipGapless(false)
 {
     qRegisterMetaType<GstCaps*>("GstCaps*");
     qRegisterMetaType<State>("State");
@@ -848,6 +849,7 @@ void MediaObject::handleAboutToFinish()
     } else {
       debug() << "Skipping gapless audio";
     }
+    m_skipGapless = false;
     m_aboutToFinishLock.unlock();
 }
 
