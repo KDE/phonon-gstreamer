@@ -15,9 +15,10 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "gsthelper.h"
+
 #include <gst/interfaces/propertyprobe.h>
 #include <gst/gst.h>
-#include "gsthelper.h"
 #include "mediaobject.h"
 #include "backend.h"
 

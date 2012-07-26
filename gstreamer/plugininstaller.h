@@ -23,8 +23,7 @@
 #include <gst/gstcaps.h>
 #include <gst/gstmessage.h>
 #include <gst/pbutils/install-plugins.h>
-#include "phonon-config-gstreamer.h"
-
+#include "phonon-config-gstreamer.h" // krazy:exclude=includes
 
 QT_BEGIN_NAMESPACE
 

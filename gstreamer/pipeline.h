@@ -120,7 +120,7 @@ class Pipeline : public QObject
         GstPipeline *m_pipeline;
         int m_bufferPercent;
 
-        // Keeps track of wether or not we jump to GST_STATE_PLAYING after plugin installtion is finished.
+        // Keeps track of whether or not we jump to GST_STATE_PLAYING after plugin installtion is finished.
         // Otherwise, it is possible to jump to another track, play a few seconds, pause, then finish installation
         // and spontaniously start playback without user action.
         bool m_resumeAfterInstall;

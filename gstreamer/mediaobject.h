@@ -33,7 +33,7 @@
 #include <QtCore/QWaitCondition>
 #include <QtCore/QMutex>
 
-#include "phonon-config-gstreamer.h"
+#include "phonon-config-gstreamer.h" // krazy:exclude=includes
 
 QT_BEGIN_NAMESPACE
 
@@ -255,7 +255,7 @@ private:
     SubtitleDescription m_currentSubtitle;
     int m_pendingTitle;
 
-    // When we emit aboutToFinish(), libphonon calls setNextSource. To achive gapless playback,
+    // When we emit aboutToFinish(), libphonon calls setNextSource. To achieve gapless playback,
     // the pipeline is immediately told to start using that new source. This can break seeking
     // since the aboutToFinish signal tends to be emitted around 15 seconds or so prior to actually
     // ending the current track.

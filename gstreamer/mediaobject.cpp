@@ -17,13 +17,13 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "mediaobject.h"
+
 #include <cmath>
 #include <gst/interfaces/navigation.h>
 #include <gst/interfaces/propertyprobe.h>
-#include "mediaobject.h"
 #include "backend.h"
 #include "streamreader.h"
-#include "phonon-config-gstreamer.h"
 #include "debug.h"
 #include "gsthelper.h"
 #include "pipeline.h"
@@ -304,7 +304,7 @@ void MediaObject::changeSubUri(const Mrl &mrl)
 
     if (customFont.isNull()) {
         QFont videoWidgetFont = QApplication::font("VideoWidget");
-        fontDesc = videoWidgetFont.family() + " " + QString::number(videoWidgetFont.pointSize());
+        fontDesc = videoWidgetFont.family() + ' ' + QString::number(videoWidgetFont.pointSize());
     }
     //FIXME: Try to detect common encodings, like libvlc does
     g_object_set(G_OBJECT(m_pipeline->element()), "suburi", mrl.toEncoded().constData(),
@@ -324,10 +324,10 @@ void MediaObject::autoDetectSubtitle()
 
         // Remove the file extension
         QString absCompleteBaseName = m_source.fileName();
-        absCompleteBaseName.replace(QFileInfo(absCompleteBaseName).suffix(), "");
+        absCompleteBaseName.replace(QFileInfo(absCompleteBaseName).suffix(), QChar());
 
         // Looking for a subtitle in the same directory and matching the same name
-        foreach(QLatin1String ext, exts) {
+        foreach(const QLatin1String &ext, exts) {
             if (QFile::exists(absCompleteBaseName + ext)) {
                 changeSubUri(Mrl("file://" + absCompleteBaseName + ext));
                 break;
@@ -744,8 +744,8 @@ void MediaObject::_iface_setCurrentSubtitle(const SubtitleDescription &subtitle)
     if (subtitle.property("type").toString() == "file") {
         QString filename = subtitle.name();
 
-        if (!filename.startsWith("file://"))
-            filename.prepend("file://");
+        if (!filename.startsWith(QLatin1String("file://")))
+            filename.prepend(QLatin1String("file://"));
         // It's not possible to change the suburi when the pipeline is PLAYING mainly
         // because the pipeline has not been built with the subtitle element. A workaround
         // consists to restart the pipeline and set the suburi property (totem does exactly the same thing)

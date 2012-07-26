@@ -37,7 +37,7 @@ namespace Gstreamer
         Q_INTERFACES(Phonon::VolumeFaderInterface)
 
         public:
-            VolumeFaderEffect(Backend *backend, QObject *parent = 0);
+            explicit VolumeFaderEffect(Backend *backend, QObject *parent = 0);
             ~VolumeFaderEffect();
 
             GstElement* createEffectBin();

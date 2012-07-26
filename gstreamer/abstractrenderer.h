@@ -18,19 +18,18 @@
 #ifndef Phonon_GSTREAMER_ABSTRACTRENDERER_H
 #define Phonon_GSTREAMER_ABSTRACTRENDERER_H
 
-#include <phonon/videowidget.h>
-
 #include <gst/gstelement.h>
 
-#ifndef QT_NO_PHONON_VIDEO
-QT_BEGIN_NAMESPACE
+#include <phonon/videowidget.h>
 
 class QString;
+
 namespace Phonon
 {
 namespace Gstreamer
 {
 
+class VideoWidget;
 
 class AbstractRenderer
 {
@@ -55,6 +54,4 @@ protected:
 }
 } //namespace Phonon::Gstreamer
 
-QT_END_NAMESPACE
-#endif //QT_NO_PHONON_VIDEO
 #endif // Phonon_GSTREAMER_ABSTRACTRENDERER_H

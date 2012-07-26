@@ -15,14 +15,16 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef Phonon_GSTREAMER_VIDEOSINK_H
-#define Phonon_GSTREAMER_VIDEOSINK_H
+#ifndef PHONON_GSTREAMER_QWIDGETVIDEOSINK_H
+#define PHONON_GSTREAMER_QWIDGETVIDEOSINK_H
 
 #include <QtCore/QEvent>
 
 #include <gst/video/gstvideosink.h>
 
 QT_BEGIN_NAMESPACE
+
+class QWidget;
 
 class NewFrameEvent : public QEvent
 {
@@ -91,4 +93,4 @@ GType get_type_RGB();
 
 QT_END_NAMESPACE
 
-#endif // Phonon_GSTREAMER_VIDEOSINK_H
+#endif // PHONON_GSTREAMER_QWIDGETVIDEOSINK_H

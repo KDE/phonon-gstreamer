@@ -66,7 +66,7 @@ void Effect::setupEffectParams()
         GParamSpec **property_specs;
         guint propertyCount, i;
         property_specs = g_object_class_list_properties(G_OBJECT_GET_CLASS (m_effectElement), &propertyCount);
-        for (i = 0; i < propertyCount; i++) {
+        for (i = 0; i < propertyCount; ++i) {
             GParamSpec *param = property_specs[i];
             if (param->flags & G_PARAM_WRITABLE) {
                 QString propertyName = g_param_spec_get_name (param);

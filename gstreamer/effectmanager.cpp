@@ -15,8 +15,9 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <gst/interfaces/propertyprobe.h>
 #include "effectmanager.h"
+
+#include <gst/interfaces/propertyprobe.h>
 #include "backend.h"
 #include "gsthelper.h"
 

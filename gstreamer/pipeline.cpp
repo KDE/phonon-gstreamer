@@ -18,6 +18,7 @@
 */
 
 #include "pipeline.h"
+
 #include "mediaobject.h"
 #include "backend.h"
 #include "debug.h"
@@ -29,7 +30,7 @@
 #include <gst/app/gstappsrc.h>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QMutexLocker>
-#include "debug.h"
+
 #define MAX_QUEUE_TIME 20 * GST_SECOND
 
 QT_BEGIN_NAMESPACE
@@ -118,7 +119,7 @@ Pipeline::Pipeline(QObject *parent)
         g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0, NULL);
     }
 
-    connect(m_installer, SIGNAL(failure(const QString&)), this, SLOT(pluginInstallFailure(const QString&)));
+    connect(m_installer, SIGNAL(failure(QString)), this, SLOT(pluginInstallFailure(QString)));
     connect(m_installer, SIGNAL(started()), this, SLOT(pluginInstallStarted()));
     connect(m_installer, SIGNAL(success()), this, SLOT(pluginInstallComplete()));
 }
@@ -837,7 +838,7 @@ void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer d
         that->m_reader->start();
     } else {
         if (that->currentSource().type() == MediaSource::Url &&
-                that->currentSource().mrl().scheme().startsWith("http")) {
+                that->currentSource().mrl().scheme().startsWith(QLatin1String("http"))) {
             QString userAgent = QCoreApplication::applicationName() + '/' + QCoreApplication::applicationVersion();
             userAgent += QString(" (Phonon/%0; Phonon-GStreamer/%1)").arg(PHONON_VERSION_STR).arg(PHONON_GST_VERSION);
             g_object_set(phononSrc, "user-agent", userAgent.toUtf8().constData(), NULL);
@@ -877,7 +878,7 @@ QByteArray Pipeline::captureDeviceURI(const MediaSource &source) const
     if (source.videoCaptureDevice().isValid()) {
         DeviceAccessList devList = source.videoCaptureDevice().property("deviceAccessList").value<Phonon::DeviceAccessList>();
         QString devPath;
-        foreach (DeviceAccess dev, devList) {
+        foreach (const DeviceAccess &dev, devList) {
             if (dev.first == "v4l2") {
                 return QString("v4l2://%0").arg(dev.second).toUtf8();
             }
