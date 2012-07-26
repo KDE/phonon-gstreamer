@@ -339,23 +339,26 @@ void MediaObject::autoDetectSubtitle()
 void MediaObject::setNextSource(const MediaSource &source)
 {
     DEBUG_BLOCK;
-    debug() << "Got next source. Waiting for end of current.";
 
     m_aboutToFinishLock.lock();
+    if (m_handlingAboutToFinish) {
+        debug() << "Got next source. Waiting for end of current.";
 
-    // If next source is valid and is not empty (an empty source is sent by Phonon if
-    // there are no more sources) skip EOS for the current source in order to seamlessly
-    // pass to the next source.
-    if (source.type() == Phonon::MediaSource::Invalid ||
-        source.type() == Phonon::MediaSource::Empty)
-        m_skippingEOS = false;
-    else
-        m_skippingEOS = true;
+        // If next source is valid and is not empty (an empty source is sent by Phonon if
+        // there are no more sources) skip EOS for the current source in order to seamlessly
+        // pass to the next source.
+        if (source.type() == Phonon::MediaSource::Invalid ||
+            source.type() == Phonon::MediaSource::Empty)
+            m_skippingEOS = false;
+        else
+            m_skippingEOS = true;
 
-    m_waitingForNextSource = true;
-    m_waitingForPreviousSource = false;
-    m_pipeline->setSource(source);
-    m_aboutToFinishWait.wakeAll();
+        m_waitingForNextSource = true;
+        m_waitingForPreviousSource = false;
+        m_pipeline->setSource(source);
+        m_aboutToFinishWait.wakeAll();
+    } else
+        qDebug() << "Ignoring source as no aboutToFinish handling is in progress.";
     m_aboutToFinishLock.unlock();
 }
 
