@@ -355,6 +355,7 @@ void MediaObject::setNextSource(const MediaSource &source)
 
         m_waitingForNextSource = true;
         m_waitingForPreviousSource = false;
+        m_skipGapless = false;
         m_pipeline->setSource(source);
         m_aboutToFinishWait.wakeAll();
     } else
@@ -391,6 +392,7 @@ void MediaObject::setSource(const MediaSource &source)
     m_source = source;
     autoDetectSubtitle();
     m_pipeline->setSource(source);
+    m_skipGapless = false;
     m_aboutToFinishWait.wakeAll();
     //emit currentSourceChanged(source);
 }
@@ -864,14 +866,18 @@ void MediaObject::handleAboutToFinish()
     if (!m_skipGapless) {
       if (m_aboutToFinishWait.wait(&m_aboutToFinishLock, 3000)) {
           debug() << "Finally got a source";
+          if (m_skipGapless) { // Was explicitly set by stateChange interrupt
+              debug() << "...oh, no, just got aborted, skipping EOS".
+              m_skippingEOS = false;
+          }
       } else {
+          warning() << "aboutToFinishWait timed out!";
           m_skippingEOS = false;
       }
     } else {
       debug() << "Skipping gapless audio";
       m_skippingEOS = false;
     }
-    m_skipGapless = false;
     m_handlingAboutToFinish = false;
     m_aboutToFinishLock.unlock();
 }
