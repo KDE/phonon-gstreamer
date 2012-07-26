@@ -79,6 +79,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_skippingEOS(false)
         , m_skipGapless(false)
         , m_doingEOS(false)
+        , m_handlingAboutToFinish(false)
 {
     qRegisterMetaType<GstCaps*>("GstCaps*");
     qRegisterMetaType<State>("State");
@@ -846,6 +847,7 @@ void MediaObject::handleAboutToFinish()
     DEBUG_BLOCK;
     debug() << "About to finish";
     m_aboutToFinishLock.lock();
+    m_handlingAboutToFinish = true;
     emit aboutToFinish();
     // Three seconds should be more than enough for any application to get their act together.
     // Any longer than that and they have bigger issues.  If Phonon does no supply a next source
@@ -858,8 +860,10 @@ void MediaObject::handleAboutToFinish()
       }
     } else {
       debug() << "Skipping gapless audio";
+      m_skippingEOS = false;
     }
     m_skipGapless = false;
+    m_handlingAboutToFinish = false;
     m_aboutToFinishLock.unlock();
 }
 
