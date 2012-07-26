@@ -868,7 +868,7 @@ void MediaObject::handleAboutToFinish()
       if (m_aboutToFinishWait.wait(&m_aboutToFinishLock, 3000)) {
           debug() << "Finally got a source";
           if (m_skipGapless) { // Was explicitly set by stateChange interrupt
-              debug() << "...oh, no, just got aborted, skipping EOS".
+              debug() << "...oh, no, just got aborted, skipping EOS";
               m_skippingEOS = false;
           }
       } else {
