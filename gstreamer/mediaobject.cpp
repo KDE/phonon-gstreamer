@@ -77,8 +77,8 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_waitingForNextSource(false)
         , m_waitingForPreviousSource(false)
         , m_skippingEOS(false)
-        , m_skipGapless(false)
         , m_doingEOS(false)
+        , m_skipGapless(false)
         , m_handlingAboutToFinish(false)
 {
     qRegisterMetaType<GstCaps*>("GstCaps*");
