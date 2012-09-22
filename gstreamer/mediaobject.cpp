@@ -860,7 +860,8 @@ void MediaObject::handleAboutToFinish()
     debug() << "About to finish";
     m_aboutToFinishLock.lock();
     m_handlingAboutToFinish = true;
-    emit aboutToFinish();
+    if (!m_waitingForNextSource)
+        emit aboutToFinish();
     // Three seconds should be more than enough for any application to get their act together.
     // Any longer than that and they have bigger issues.  If Phonon does no supply a next source
     // within 3 seconds, treat as if there is no next source to come, and finish the current source.
