@@ -50,7 +50,7 @@ VideoGraphicsObject::VideoGraphicsObject(Backend *backend, QObject *parent) :
 
     GstCaps *caps = p_gst_video_sink_get_static_caps();
 
-    gst_bin_add_many(GST_BIN(m_bin), sink, convert, queue, 0);
+    gst_bin_add_many(GST_BIN(m_bin), sink, convert, queue, NULL);
     gst_element_link(queue, convert);
     gst_element_link_filtered(convert, sink, caps);
     gst_caps_unref(caps);
@@ -75,7 +75,7 @@ void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
         return;
 
     VideoGraphicsObject *that = static_cast<VideoGraphicsObject *>(userData);
-    if (!that || !that->videoGraphicsObject())
+    if (!that)
         return;
 
     // Frontend holds lock on data
@@ -93,19 +93,18 @@ void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
 
     VideoFrame *frame = &that->m_frame;
     GstStructure *structure = gst_caps_get_structure(GST_BUFFER_CAPS(buffer), 0);
-    gst_structure_get_int(structure, "width", &frame->width);
-    gst_structure_get_int(structure, "height", &frame->height);
-    frame->aspectRatio =
-            static_cast<double>(frame->width/frame->height);
+    gst_structure_get_uint(structure, "width", &frame->width);
+    gst_structure_get_uint(structure, "height", &frame->height);
+    /*frame->aspectRatio =
+            static_cast<double>(frame->width/frame->height);*/
 
     frame->format = VideoFrame::Format_RGB32;
+    frame->planeCount = 1;
     // RGB888 Means the data is 8 bits o' red, 8 bits o' green, and 8 bits o' blue per pixel.
-    frame->data0 =
+    frame->plane[0] =
             QByteArray::fromRawData(
                 reinterpret_cast<const char*>(GST_BUFFER_DATA(buffer)),
                 GST_BUFFER_SIZE(buffer));
-    frame->data1 = 0;
-    frame->data2 = 0;
 
     that->m_mutex.unlock();
     emit that->frameReady();
@@ -129,6 +128,16 @@ void VideoGraphicsObject::unlock()
 const VideoFrame *VideoGraphicsObject::frame() const
 {
     return &m_frame;
+}
+
+QList<VideoFrame::Format> VideoGraphicsObject::offering(QList<VideoFrame::Format> offers)
+{
+    return QList<VideoFrame::Format>() << VideoFrame::Format_RGB32;
+}
+
+void VideoGraphicsObject::choose(VideoFrame::Format format)
+{
+    m_format = format;
 }
 
 } // namespace Gstreamer

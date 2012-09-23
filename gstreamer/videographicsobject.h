@@ -23,11 +23,13 @@
 #define PHONON_GSTREAMER_VIDEOGRAPHICSOBJECT_H
 
 #include <QtCore/QObject>
+#include <QtCore/QMutex>
 
-#include <phonon/videographicsobject.h>
+#include <phonon/videographicsobjectinterface.h>
 
 #include "medianode.h"
 #include "videosink.h"
+#include "debug.h"
 
 namespace Phonon {
 namespace Gstreamer {
@@ -41,9 +43,8 @@ class VideoGraphicsObject : public QObject,
 public:
     explicit VideoGraphicsObject(Backend *backend, QObject *parent = 0);
     ~VideoGraphicsObject();
-
-    virtual Phonon::VideoGraphicsObject *videoGraphicsObject() { return m_frontendObject; }
-    virtual void setVideoGraphicsObject(Phonon::VideoGraphicsObject *object) { m_frontendObject = object; }
+    QList<VideoFrame::Format> offering(QList<VideoFrame::Format> offers);
+    void choose(VideoFrame::Format format);
 
     static void renderCallback(GstBuffer *buffer, void *userData);
 
@@ -55,16 +56,17 @@ public:
 
     GstElement *videoElement()
     {
-        qDebug() << "fishy";
+        debug() << "fishy";
         return m_bin;
     }
 
 signals:
     void frameReady();
+    void reset();
+    void needFormat();
 
 private:
     Phonon::VideoFrame m_frame;
-    Phonon::VideoGraphicsObject *m_frontendObject;
 
     PGstVideoSink *m_sink;
 
@@ -72,6 +74,8 @@ private:
 
     GstElement *m_bin;
     GstBuffer *m_buffer;
+
+    VideoFrame::Format m_format;
 };
 
 } // namespace Gstreamer
