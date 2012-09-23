@@ -72,6 +72,7 @@ class Pipeline : public QObject
 
         static void cb_videoChanged(GstElement *playbin, gpointer data);
         static void cb_textTagsChanged(GstElement *playbin, gint stream, gpointer data);
+        static void cb_audioTagsChanged(GstElement *playbin, gint stream, gpointer data);
 
         GstElement *audioPipe();
         GstElement *videoPipe();
@@ -107,6 +108,7 @@ class Pipeline : public QObject
         void stateChanged(GstState oldState, GstState newState);
         void videoAvailabilityChanged(bool);
         void textTagChanged(int stream);
+        void audioTagChanged(int stream);
         void errorMessage(const QString &message, Phonon::ErrorType type);
         // Only emitted when metadata changes in the middle of a stream.
         void metaDataChanged(QMultiMap<QString, QString>);

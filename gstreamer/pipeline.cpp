@@ -54,6 +54,7 @@ Pipeline::Pipeline(QObject *parent)
     gst_object_sink(m_pipeline);
     g_signal_connect(m_pipeline, "video-changed", G_CALLBACK(cb_videoChanged), this);
     g_signal_connect(m_pipeline, "text-tags-changed", G_CALLBACK(cb_textTagsChanged), this);
+    g_signal_connect(m_pipeline, "audio-tags-changed", G_CALLBACK(cb_audioTagsChanged), this);
     g_signal_connect(m_pipeline, "notify::source", G_CALLBACK(cb_setupSource), this);
     g_signal_connect(m_pipeline, "about-to-finish", G_CALLBACK(cb_aboutToFinish), this);
 
@@ -400,6 +401,12 @@ void Pipeline::cb_textTagsChanged(GstElement *playbin, gint stream, gpointer dat
 {
     Pipeline *that = static_cast<Pipeline *>(data);
     emit that->textTagChanged(stream);
+}
+
+void Pipeline::cb_audioTagsChanged(GstElement *playbin, gint stream, gpointer data)
+{
+    Pipeline *that = static_cast<Pipeline *>(data);
+    emit that->audioTagChanged(stream);
 }
 
 bool Pipeline::videoIsAvailable() const

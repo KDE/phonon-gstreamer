@@ -117,6 +117,8 @@ Backend::~Backend()
 {
     if (GlobalSubtitles::self)
         delete GlobalSubtitles::self;
+    if (GlobalAudioChannels::self)
+        delete GlobalAudioChannels::self;
     delete m_effectManager;
     delete m_deviceManager;
     PulseSupport::shutdown();
@@ -309,6 +311,9 @@ QList<int> Backend::objectDescriptionIndexes(ObjectDescriptionType type) const
     case Phonon::SubtitleType:
         list << GlobalSubtitles::instance()->globalIndexes();
         break;
+    case Phonon::AudioChannelType:
+        list << GlobalAudioChannels::instance()->globalIndexes();
+        break;
     default:
         break;
     }
@@ -347,6 +352,14 @@ QHash<QByteArray, QVariant> Backend::objectDescriptionProperties(ObjectDescripti
 
     case Phonon::SubtitleType: {
             const SubtitleDescription description = GlobalSubtitles::instance()->fromIndex(index);
+            ret.insert("name", description.name());
+            ret.insert("description", description.description());
+            ret.insert("type", description.property("type"));
+        }
+        break;
+
+    case Phonon::AudioChannelType: {
+            const AudioChannelDescription description = GlobalAudioChannels::instance()->fromIndex(index);
             ret.insert("name", description.name());
             ret.insert("description", description.description());
             ret.insert("type", description.property("type"));

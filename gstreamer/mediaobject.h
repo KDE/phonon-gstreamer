@@ -194,6 +194,7 @@ protected:
 private Q_SLOTS:
     void handleTrackCountChange(int tracks);
     void getSubtitleInfo(int stream);
+    void getAudioChannelInfo(int stream);
     void emitTick();
     void beginPlay();
     void autoDetectSubtitle();
@@ -222,6 +223,10 @@ private:
     void _iface_setCurrentSubtitle(const SubtitleDescription &subtitle);
     void changeTitle(const QString &format, int title);
     void changeSubUri(const Mrl &mrl);
+
+    QList<AudioChannelDescription> _iface_availableAudioChannels() const;
+    AudioChannelDescription _iface_currentAudioChannel() const;
+    void _iface_setCurrentAudioChannel(const AudioChannelDescription &channel);
 
     bool m_resumeState;
     State m_oldState;
@@ -253,6 +258,7 @@ private:
     int m_availableTitles;
     int m_currentTitle;
     SubtitleDescription m_currentSubtitle;
+    AudioChannelDescription m_currentAudioChannel;
     int m_pendingTitle;
 
     // When we emit aboutToFinish(), libphonon calls setNextSource. To achieve gapless playback,

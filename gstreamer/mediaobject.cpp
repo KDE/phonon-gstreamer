@@ -96,6 +96,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         m_pipeline = new Pipeline(this);
         m_isValid = true;
         GlobalSubtitles::instance()->register_(this);
+        GlobalAudioChannels::instance()->register_(this);
 
         connect(m_pipeline, SIGNAL(aboutToFinish()),
                 this, SLOT(handleAboutToFinish()), Qt::DirectConnection);
@@ -124,6 +125,8 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
 
         connect(m_pipeline, SIGNAL(textTagChanged(int)),
                 this, SLOT(getSubtitleInfo(int)));
+        connect(m_pipeline, SIGNAL(audioTagChanged(int)),
+                this, SLOT(getAudioChannelInfo(int)));
         connect(m_pipeline, SIGNAL(trackCountChanged(int)),
                 this, SLOT(handleTrackCountChange(int)));
 
@@ -140,6 +143,7 @@ MediaObject::~MediaObject()
         delete m_pipeline;
     }
     GlobalSubtitles::instance()->unregister_(this);
+    GlobalAudioChannels::instance()->unregister_(this);
 }
 
 void MediaObject::saveState()
@@ -404,6 +408,31 @@ void MediaObject::loadingComplete()
     link();
 }
 
+void MediaObject::getAudioChannelInfo(int stream)
+{
+    gint channelCount = 0;
+    g_object_get(G_OBJECT(m_pipeline->element()), "n-audio", &channelCount, NULL);
+    if (channelCount)
+        GlobalAudioChannels::instance()->add(this, -1, tr("Default"), "");
+    for (gint i = 0; i < channelCount; ++i) {
+        GstTagList *tags = 0;
+        g_signal_emit_by_name (G_OBJECT(m_pipeline->element()), "get-audio-tags",
+                               i, &tags);
+        if (tags) {
+            gchar *tagLangCode = 0;
+            gst_tag_list_get_string (tags, GST_TAG_LANGUAGE_CODE, &tagLangCode);
+            QString name;
+            if (tagLangCode)
+                name = QLatin1String(tagLangCode);
+            else
+                name = tr("Unknown");
+            GlobalAudioChannels::instance()->add(this, i, name);
+            g_free(tagLangCode);
+        }
+    }
+    emit availableAudioChannelsChanged();
+}
+
 void MediaObject::getSubtitleInfo(int stream)
 {
     gint spuCount = 0; // Sub picture units.
@@ -590,7 +619,7 @@ void MediaObject::handleEndOfStream()
 bool MediaObject::hasInterface(Interface iface) const
 {
     return iface == AddonInterface::TitleInterface || iface == AddonInterface::NavigationInterface
-        || iface == AddonInterface::SubtitleInterface;
+        || iface == AddonInterface::SubtitleInterface || iface == AddonInterface::AudioChannelInterface;
 }
 
 QVariant MediaObject::interfaceCall(Interface iface, int command, const QList<QVariant> &params)
@@ -646,11 +675,46 @@ QVariant MediaObject::interfaceCall(Interface iface, int command, const QList<QV
                     break;
             }
             break;
+        case AudioChannelInterface:
+            switch(command)
+            {
+                case availableAudioChannels:
+                    return QVariant::fromValue(_iface_availableAudioChannels());
+                    break;
+                case currentAudioChannel:
+                    return QVariant::fromValue(_iface_currentAudioChannel());
+                    break;
+                case setCurrentAudioChannel:
+                    if (params.isEmpty() || !params.first().canConvert<AudioChannelDescription>()) {
+                        error() << Q_FUNC_INFO << "arguments invalid";
+                        return QVariant();
+                    }
+                    _iface_setCurrentAudioChannel(params.first().value<AudioChannelDescription>());
+                    break;
+            }
+            break;
         }
     }
     return QVariant();
 }
 #endif
+
+QList<AudioChannelDescription> MediaObject::_iface_availableAudioChannels() const
+{
+    return GlobalAudioChannels::instance()->listFor(this);
+}
+
+AudioChannelDescription MediaObject::_iface_currentAudioChannel() const
+{
+    return m_currentAudioChannel;
+}
+
+void MediaObject::_iface_setCurrentAudioChannel(const AudioChannelDescription &channel)
+{
+    const int localIndex = GlobalAudioChannels::instance()->localIdFor(this, channel.index());
+    g_object_set(G_OBJECT(m_pipeline->element()), "current-audio", localIndex, NULL);
+    m_currentAudioChannel = channel;
+}
 
 QList<MediaController::NavigationMenu> MediaObject::_iface_availableMenus() const
 {
