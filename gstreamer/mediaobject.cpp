@@ -420,14 +420,19 @@ void MediaObject::getAudioChannelInfo(int stream)
                                i, &tags);
         if (tags) {
             gchar *tagLangCode = 0;
+            gchar *tagCodecName = 0;
+            gst_tag_list_get_string (tags, GST_TAG_AUDIO_CODEC, &tagCodecName);
             gst_tag_list_get_string (tags, GST_TAG_LANGUAGE_CODE, &tagLangCode);
             QString name;
             if (tagLangCode)
                 name = QLatin1String(tagLangCode);
             else
                 name = tr("Unknown");
+            if (tagCodecName)
+                name = QString("%1 [%2]").arg(name, QLatin1String(tagCodecName));
             GlobalAudioChannels::instance()->add(this, i, name);
             g_free(tagLangCode);
+            g_free(tagCodecName);
         }
     }
     emit availableAudioChannelsChanged();
