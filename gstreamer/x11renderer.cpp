@@ -15,12 +15,14 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "videowidget.h"
 #include "x11renderer.h"
+
+#include "videowidget.h"
 
 #ifndef Q_WS_QWS
 
 #include "backend.h"
+#include "debug.h"
 #include "mediaobject.h"
 #include <QtGui/QPalette>
 #include <QtGui/QApplication>
@@ -62,7 +64,7 @@ X11Renderer::X11Renderer(VideoWidget *videoWidget)
         : AbstractRenderer(videoWidget)
 {
     m_renderWidget = new OverlayWidget(videoWidget, this);
-    videoWidget->backend()->logMessage("Creating X11 overlay renderer");
+    debug() << "Creating X11 overlay renderer";
     QPalette palette;
     palette.setColor(QPalette::Background, Qt::black);
     m_videoWidget->setPalette(palette);
@@ -92,10 +94,10 @@ GstElement* X11Renderer::createVideoSink()
             // Note that this should not really be necessary as these are
             // default values, though under certain conditions values are retained
             // even between application instances. (reproducible on 0.10.16/Gutsy)
-            g_object_set(G_OBJECT(videoSink), "brightness", 0, (const char*)NULL);
-            g_object_set(G_OBJECT(videoSink), "contrast", 0, (const char*)NULL);
-            g_object_set(G_OBJECT(videoSink), "hue", 0, (const char*)NULL);
-            g_object_set(G_OBJECT(videoSink), "saturation", 0, (const char*)NULL);
+            g_object_set(G_OBJECT(videoSink), "brightness", 0, NULL);
+            g_object_set(G_OBJECT(videoSink), "contrast", 0, NULL);
+            g_object_set(G_OBJECT(videoSink), "hue", 0, NULL);
+            g_object_set(G_OBJECT(videoSink), "saturation", 0, NULL);
         }
     }
     QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
@@ -111,18 +113,6 @@ GstElement* X11Renderer::createVideoSink()
 
     return videoSink;
 }
-
-void X11Renderer::handleMediaNodeEvent(const MediaNodeEvent *event)
-{
-    switch (event->type()) {
-    case MediaNodeEvent::SourceChanged:
-        setOverlay(); // We need to do this whenever the pipeline is reset
-        break;        // otherwise the videosink will open in its own window
-    default:
-        break;
-    }
-}
-
 
 void X11Renderer::aspectRatioChanged(Phonon::VideoWidget::AspectRatio)
 {

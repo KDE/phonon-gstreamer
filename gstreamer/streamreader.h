@@ -16,8 +16,8 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef PHONON_IODEVICEREADER_H
-#define PHONON_IODEVICEREADER_H
+#ifndef PHONON_GSTREAMER_STREAMREADER_H
+#define PHONON_GSTREAMER_STREAMREADER_H
 
 #include <phonon/streaminterface.h>
 
@@ -40,8 +40,10 @@ namespace Gstreamer
 
 class StreamReader : public QObject, Phonon::StreamInterface
 {
+    Q_INTERFACES(Phonon::StreamInterface);
+    Q_OBJECT
 public:
-    StreamReader(const Phonon::MediaSource &source, MediaObject *parent);
+    StreamReader(const Phonon::MediaSource &source, Pipeline *parent);
     ~StreamReader();
 
     /*
@@ -54,7 +56,6 @@ public:
     void endOfData();
     void start();
     void stop();
-    void unlock();
 
     void setCurrentPos(qint64 pos);
     quint64 currentPos() const;
@@ -71,7 +72,7 @@ private:
     bool m_eos;
     bool m_locked;
     bool m_seekable;
-    MediaObject *m_mediaObject;
+    Pipeline *m_pipeline;
     QByteArray m_buffer;
     QMutex m_mutex;
     QWaitCondition m_waitingForData;
@@ -84,4 +85,4 @@ private:
 
 QT_END_NAMESPACE
 
-#endif
+#endif // PHONON_GSTREAMER_STREAMREADER_H

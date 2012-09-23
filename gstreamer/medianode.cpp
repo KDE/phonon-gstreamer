@@ -16,9 +16,9 @@
 */
 
 #include "medianode.h"
-#include "medianodeevent.h"
 #include "mediaobject.h"
 #include "backend.h"
+#include "debug.h"
 
 #include <gst/gstbin.h>
 #include <gst/gstutils.h>
@@ -38,7 +38,8 @@ MediaNode::MediaNode(Backend *backend, NodeDescription description) :
         m_fakeAudioSink(0),
         m_fakeVideoSink(0),
         m_backend(backend),
-        m_description(description)
+        m_description(description),
+        m_finalized(false)
 {
     if ((description & AudioSink) && (description & VideoSink)) {
         Q_ASSERT(0); // A node cannot accept both audio and video
@@ -51,7 +52,7 @@ MediaNode::MediaNode(Backend *backend, NodeDescription description) :
 
         // Fake audio sink to swallow unconnected audio pads
         m_fakeAudioSink = gst_element_factory_make("fakesink", NULL);
-        g_object_set (G_OBJECT (m_fakeAudioSink), "sync", TRUE, (const char*)NULL);
+        g_object_set (G_OBJECT (m_fakeAudioSink), "sync", TRUE, NULL);
         gst_object_ref (GST_OBJECT (m_fakeAudioSink));
         gst_object_sink (GST_OBJECT (m_fakeAudioSink));
     }
@@ -63,7 +64,7 @@ MediaNode::MediaNode(Backend *backend, NodeDescription description) :
 
         // Fake video sink to swallow unconnected video pads
         m_fakeVideoSink = gst_element_factory_make("fakesink", NULL);
-        g_object_set (G_OBJECT (m_fakeVideoSink), "sync", TRUE, (const char*)NULL);
+        g_object_set (G_OBJECT (m_fakeVideoSink), "sync", TRUE, NULL);
         gst_object_ref (GST_OBJECT (m_fakeVideoSink));
         gst_object_sink (GST_OBJECT (m_fakeVideoSink));
     }
@@ -121,8 +122,12 @@ bool MediaNode::buildGraph()
         }
     }
 
-    if (!success)
+    if (!success) {
         unlink();
+    } else if (!m_finalized) {
+        finalizeLink();
+        m_finalized = true;
+    }
 
     return success;
 }
@@ -132,6 +137,10 @@ bool MediaNode::buildGraph()
  */
 bool MediaNode::breakGraph()
 {
+    if (m_finalized) {
+        prepareToUnlink();
+        m_finalized = false;
+    }
     for (int i=0; i<m_audioSinkList.size(); ++i) {
         MediaNode *node = qobject_cast<MediaNode*>(m_audioSinkList[i]);
         if (!node || !node->breakGraph())
@@ -158,34 +167,28 @@ bool MediaNode::connectNode(QObject *obj)
     if (sink) {
 
         if (!sink->isValid()) {
-            m_backend->logMessage(QString("Trying to link to an invalid node (%0)").arg(sink->name()), Backend::Warning);
+            warning() << "Trying to link to an invalid node" << sink->name();
             return false;
         }
 
         if (sink->root()) {
-            m_backend->logMessage("Trying to link a node that is already linked to a different mediasource ", Backend::Warning);
+            warning() << "Trying to link a node that is already linked to a different mediasource";
             return false;
         }
 
         if ((m_description & AudioSource) && (sink->m_description & AudioSink)) {
             m_audioSinkList << obj;
-            MediaNodeEvent event(MediaNodeEvent::AudioSinkAdded, sink);
-            root()->mediaNodeEvent(&event);
             success = true;
         }
 
         if ((m_description & VideoSource) && (sink->m_description & VideoSink)) {
             m_videoSinkList << obj;
-            MediaNodeEvent event(MediaNodeEvent::VideoSinkAdded, sink);
-            root()->mediaNodeEvent(&event);
             success = true;
         }
 
         // If we have a root source, and we are connected
         // try to link the gstreamer elements
         if (success && root()) {
-            MediaNodeEvent mediaObjectConnected(MediaNodeEvent::MediaObjectConnected, root());
-            notify(&mediaObjectConnected);
             root()->buildGraph();
         }
     }
@@ -199,12 +202,12 @@ bool MediaNode::disconnectNode(QObject *obj)
         // Disconnecting elements while playing or paused seems to cause
         // potential deadlock. Hence we force the pipeline into ready state
         // before any nodes are disconnected.
-        gst_element_set_state(root()->pipeline(), GST_STATE_READY);
+        root()->pipeline()->setState(GST_STATE_READY);
 
         Q_ASSERT(sink->root()); //sink has to have a root since it is connected
 
         if (sink->description() & (AudioSink)) {
-            GstPad *sinkPad = gst_element_get_pad(sink->audioElement(), "sink");
+            GstPad *sinkPad = gst_element_get_static_pad(sink->audioElement(), "sink");
             // Release requested src pad from tee
             GstPad *requestedPad = gst_pad_get_peer(sinkPad);
             if (requestedPad) {
@@ -217,7 +220,7 @@ bool MediaNode::disconnectNode(QObject *obj)
         }
 
         if (sink->description() & (VideoSink)) {
-            GstPad *sinkPad = gst_element_get_pad(sink->videoElement(), "sink");
+            GstPad *sinkPad = gst_element_get_static_pad(sink->videoElement(), "sink");
             // Release requested src pad from tee
             GstPad *requestedPad = gst_pad_get_peer(sinkPad);
             if (requestedPad) {
@@ -238,40 +241,15 @@ bool MediaNode::disconnectNode(QObject *obj)
 
     if (sink->m_description & AudioSink) {
         // Remove sink from graph
-        MediaNodeEvent event(MediaNodeEvent::AudioSinkRemoved, sink);
-        mediaNodeEvent(&event);
         return true;
     }
 
     if ((m_description & VideoSource) && (sink->m_description & VideoSink)) {
         // Remove sink from graph
-        MediaNodeEvent event(MediaNodeEvent::VideoSinkRemoved, sink);
-        mediaNodeEvent(&event);
         return true;
     }
 
     return false;
-}
-
-void MediaNode::mediaNodeEvent(const MediaNodeEvent *) {}
-
-/**
- * Propagates an event down the graph
- * sender is responsible for deleting the event
- */
-void MediaNode::notify(const MediaNodeEvent *event)
-{
-    Q_ASSERT(event);
-    mediaNodeEvent(event);
-    for (int i=0; i<m_audioSinkList.size(); ++i) {
-        MediaNode *node = qobject_cast<MediaNode*>(m_audioSinkList[i]);
-        node->notify(event);
-    }
-
-    for (int i=0; i<m_videoSinkList.size(); ++i) {
-        MediaNode *node = qobject_cast<MediaNode*>(m_videoSinkList[i]);
-        node->notify(event);
-    }
 }
 
 /*
@@ -294,9 +272,9 @@ bool MediaNode::addOutput(MediaNode *output, GstElement *tee)
     if (!sinkElement)
         return false;
 
-    GstState state = GST_STATE (root()->pipeline());
+    GstState state = root()->pipeline()->state();
     GstPad *srcPad = gst_element_get_request_pad (tee, "src%d");
-    GstPad *sinkPad = gst_element_get_pad (sinkElement, "sink");
+    GstPad *sinkPad = gst_element_get_static_pad (sinkElement, "sink");
 
     if (!sinkPad) {
         success = false;
@@ -330,7 +308,7 @@ bool MediaNode::addOutput(MediaNode *output, GstElement *tee)
 bool MediaNode::connectToFakeSink(GstElement *tee, GstElement *sink, GstElement *bin)
 {
     bool success = true;
-    GstPad *sinkPad = gst_element_get_pad (sink, "sink");
+    GstPad *sinkPad = gst_element_get_static_pad (sink, "sink");
 
     if (GST_PAD_IS_LINKED (sinkPad)) {
         //This fakesink is already connected
@@ -353,7 +331,7 @@ bool MediaNode::connectToFakeSink(GstElement *tee, GstElement *sink, GstElement 
 bool MediaNode::releaseFakeSinkIfConnected(GstElement *tee, GstElement *fakesink, GstElement *bin)
 {
     if (GST_ELEMENT_PARENT(fakesink) == GST_ELEMENT(bin)) {
-        GstPad *sinkPad = gst_element_get_pad(fakesink, "sink");
+        GstPad *sinkPad = gst_element_get_static_pad(fakesink, "sink");
 
         // Release requested src pad from tee
         GstPad *requestedPad = gst_pad_get_peer(sinkPad);
@@ -448,6 +426,14 @@ bool MediaNode::unlink()
         }
     }
     return true;
+}
+
+void MediaNode::prepareToUnlink()
+{
+}
+
+void MediaNode::finalizeLink()
+{
 }
 
 

@@ -18,17 +18,20 @@
 #include "backend.h"
 #include "audiooutput.h"
 #include "audiodataoutput.h"
+#ifdef PHONON_EXPERIMENTAL
 #include "videodataoutput.h"
+#endif
 #include "audioeffect.h"
+#include "debug.h"
 #include "mediaobject.h"
 #include "videographicsobject.h"
 #include "videowidget.h"
 #include "devicemanager.h"
 #include "effectmanager.h"
 #include "volumefadereffect.h"
-#include "phononsrc.h"
 #include <gst/interfaces/propertyprobe.h>
 #include <phonon/pulsesupport.h>
+#include <phonon/GlobalDescriptionContainer>
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QSet>
@@ -52,7 +55,6 @@ Backend::Backend(QObject *parent, const QVariantList &)
         : QObject(parent)
         , m_deviceManager(0)
         , m_effectManager(0)
-        , m_debugLevel(Warning)
         , m_isValid(false)
 {
     // Initialise PulseAudio support
@@ -69,7 +71,7 @@ Backend::Backend(QObject *parent, const QVariantList &)
 
     QByteArray appFilePath = qApp->applicationFilePath().toUtf8();
     QByteArray gstDebugLevel("--gst-debug-level=");
-    gstDebugLevel.append(qgetenv("PHONON_GST_GST_DEBUG"));
+    gstDebugLevel.append(qgetenv("PHONON_SUBSYSTEM_DEBUG"));
 
     const char *args[] = {
         appFilePath.constData(),
@@ -93,17 +95,16 @@ Backend::Backend(QObject *parent, const QVariantList &)
     setProperty("backendWebsite", QLatin1String("http://phonon.kde.org/"));
 #endif //QT_NO_PROPERTIES
 
-    //check if we should enable debug output
-    QString debugLevelString = qgetenv("PHONON_GST_DEBUG");
-    int debugLevel = debugLevelString.toInt();
-    if (debugLevel > 3) //3 is maximum
+    // Check if we should enable debug output
+    int debugLevel = qgetenv("PHONON_BACKEND_DEBUG").toInt();
+    if (debugLevel > 3) // 3 is maximum
         debugLevel = 3;
-    m_debugLevel = (DebugLevel)debugLevel;
+    Debug::setMinimumDebugLevel((Debug::DebugLevel)((int) Debug::DEBUG_NONE - 1 - debugLevel));
 
     if (wasInit) {
         m_isValid = checkDependencies();
         gchar *versionString = gst_version_string();
-        logMessage(QString("Using %0").arg(versionString));
+        debug() << "Using" << versionString;
         g_free(versionString);
     }
     if (!m_isValid)
@@ -111,16 +112,18 @@ Backend::Backend(QObject *parent, const QVariantList &)
 
     m_deviceManager = new DeviceManager(this);
     m_effectManager = new EffectManager(this);
-
-    // Register gst plugin
-    register_phonon_elements();
 }
 
 Backend::~Backend()
 {
+    if (GlobalSubtitles::self)
+        delete GlobalSubtitles::self;
+    if (GlobalAudioChannels::self)
+        delete GlobalAudioChannels::self;
     delete m_effectManager;
     delete m_deviceManager;
     PulseSupport::shutdown();
+    gst_deinit();
 }
 
 /***
@@ -145,9 +148,11 @@ QObject *Backend::createObject(BackendInterface::Class c, QObject *parent, const
         return new AudioDataOutput(this, parent);
 
 #ifndef QT_NO_PHONON_VIDEO
+#ifdef PHONON_EXPERIMENTAL
     case VideoDataOutputClass:
         return new VideoDataOutput(this, parent);
         break;
+#endif
 
     case VideoWidgetClass: {
             QWidget *widget =  qobject_cast<QWidget*>(parent);
@@ -163,7 +168,7 @@ QObject *Backend::createObject(BackendInterface::Class c, QObject *parent, const
 
     case VisualizationClass:  //Fall through
     default:
-        logMessage("createObject() : Backend object not available");
+        warning() << "Backend class" << c << "is not supported by Phonon GST :(";
     }
     return 0;
 }
@@ -197,16 +202,15 @@ bool Backend::checkDependencies(bool retry) const
                 gst_update_registry();
                 checkDependencies(true);
             }
-            QString message = tr("Warning: You do not seem to have the package gstreamer0.10-plugins-good installed.\n"
-                                 "          Some video features have been disabled.");
-            qDebug() << message;
+            warning() << tr("Warning: You do not seem to have the package gstreamer0.10-plugins-good installed.\n"
+                            "          Some video features have been disabled.");
         }
     } else {
         if (!retry) {
             gst_update_registry();
             checkDependencies(true);
         }
-        qWarning() << tr("Warning: You do not seem to have the base GStreamer plugins installed.\n"
+        warning() << tr("Warning: You do not seem to have the base GStreamer plugins installed.\n"
                          "          All audio and video support has been disabled");
     }
     return success;
@@ -295,27 +299,23 @@ QList<int> Backend::objectDescriptionIndexes(ObjectDescriptionType type) const
         return list;
 
     switch (type) {
-    case Phonon::AudioOutputDeviceType: {
-            QList<AudioDevice> deviceList = deviceManager()->audioOutputDevices();
-            for (int dev = 0 ; dev < deviceList.size() ; ++dev)
-                list.append(deviceList[dev].id);
-            break;
-        }
+    case Phonon::AudioOutputDeviceType:
+    case Phonon::AudioCaptureDeviceType:
+    case Phonon::VideoCaptureDeviceType:
+        list = deviceManager()->deviceIds(type);
         break;
-    case Phonon::VideoCaptureDeviceType: {
-            QList<VideoCaptureDevice> deviceList = deviceManager()->videoCaptureDevices();
-            for(int dev = 0 ; dev < deviceList.size() ; ++dev)
-                list.append(deviceList[dev].id);
-            break;
-        }
-        break;
-
     case Phonon::EffectType: {
             QList<EffectInfo*> effectList = effectManager()->audioEffects();
             for (int eff = 0 ; eff < effectList.size() ; ++eff)
                 list.append(eff);
             break;
         }
+        break;
+    case Phonon::SubtitleType:
+        list << GlobalSubtitles::instance()->globalIndexes();
+        break;
+    case Phonon::AudioChannelType:
+        list << GlobalAudioChannels::instance()->globalIndexes();
         break;
     default:
         break;
@@ -328,34 +328,17 @@ QList<int> Backend::objectDescriptionIndexes(ObjectDescriptionType type) const
  */
 QHash<QByteArray, QVariant> Backend::objectDescriptionProperties(ObjectDescriptionType type, int index) const
 {
-
     QHash<QByteArray, QVariant> ret;
 
     if (!isValid())
         return ret;
 
     switch (type) {
-    case Phonon::AudioOutputDeviceType: {
-            AudioDevice* ad;
-            if ((ad = deviceManager()->audioDevice(index))) {
-                ret.insert("name", ad->gstId);
-                ret.insert("description", ad->description);
-                ret.insert("icon", ad->icon);
-            }
-        }
-        break;
-    case Phonon::VideoCaptureDeviceType: {
-            VideoCaptureDevice* dev;
-            if ((dev = deviceManager()->videoCaptureDevice(index))) {
-                ret.insert("name", dev->gstId);
-                ret.insert("description", dev->description);
-                ret.insert("icon", dev->icon);
-                DeviceAccessList devlist;
-                devlist << DeviceAccess("v4l2", dev->gstId);
-                ret.insert("deviceAccessList", QVariant::fromValue<Phonon::DeviceAccessList>(devlist));
-                ret.insert("hasvideo", true);
-            }
-        }
+    case Phonon::AudioOutputDeviceType:
+    case Phonon::AudioCaptureDeviceType:
+    case Phonon::VideoCaptureDeviceType:
+        // Index should be unique, even for different categories
+        ret = deviceManager()->deviceProperties(index);
         break;
 
     case Phonon::EffectType: {
@@ -368,6 +351,24 @@ QHash<QByteArray, QVariant> Backend::objectDescriptionProperties(ObjectDescripti
             } else
                 Q_ASSERT(1); // Since we use list position as ID, this should not happen
         }
+        break;
+
+    case Phonon::SubtitleType: {
+            const SubtitleDescription description = GlobalSubtitles::instance()->fromIndex(index);
+            ret.insert("name", description.name());
+            ret.insert("description", description.description());
+            ret.insert("type", description.property("type"));
+        }
+        break;
+
+    case Phonon::AudioChannelType: {
+            const AudioChannelDescription description = GlobalAudioChannels::instance()->fromIndex(index);
+            ret.insert("name", description.name());
+            ret.insert("description", description.description());
+            ret.insert("type", description.property("type"));
+        }
+        break;
+
     default:
         break;
     }
@@ -384,7 +385,6 @@ bool Backend::startConnectionChange(QSet<QObject *> objects)
         MediaObject *media = sourceNode->root();
         if (media) {
             media->saveState();
-            return true;
         }
     }
     return true;
@@ -400,13 +400,12 @@ bool Backend::connectNodes(QObject *source, QObject *sink)
         MediaNode *sinkNode = qobject_cast<MediaNode *>(sink);
         if (sourceNode && sinkNode) {
             if (sourceNode->connectNode(sink)) {
-                sourceNode->root()->invalidateGraph();
-                logMessage(QString("Backend connected %0 to %1").arg(source->metaObject()->className()).arg(sink->metaObject()->className()));
+                debug() << "Backend connected" << source->metaObject()->className() << "to" << sink->metaObject()->className();
                 return true;
             }
         }
     }
-    logMessage(QString("Linking %0 to %1 failed").arg(source->metaObject()->className()).arg(sink->metaObject()->className()), Warning);
+    warning() << "Linking" << source->metaObject()->className() << "to" << sink->metaObject()->className() << "failed";
     return false;
 }
 
@@ -434,7 +433,6 @@ bool Backend::endConnectionChange(QSet<QObject *> objects)
         MediaObject *media = sourceNode->root();
         if (media) {
             media->resumeState();
-            return true;
         }
     }
     return true;
@@ -448,56 +446,6 @@ DeviceManager* Backend::deviceManager() const
 EffectManager* Backend::effectManager() const
 {
     return m_effectManager;
-}
-
-/**
- * Returns a debuglevel that is determined by the
- * PHONON_GST_DEBUG environment variable.
- *
- *  Warning - important warnings
- *  Info    - general info
- *  Debug   - gives extra info
- */
-Backend::DebugLevel Backend::debugLevel() const
-{
-    return m_debugLevel;
-}
-
-/***
- * Prints a conditional debug message based on the current debug level
- * If obj is provided, classname and objectname will be printed as well
- *
- * see debugLevel()
- */
-void Backend::logMessage(const QString &message, int priority, QObject *obj) const
-{
-    // Backend is a singleton, so this is just fine.
-    static QString lastLogMessage = QString();
-    static int logMessageSkipCount = 0;
-
-    if (debugLevel() > 0) {
-        QString output;
-        if (obj) {
-            // Strip away namespace from className
-            QString className(obj->metaObject()->className());
-            int nameLength = className.length() - className.lastIndexOf(':') - 1;
-            className = className.right(nameLength);
-            output.sprintf("%s %s (%s %p)", message.toLatin1().constData(),
-                                          obj->objectName().toLatin1().constData(),
-                                          className.toLatin1().constData(), obj);
-        }
-        else {
-            output = message;
-        }
-        if (priority <= (int)debugLevel() && lastLogMessage != output) {
-            if (logMessageSkipCount != 0)
-                qDebug() << "  PGST: Last message repeated" << logMessageSkipCount << "time(s)";
-            qDebug() << QString("PGST(%1): %2").arg(priority).arg(output);
-            lastLogMessage = output;
-            logMessageSkipCount = 0;
-        } else
-            ++logMessageSkipCount;
-    }
 }
 
 }

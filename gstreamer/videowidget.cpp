@@ -1,6 +1,7 @@
 /*  This file is part of the KDE project.
 
     Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
+    Copyright (C) 2012 Anssi Hannula <anssi.hannula@iki.fi>
 
     This library is free software: you can redistribute it and/or modify
     it under the terms of the GNU Lesser General Public License as published by
@@ -26,10 +27,14 @@
 #include <gst/gst.h>
 #include <gst/interfaces/navigation.h>
 #include <gst/interfaces/propertyprobe.h>
+#include <gst/pbutils/gstpluginsbaseversion.h>
+#include <gst/video/video.h>
 #include "abstractrenderer.h"
 #include "backend.h"
+#include "debug.h"
 #include "devicemanager.h"
 #include "mediaobject.h"
+#include "x11renderer.h"
 
 #include "widgetrenderer.h"
 
@@ -71,12 +76,31 @@ VideoWidget::~VideoWidget()
         delete m_renderer;
 }
 
+void VideoWidget::updateWindowID()
+{
+    X11Renderer *render = dynamic_cast<X11Renderer*>(m_renderer);
+    if (render)
+        render->setOverlay();
+}
+
+void VideoWidget::finalizeLink()
+{
+    connect(root()->pipeline(), SIGNAL(mouseOverActive(bool)), this, SLOT(mouseOverActive(bool)));
+    connect(root()->pipeline(), SIGNAL(windowIDNeeded()), this, SLOT(updateWindowID()), Qt::DirectConnection);
+}
+
+void VideoWidget::prepareToUnlink()
+{
+    disconnect(root()->pipeline());
+}
 
 void VideoWidget::setupVideoBin()
 {
 
     m_renderer = m_backend->deviceManager()->createVideoRenderer(this);
     GstElement *videoSink = m_renderer->videoSink();
+    GstPad *videoPad = gst_element_get_static_pad(videoSink, "sink");
+    g_signal_connect(videoPad, "notify::caps", G_CALLBACK(cb_capsChanged), this);
 
     m_videoBin = gst_bin_new (NULL);
     Q_ASSERT(m_videoBin);
@@ -98,7 +122,7 @@ void VideoWidget::setupVideoBin()
 
         if (queue && m_videoBin && videoScale && m_colorspace && videoSink && m_videoplug) {
         //Ensure that the bare essentials are prepared
-            gst_bin_add_many (GST_BIN (m_videoBin), queue, m_colorspace, m_videoplug, videoScale, videoSink, (const char*)NULL);
+            gst_bin_add_many (GST_BIN (m_videoBin), queue, m_colorspace, m_videoplug, videoScale, videoSink, NULL);
             bool success = false;
             //Video balance controls color/sat/hue in the YUV colorspace
             m_videoBalance = gst_element_factory_make ("videobalance", NULL);
@@ -107,14 +131,14 @@ void VideoWidget::setupVideoBin()
                 // then hand it off to the videobalance filter before finally converting it back to RGB.
                 // Hence we nede a videoFilter to convert the colorspace before and after videobalance
                 GstElement *m_colorspace2 = gst_element_factory_make ("ffmpegcolorspace", NULL);
-                gst_bin_add_many(GST_BIN(m_videoBin), m_videoBalance, m_colorspace2, (const char*)NULL);
-                success = gst_element_link_many(queue, m_colorspace, m_videoBalance, m_colorspace2, videoScale, m_videoplug, videoSink, (const char*)NULL);
+                gst_bin_add_many(GST_BIN(m_videoBin), m_videoBalance, m_colorspace2, NULL);
+                success = gst_element_link_many(queue, m_colorspace, m_videoBalance, m_colorspace2, videoScale, m_videoplug, videoSink, NULL);
             } else {
                 //If video balance is not available, just connect to sink directly
-                success = gst_element_link_many(queue, m_colorspace, videoScale, m_videoplug, videoSink, (const char*)NULL);
+                success = gst_element_link_many(queue, m_colorspace, videoScale, m_videoplug, videoSink, NULL);
             }
             if (success) {
-                GstPad *videopad = gst_element_get_pad (queue, "sink");
+                GstPad *videopad = gst_element_get_static_pad (queue, "sink");
                 gst_element_add_pad (m_videoBin, gst_ghost_pad_new ("sink", videopad));
                 gst_object_unref (videopad);
                 QWidget *parentWidget = qobject_cast<QWidget*>(parent());
@@ -126,7 +150,7 @@ void VideoWidget::setupVideoBin()
         }
     } else {
         gst_bin_add_many (GST_BIN (m_videoBin), videoSink, NULL);
-        GstPad *videopad = gst_element_get_pad (videoSink,"sink");
+        GstPad *videopad = gst_element_get_static_pad (videoSink,"sink");
         gst_element_add_pad (m_videoBin, gst_ghost_pad_new ("sink", videopad));
         gst_object_unref (videopad);
         QWidget *parentWidget = qobject_cast<QWidget*>(parent());
@@ -148,7 +172,7 @@ void VideoWidget::setVisible(bool val) {
 
     // Disable overlays for graphics view
     if (root() && window() && window()->testAttribute(Qt::WA_DontShowOnScreen) && !m_renderer->paintsOnWidget()) {
-        m_backend->logMessage(QString("Widget rendering forced"), Backend::Info, this);
+        debug() << this << "Widget rendering forced";
         GstElement *videoSink = m_renderer->videoSink();
         Q_ASSERT(videoSink);
 
@@ -160,13 +184,12 @@ void VideoWidget::setVisible(bool val) {
         // Use widgetRenderer as a fallback
         m_renderer = new WidgetRenderer(this);
         videoSink = m_renderer->videoSink();
+        GstPad *videoPad = gst_element_get_static_pad(videoSink, "sink");
+        g_signal_connect(videoPad, "notify::caps", G_CALLBACK(cb_capsChanged), this);
         gst_bin_add(GST_BIN(m_videoBin), videoSink);
         gst_element_link(m_videoplug, videoSink);
         gst_element_set_state (videoSink, GST_STATE_PAUSED);
 
-        // Request return to current state
-        root()->invalidateGraph();
-        root()->setState(root()->state());
     }
     QWidget::setVisible(val);
 }
@@ -272,6 +295,62 @@ QRect VideoWidget::calculateDrawFrameRect() const
     return drawFrameRect;
 }
 
+QImage VideoWidget::snapshot() const
+{
+    // for gst_video_convert_frame()
+#if GST_CHECK_PLUGINS_BASE_VERSION(0,10,31)
+    GstElement *videosink = m_renderer->videoSink();
+    GstBuffer *videobuffer = NULL;
+
+    // in case we get called just after a flush (e.g. seeking), wait for the
+    // pipeline state change to complete first (with a timeout) so that
+    // last-buffer will be populated
+    gst_element_get_state(videosink, NULL, NULL, GST_SECOND);
+
+    g_object_get(G_OBJECT(videosink), "last-buffer", &videobuffer, NULL);
+
+    if (videobuffer) {
+        GstCaps *snapcaps = gst_caps_new_simple("video/x-raw-rgb",
+                                                "bpp", G_TYPE_INT, 24,
+                                                "depth", G_TYPE_INT, 24,
+                                                "endianness", G_TYPE_INT, G_BIG_ENDIAN,
+                                                "red_mask", G_TYPE_INT, 0xff0000,
+                                                "green_mask", G_TYPE_INT, 0x00ff00,
+                                                "blue_mask", G_TYPE_INT, 0x0000ff,
+                                                NULL);
+
+        GstBuffer *snapbuffer = gst_video_convert_frame(videobuffer, snapcaps, GST_SECOND, NULL);
+
+        gst_buffer_unref(videobuffer);
+        gst_caps_unref(snapcaps);
+
+        if (snapbuffer) {
+            gint width, height;
+            gboolean ret;
+            GstStructure *s = gst_caps_get_structure(GST_BUFFER_CAPS(snapbuffer), 0);
+
+            ret  = gst_structure_get_int(s, "width", &width);
+            ret &= gst_structure_get_int(s, "height", &height);
+
+            if (ret && width > 0 && height > 0) {
+                QImage snapimage(width, height, QImage::Format_RGB888);
+
+                for (int i = 0; i < height; ++i)
+                    memcpy(snapimage.scanLine(i),
+                           GST_BUFFER_DATA(snapbuffer) + i * GST_ROUND_UP_4(width * 3),
+                           width * 3);
+
+                gst_buffer_unref(snapbuffer);
+                return snapimage;
+            }
+
+            gst_buffer_unref(snapbuffer);
+        }
+    }
+#endif // gst_video_convert_frame()
+    return QImage();
+}
+
 void VideoWidget::setScaleMode(Phonon::VideoWidget::ScaleMode scaleMode)
 {
     m_scaleMode = scaleMode;
@@ -307,10 +386,10 @@ void VideoWidget::setBrightness(qreal newValue)
     QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
     if (tegraEnv.isEmpty()) {
         if (m_videoBalance)
-            g_object_set(G_OBJECT(m_videoBalance), "brightness", newValue, (const char*)NULL); //gstreamer range is [-1, 1]
+            g_object_set(G_OBJECT(m_videoBalance), "brightness", newValue, NULL); //gstreamer range is [-1, 1]
     } else {
         if (videoSink)
-            g_object_set(G_OBJECT(videoSink), "brightness", newValue, (const char*)NULL); //gstreamer range is [-1, 1]
+            g_object_set(G_OBJECT(videoSink), "brightness", newValue, NULL); //gstreamer range is [-1, 1]
     }
 }
 
@@ -334,10 +413,10 @@ void VideoWidget::setContrast(qreal newValue)
 
     if (tegraEnv.isEmpty()) {
         if (m_videoBalance)
-            g_object_set(G_OBJECT(m_videoBalance), "contrast", (newValue + 1.0), (const char*)NULL); //gstreamer range is [0-2]
+            g_object_set(G_OBJECT(m_videoBalance), "contrast", (newValue + 1.0), NULL); //gstreamer range is [0-2]
     } else {
        if (videoSink)
-           g_object_set(G_OBJECT(videoSink), "contrast", (newValue + 1.0), (const char*)NULL); //gstreamer range is [0-2]
+           g_object_set(G_OBJECT(videoSink), "contrast", (newValue + 1.0), NULL); //gstreamer range is [0-2]
     }
 }
 
@@ -356,7 +435,7 @@ void VideoWidget::setHue(qreal newValue)
     m_hue = newValue;
 
     if (m_videoBalance)
-        g_object_set(G_OBJECT(m_videoBalance), "hue", newValue, (const char*)NULL); //gstreamer range is [-1, 1]
+        g_object_set(G_OBJECT(m_videoBalance), "hue", newValue, NULL); //gstreamer range is [-1, 1]
 }
 
 qreal VideoWidget::saturation() const
@@ -379,17 +458,17 @@ void VideoWidget::setSaturation(qreal newValue)
     QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
     if (tegraEnv.isEmpty()) {
         if (m_videoBalance)
-            g_object_set(G_OBJECT(m_videoBalance), "saturation", newValue + 1.0, (const char*)NULL); //gstreamer range is [0, 2]
+            g_object_set(G_OBJECT(m_videoBalance), "saturation", newValue + 1.0, NULL); //gstreamer range is [0, 2]
     } else {
         if (videoSink)
-            g_object_set(G_OBJECT(videoSink), "saturation", newValue + 1.0, (const char*)NULL); //gstreamer range is [0, 2]
+            g_object_set(G_OBJECT(videoSink), "saturation", newValue + 1.0, NULL); //gstreamer range is [0, 2]
     }
 }
 
 
 void VideoWidget::setMovieSize(const QSize &size)
 {
-    m_backend->logMessage(QString("New video size %0 x %1").arg(size.width()).arg(size.height()), Backend::Info);
+    debug() << "New video size" << size;
     if (size == m_movieSize)
         return;
     m_movieSize = size;
@@ -398,32 +477,6 @@ void VideoWidget::setMovieSize(const QSize &size)
 
     if (m_renderer)
         m_renderer->movieSizeChanged(m_movieSize);
-}
-
-void VideoWidget::mediaNodeEvent(const MediaNodeEvent *event)
-{
-    switch (event->type()) {
-    case MediaNodeEvent::VideoSizeChanged: {
-        const QSize *size = static_cast<const QSize*>(event->data());
-        setMovieSize(*size);
-        break;
-    }
-    case MediaNodeEvent::VideoMouseOver: {
-        const gboolean active = *static_cast<const gboolean*>(event->data());
-        if (active) {
-            setCursor(Qt::PointingHandCursor);
-        } else {
-            setCursor(Qt::ArrowCursor);
-        }
-        break;
-    }
-    default:
-        break;
-    }
-
-    // Forward events to renderer
-    if (m_renderer)
-        m_renderer->handleMediaNodeEvent(event);
 }
 
 void VideoWidget::keyPressEvent(QKeyEvent *event)
@@ -500,6 +553,36 @@ void VideoWidget::mouseReleaseEvent(QMouseEvent *event)
         }
     }
     QWidget::mouseReleaseEvent(event);
+}
+
+void VideoWidget::cb_capsChanged(GstPad *pad, GParamSpec *spec, gpointer data)
+{
+    Q_UNUSED(spec)
+    //TODO: Original code disconnected the signal until source was changed again. Is that needed?
+    //Also, it used a signal ID, which isn't needed since we can just disconnect based on the data
+    //value (see Pipeline destructor for example)
+    //g_signal_handler_disconnect(pad, media->capsHandler());
+    VideoWidget *that = static_cast<VideoWidget*>(data);
+    if (!GST_PAD_IS_LINKED(pad))
+        return;
+    GstState videoState;
+    gst_element_get_state(that->videoElement(), &videoState, NULL, 1000);
+
+    gint width;
+    gint height;
+    //FIXME: This sometimes gives a gstreamer warning. Feels like GStreamer shouldn't, and instead
+    //just quietly return false, probably a bug.
+    if (gst_video_get_size(pad, &width, &height)) {
+        QMetaObject::invokeMethod(that, "setMovieSize", Q_ARG(QSize, QSize(width, height)));
+    }
+}
+
+void VideoWidget::mouseOverActive(bool active)
+{
+    if (active)
+        setCursor(Qt::PointingHandCursor);
+    else
+        setCursor(Qt::ArrowCursor);
 }
 
 }

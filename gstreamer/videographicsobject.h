@@ -43,7 +43,7 @@ class VideoGraphicsObject : public QObject,
 public:
     explicit VideoGraphicsObject(Backend *backend, QObject *parent = 0);
     ~VideoGraphicsObject();
-    QList<VideoFrame::Format> offering(QList<VideoFrame::Format> offers);
+    Q_INVOKABLE QList<VideoFrame::Format> offering(QList<VideoFrame::Format> offers);
     void choose(VideoFrame::Format format);
 
     static void renderCallback(GstBuffer *buffer, void *userData);

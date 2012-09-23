@@ -15,15 +15,19 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef QT_NO_OPENGL
+#include "glrenderer.h"
+#endif
+
 #include <QtGui/QPainter>
 #include <QtGui/QResizeEvent>
 
 #ifndef QT_NO_OPENGL
 
 #include "backend.h"
+#include "debug.h"
 #include "mediaobject.h"
 #include "qwidgetvideosink.h"
-#include "glrenderer.h"
 #include "qrgb.h"
 #include "videowidget.h"
 
@@ -72,7 +76,7 @@ GLRenderer::GLRenderer(VideoWidget* videoWidget) :
     AbstractRenderer(videoWidget)
     , m_glWindow(0)
 {
-    videoWidget->backend()->logMessage("Creating OpenGL renderer");
+    debug() << "Creating OpenGL renderer";
     QGLFormat format = QGLFormat::defaultFormat();
     format.setSwapInterval(1);    // Enable vertical sync on draw to avoid tearing
     m_glWindow = new GLRenderWidgetImplementation(videoWidget, format);
@@ -108,20 +112,6 @@ bool GLRenderer::eventFilter(QEvent * event)
         return true;
     }
     return false;
-}
-
-void GLRenderer::handleMediaNodeEvent(const MediaNodeEvent *event)
-{
-    switch (event->type()) {
-    case MediaNodeEvent::SourceChanged:
-    {
-        Q_ASSERT(m_glWindow);
-        m_glWindow->clearFrame();
-        break;
-    }
-    default:
-        break;
-    }
 }
 
 GstElement* GLRenderWidgetImplementation::createVideoSink()

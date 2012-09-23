@@ -52,11 +52,12 @@ public:
         return m_audioBin;
     }
 
-    void mediaNodeEvent(const MediaNodeEvent *event);
-
 Q_SIGNALS:
     void volumeChanged(qreal newVolume);
     void audioDeviceFailed();
+
+private:
+    bool setOutputDevice(const QByteArray &, const QString &, const GstState);
 
 private:
 

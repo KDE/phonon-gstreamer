@@ -42,7 +42,6 @@ class GLRenderer : public AbstractRenderer
 public:
     GLRenderer(VideoWidget *control);
     ~GLRenderer();
-    void handleMediaNodeEvent(const MediaNodeEvent *event);
     bool eventFilter(QEvent * event);
     bool paintsOnWidget() { return false; }
 private:

@@ -18,20 +18,18 @@
 #ifndef Phonon_GSTREAMER_ABSTRACTRENDERER_H
 #define Phonon_GSTREAMER_ABSTRACTRENDERER_H
 
-#include <phonon/videowidget.h>
-
 #include <gst/gstelement.h>
 
-#ifndef QT_NO_PHONON_VIDEO
-QT_BEGIN_NAMESPACE
+#include <phonon/videowidget.h>
 
 class QString;
+
 namespace Phonon
 {
 namespace Gstreamer
 {
 
-class MediaNodeEvent;
+class VideoWidget;
 
 class AbstractRenderer
 {
@@ -44,7 +42,6 @@ public:
     virtual void aspectRatioChanged(Phonon::VideoWidget::AspectRatio aspectRatio);
     virtual void scaleModeChanged(Phonon::VideoWidget::ScaleMode scaleMode);
     virtual void movieSizeChanged(const QSize &movieSize);
-    virtual void handleMediaNodeEvent(const MediaNodeEvent *event) = 0;
     virtual bool eventFilter(QEvent *) = 0;
     virtual void handlePaint(QPaintEvent *) {}
     virtual bool paintsOnWidget() { return true; } // Controls overlays
@@ -57,6 +54,4 @@ protected:
 }
 } //namespace Phonon::Gstreamer
 
-QT_END_NAMESPACE
-#endif //QT_NO_PHONON_VIDEO
 #endif // Phonon_GSTREAMER_ABSTRACTRENDERER_H

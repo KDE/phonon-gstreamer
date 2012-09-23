@@ -15,9 +15,13 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <QApplication>
-#include "videowidget.h"
 #include "qwidgetvideosink.h"
+
+#include <QtGui/QApplication>
+
+#include <gst/video/video.h>
+
+#include "videowidget.h"
 
 QT_BEGIN_NAMESPACE
 
@@ -106,11 +110,7 @@ static GstStaticPadTemplate template_factory_rgb =
     GST_STATIC_PAD_TEMPLATE("sink",
                             GST_PAD_SINK,
                             GST_PAD_ALWAYS,
-                            GST_STATIC_CAPS("video/x-raw-rgb, "
-                                            "framerate = (fraction) [ 0, MAX ], "
-                                            "width = (int) [ 1, MAX ], "
-                                            "height = (int) [ 1, MAX ],"
-                                            "bpp = (int) 32"));
+                            GST_STATIC_CAPS(GST_VIDEO_CAPS_xRGB_HOST_ENDIAN));
 
 template <VideoFormat FMT>
 struct template_factory;

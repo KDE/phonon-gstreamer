@@ -27,19 +27,20 @@ namespace Phonon
 namespace Gstreamer
 {
 
-StreamReader::StreamReader(const Phonon::MediaSource &source, MediaObject *parent)
+StreamReader::StreamReader(const Phonon::MediaSource &source, Pipeline *parent)
     : m_pos(0)
     , m_size(0)
     , m_eos(false)
     , m_locked(false)
     , m_seekable(false)
-    , m_mediaObject(parent)
+    , m_pipeline(parent)
 {
     connectToSource(source);
 }
 
 StreamReader::~StreamReader()
 {
+    DEBUG_BLOCK;
 }
 
 //------------------------------------------------------------------------------
@@ -61,15 +62,14 @@ qint64 StreamReader::streamSize() const
     return m_size;
 }
 
+#warning convert to streamtype query
 bool StreamReader::streamSeekable() const
 {
-    // TODO - problems with pull seeking and the way our current stack works.
-    return false;
-//    return m_seekable;
+    return m_seekable;
 }
 
 //------------------------------------------------------------------------------
-// Explicit thread safe by locking the mutex ---------------------------------
+// Explicit thread safe through locking the mutex ------------------------------
 //------------------------------------------------------------------------------
 
 void StreamReader::setCurrentPos(qint64 pos)
@@ -83,6 +83,7 @@ void StreamReader::setCurrentPos(qint64 pos)
 void StreamReader::writeData(const QByteArray &data)
 {
     QMutexLocker locker(&m_mutex);
+    Debug::Block block(__PRETTY_FUNCTION__);
     m_buffer.append(data);
     m_waitingForData.wakeAll();
 }
@@ -90,6 +91,11 @@ void StreamReader::writeData(const QByteArray &data)
 GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
 {
     QMutexLocker locker(&m_mutex);
+    DEBUG_BLOCK;
+
+    // If we got unlocked before grabbing the mutex -> return
+    if (!m_locked)
+        return GST_FLOW_UNEXPECTED;
 
     if (currentPos() != pos) {
         if (!streamSeekable()) {
@@ -109,9 +115,8 @@ GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
 
         // Abort instantly if we got unlocked, whether we got sufficient data or not
         // is absolutely unimportant at this point.
-        if (!m_locked) {
-            break;
-        }
+        if (!m_locked)
+            return GST_FLOW_UNEXPECTED;
 
         if (oldSize == currentBufferSize()) {
             // We didn't get any data, check if we are at the end of stream already.
@@ -120,8 +125,8 @@ GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
             }
         }
     }
-    if (m_mediaObject->state() != Phonon::BufferingState &&
-        m_mediaObject->state() != Phonon::LoadingState) {
+    if (m_pipeline->phononState() != Phonon::BufferingState &&
+        m_pipeline->phononState() != Phonon::LoadingState) {
         enoughData();
     }
 
@@ -142,6 +147,7 @@ void StreamReader::endOfData()
 void StreamReader::start()
 {
     QMutexLocker locker(&m_mutex);
+    DEBUG_BLOCK;
     m_buffer.clear();
     m_eos = false;
     m_locked = true;
@@ -154,13 +160,7 @@ void StreamReader::start()
 void StreamReader::stop()
 {
     QMutexLocker locker(&m_mutex);
-    enoughData();
-    m_waitingForData.wakeAll();
-}
-
-void StreamReader::unlock()
-{
-    QMutexLocker locker(&m_mutex);
+    DEBUG_BLOCK;
     enoughData();
     m_locked = false;
     m_waitingForData.wakeAll();
@@ -175,11 +175,6 @@ void StreamReader::setStreamSize(qint64 newSize)
 void StreamReader::setStreamSeekable(bool seekable)
 {
     QMutexLocker locker(&m_mutex);
-//    if (seekable) {
-//        // The initial stream size of a seekable stream *must* not be 0 or
-//        // GStreamer will refuse to typefind.
-//        m_size = 1;
-//    }
     m_seekable = seekable;
 }
 
@@ -188,3 +183,5 @@ void StreamReader::setStreamSeekable(bool seekable)
 #endif //QT_NO_PHONON_ABSTRACTMEDIASTREAM
 
 QT_END_NAMESPACE
+
+#include "moc_streamreader.cpp"

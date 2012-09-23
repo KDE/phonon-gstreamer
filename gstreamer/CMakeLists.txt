@@ -26,10 +26,7 @@ if (BUILD_PHONON_GSTREAMER)
           ${GLIB2_INCLUDE_DIR}
           ${LIBXML2_INCLUDE_DIR}
           ${X11_X11_INCLUDE_PATH})
-   add_definitions(-DPHONON_BACKEND_VERSION_4_2)
-   if (PHONON_FOUND_EXPERIMENTAL)
-      add_definitions(-DPHONON_EXPERIMENTAL)
-   endif (PHONON_FOUND_EXPERIMENTAL)
+   add_definitions(-DPHONON_BACKEND_VERSION_4_4)
 
    # configure plugin api
    if(USE_INSTALL_PLUGIN)
@@ -51,9 +48,8 @@ if (BUILD_PHONON_GSTREAMER)
       effectmanager.cpp
       gsthelper.cpp
       medianode.cpp
-      medianodeevent.cpp
       mediaobject.cpp
-      phononsrc.cpp
+      pipeline.cpp
       plugininstaller.cpp
       qwidgetvideosink.cpp
       streamreader.cpp
@@ -64,6 +60,11 @@ if (BUILD_PHONON_GSTREAMER)
       volumefadereffect.cpp
       widgetrenderer.cpp
       )
+
+    if(PHONON_FOUND_EXPERIMENTAL)
+        add_definitions(-DPHONON_EXPERIMENTAL)
+        list(APPEND phonon_gstreamer_SRCS videodataoutput.cpp)
+    endif(PHONON_FOUND_EXPERIMENTAL)
 
    if(OPENGL_FOUND)
         list(APPEND phonon_gstreamer_SRCS glrenderer.cpp)
@@ -81,7 +82,7 @@ if (BUILD_PHONON_GSTREAMER)
       ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} ${PHONON_LIBRARY}
       ${GSTREAMER_LIBRARIES} ${GSTREAMER_BASE_LIBRARY} ${GSTREAMER_INTERFACE_LIBRARY}
       ${GSTREAMER_PLUGIN_VIDEO_LIBRARY} ${GSTREAMER_PLUGIN_AUDIO_LIBRARY} ${GSTREAMER_PLUGIN_PBUTILS_LIBRARY}
-      ${GLIB2_LIBRARIES} ${GOBJECT_LIBRARIES})
+      ${GLIB2_LIBRARIES} ${GOBJECT_LIBRARIES} ${GSTREAMER_APP_LIBRARY})
    if(USE_INSTALL_PLUGIN)
        target_link_libraries(phonon_gstreamer ${GSTREAMER_PLUGIN_PBUTILS_LIBRARIES})
    endif(USE_INSTALL_PLUGIN)

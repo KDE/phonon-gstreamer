@@ -15,11 +15,13 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "widgetrenderer.h"
+
 #include <gst/gst.h>
 #include "backend.h"
+#include "debug.h"
 #include "mediaobject.h"
 #include "qwidgetvideosink.h"
-#include "widgetrenderer.h"
 #include "videowidget.h"
 #include "qrgb.h"
 
@@ -67,7 +69,7 @@ WidgetRenderer::WidgetRenderer(VideoWidget *videoWidget)
         , m_width(0)
         , m_height(0)
 {
-    videoWidget->backend()->logMessage("Creating QWidget renderer");
+    debug() << "Creating QWidget renderer";
     if ((m_videoSink = GST_ELEMENT(g_object_new(get_type_RGB(), NULL)))) {
         gst_object_ref (GST_OBJECT (m_videoSink)); //Take ownership
         gst_object_sink (GST_OBJECT (m_videoSink));
@@ -101,19 +103,6 @@ void WidgetRenderer::setNextFrame(const QByteArray &array, int w, int h)
     m_height = h;
 
     m_videoWidget->update();
-}
-
-void WidgetRenderer::handleMediaNodeEvent(const MediaNodeEvent *event)
-{
-    switch (event->type()) {
-    case MediaNodeEvent::SourceChanged:
-    {
-        clearFrame();
-        break;
-    }
-    default:
-        break;
-    }
 }
 
 void WidgetRenderer::clearFrame()
