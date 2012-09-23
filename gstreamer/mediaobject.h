@@ -33,7 +33,7 @@
 #include <QtCore/QWaitCondition>
 #include <QtCore/QMutex>
 
-#include "phonon-config-gstreamer.h"
+#include "phonon-config-gstreamer.h" // krazy:exclude=includes
 
 QT_BEGIN_NAMESPACE
 
@@ -194,6 +194,7 @@ protected:
 private Q_SLOTS:
     void handleTrackCountChange(int tracks);
     void getSubtitleInfo(int stream);
+    void getAudioChannelInfo(int stream);
     void emitTick();
     void beginPlay();
     void autoDetectSubtitle();
@@ -222,6 +223,10 @@ private:
     void _iface_setCurrentSubtitle(const SubtitleDescription &subtitle);
     void changeTitle(const QString &format, int title);
     void changeSubUri(const Mrl &mrl);
+
+    QList<AudioChannelDescription> _iface_availableAudioChannels() const;
+    AudioChannelDescription _iface_currentAudioChannel() const;
+    void _iface_setCurrentAudioChannel(const AudioChannelDescription &channel);
 
     bool m_resumeState;
     State m_oldState;
@@ -253,9 +258,10 @@ private:
     int m_availableTitles;
     int m_currentTitle;
     SubtitleDescription m_currentSubtitle;
+    AudioChannelDescription m_currentAudioChannel;
     int m_pendingTitle;
 
-    // When we emit aboutToFinish(), libphonon calls setNextSource. To achive gapless playback,
+    // When we emit aboutToFinish(), libphonon calls setNextSource. To achieve gapless playback,
     // the pipeline is immediately told to start using that new source. This can break seeking
     // since the aboutToFinish signal tends to be emitted around 15 seconds or so prior to actually
     // ending the current track.
@@ -269,6 +275,7 @@ private:
     bool m_waitingForPreviousSource;
 
     bool m_skippingEOS;
+    bool m_doingEOS; // To prevent superfluously signal emission.
 
     // This keeps track of the source currently heard over the speakers.
     // It can be different from the pipeline's current source due to how the
@@ -281,6 +288,10 @@ private:
     QWaitCondition m_aboutToFinishWait;
 
     qint64 m_lastTime;
+    bool m_skipGapless;
+
+    /*** Tracks whereever the MO is actively handling an aboutToFinish CB right now. */
+    bool m_handlingAboutToFinish;
 };
 }
 } //namespace Phonon::Gstreamer

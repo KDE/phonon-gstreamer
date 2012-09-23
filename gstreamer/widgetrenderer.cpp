@@ -15,12 +15,13 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "widgetrenderer.h"
+
 #include <gst/gst.h>
 #include "backend.h"
 #include "debug.h"
 #include "mediaobject.h"
 #include "qwidgetvideosink.h"
-#include "widgetrenderer.h"
 #include "videowidget.h"
 #include "qrgb.h"
 

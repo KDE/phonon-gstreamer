@@ -86,7 +86,7 @@ void VideoWidget::updateWindowID()
 void VideoWidget::finalizeLink()
 {
     connect(root()->pipeline(), SIGNAL(mouseOverActive(bool)), this, SLOT(mouseOverActive(bool)));
-    connect(root()->pipeline(), SIGNAL(windowIDNeeded()), this, SLOT(updateWindowID()));
+    connect(root()->pipeline(), SIGNAL(windowIDNeeded()), this, SLOT(updateWindowID()), Qt::DirectConnection);
 }
 
 void VideoWidget::prepareToUnlink()

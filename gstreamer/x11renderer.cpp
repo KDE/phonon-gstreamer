@@ -15,8 +15,9 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "videowidget.h"
 #include "x11renderer.h"
+
+#include "videowidget.h"
 
 #ifndef Q_WS_QWS
 

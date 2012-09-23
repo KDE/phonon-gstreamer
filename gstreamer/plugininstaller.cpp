@@ -171,11 +171,11 @@ void PluginInstaller::run()
     }
     gchar *details[m_pluginList.size()+m_descList.size()+1];
     int i = 0;
-    foreach (QString plugin, m_pluginList.keys()) {
+    foreach (const QString &plugin, m_pluginList.keys()) {
         details[i] = strdup(buildInstallationString(plugin.toLocal8Bit().data(), m_pluginList[plugin]).toLocal8Bit().data());
         i++;
     }
-    foreach (QString desc, m_descList) {
+    foreach (const QString &desc, m_descList) {
         details[i] = strdup(desc.toLocal8Bit().data());
         i++;
     }
@@ -252,7 +252,7 @@ PluginInstaller::InstallStatus PluginInstaller::checkInstalledPlugins()
     if (m_state != Idle)
         return m_state;
     bool allFound = true;
-    foreach (QString plugin, m_pluginList.keys()) {
+    foreach (const QString &plugin, m_pluginList.keys()) {
         if (!gst_default_registry_check_feature_version(plugin.toLocal8Bit().data(), 0, 10, 0)) {
             allFound = false;
             break;

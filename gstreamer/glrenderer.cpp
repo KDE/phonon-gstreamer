@@ -15,6 +15,10 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef QT_NO_OPENGL
+#include "glrenderer.h"
+#endif
+
 #include <QtGui/QPainter>
 #include <QtGui/QResizeEvent>
 
@@ -24,7 +28,6 @@
 #include "debug.h"
 #include "mediaobject.h"
 #include "qwidgetvideosink.h"
-#include "glrenderer.h"
 #include "qrgb.h"
 #include "videowidget.h"
 

@@ -35,6 +35,7 @@ namespace Gstreamer
 
 class MediaObject;
 class PluginInstaller;
+class StreamReader;
 
 class Pipeline : public QObject
 {
@@ -71,6 +72,7 @@ class Pipeline : public QObject
 
         static void cb_videoChanged(GstElement *playbin, gpointer data);
         static void cb_textTagsChanged(GstElement *playbin, gint stream, gpointer data);
+        static void cb_audioTagsChanged(GstElement *playbin, gint stream, gpointer data);
 
         GstElement *audioPipe();
         GstElement *videoPipe();
@@ -106,6 +108,7 @@ class Pipeline : public QObject
         void stateChanged(GstState oldState, GstState newState);
         void videoAvailabilityChanged(bool);
         void textTagChanged(int stream);
+        void audioTagChanged(int stream);
         void errorMessage(const QString &message, Phonon::ErrorType type);
         // Only emitted when metadata changes in the middle of a stream.
         void metaDataChanged(QMultiMap<QString, QString>);
@@ -119,7 +122,7 @@ class Pipeline : public QObject
         GstPipeline *m_pipeline;
         int m_bufferPercent;
 
-        // Keeps track of wether or not we jump to GST_STATE_PLAYING after plugin installtion is finished.
+        // Keeps track of whether or not we jump to GST_STATE_PLAYING after plugin installtion is finished.
         // Otherwise, it is possible to jump to another track, play a few seconds, pause, then finish installation
         // and spontaniously start playback without user action.
         bool m_resumeAfterInstall;
@@ -130,6 +133,7 @@ class Pipeline : public QObject
         QList<MediaController::NavigationMenu> m_menus;
         Phonon::MediaSource m_currentSource;
         PluginInstaller *m_installer;
+        StreamReader *m_reader;
         GstElement *m_audioGraph;
         GstElement *m_videoGraph;
         GstElement *m_audioPipe;

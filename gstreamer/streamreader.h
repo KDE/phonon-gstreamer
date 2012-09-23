@@ -16,8 +16,8 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef PHONON_IODEVICEREADER_H
-#define PHONON_IODEVICEREADER_H
+#ifndef PHONON_GSTREAMER_STREAMREADER_H
+#define PHONON_GSTREAMER_STREAMREADER_H
 
 #include <phonon/streaminterface.h>
 
@@ -56,7 +56,6 @@ public:
     void endOfData();
     void start();
     void stop();
-    void unlock();
 
     void setCurrentPos(qint64 pos);
     quint64 currentPos() const;
@@ -86,4 +85,4 @@ private:
 
 QT_END_NAMESPACE
 
-#endif
+#endif // PHONON_GSTREAMER_STREAMREADER_H

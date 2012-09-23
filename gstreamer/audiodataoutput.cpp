@@ -105,6 +105,7 @@ inline void AudioDataOutput::convertAndEmit()
 
     for (int i = 0 ; i < m_channels ; ++i) {
         map.insert(static_cast<Phonon::AudioDataOutput::Channel>(i), m_channelBuffers[i]);
+        Q_ASSERT(i == 0 || m_channelBuffers[i - 1].size() == m_channelBuffers[i].size());
     }
 
     emit dataReady(map);
@@ -146,19 +147,24 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad*, gpo
     int nBlockToSend = (that->m_pendingData.size() + gstBufferSize) / (dataSize * that->m_channels);
 
     if (nBlockToSend == 0) { // add data to pending buffer
+        const int prevPendingSize = that->m_pendingData.size();
         for (quint32 i = 0; i < gstBufferSize ; ++i) {
+#warning should be QBA, so we can work with append(buffer, size)
             that->m_pendingData.append(gstBufferData[i]);
-            return;
         }
+        Q_ASSERT(prevPendingSize + gstBufferSize == that->m_pendingData.size());
+        return;
     }
 
     // SENDING DATA
 
     // 1) I empty the stored data
     if (that->m_pendingData.size() != 0) {
+        // Since pendingData is a concatenation of buffers it must share its
+        // attribute of being a multiple of channelCount
+        Q_ASSERT((that->m_pendingData.size() % that->m_channels) == 0);
         for (int i = 0; i < that->m_pendingData.size(); i += that->m_channels) {
-            //TODO: Figure out why it crashes without the second test (bug #279791)
-            for (int j = 0; (j < that->m_channels) && (i+j < that->m_pendingData.size()); ++j) {
+            for (int j = 0; j < that->m_channels; ++j) {
                 that->m_channelBuffers[j].append(that->m_pendingData[i+j]);
             }
         }

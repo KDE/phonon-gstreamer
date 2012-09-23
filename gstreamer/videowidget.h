@@ -41,7 +41,7 @@ class VideoWidget : public QWidget, public Phonon::VideoWidgetInterface44, publi
     Q_OBJECT
     Q_INTERFACES(Phonon::VideoWidgetInterface44 Phonon::Gstreamer::MediaNode)
 public:
-    VideoWidget(Backend *backend, QWidget *parent = 0);
+    explicit VideoWidget(Backend *backend, QWidget *parent = 0);
     ~VideoWidget();
 
     void setupVideoBin();

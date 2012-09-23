@@ -15,9 +15,10 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <gst/interfaces/propertyprobe.h>
-#include "phonon-config-gstreamer.h"
 #include "devicemanager.h"
+
+#include <gst/interfaces/propertyprobe.h>
+#include "phonon-config-gstreamer.h" // krazy:exclude=includes
 #include "backend.h"
 #include "debug.h"
 #include "gsthelper.h"

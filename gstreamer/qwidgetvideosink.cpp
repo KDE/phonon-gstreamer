@@ -15,11 +15,12 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "qwidgetvideosink.h"
+
 #include <QtGui/QApplication>
 
 #include <gst/video/video.h>
 
-#include "qwidgetvideosink.h"
 #include "videowidget.h"
 
 QT_BEGIN_NAMESPACE

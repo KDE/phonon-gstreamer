@@ -18,6 +18,7 @@
 */
 
 #include "pipeline.h"
+
 #include "mediaobject.h"
 #include "backend.h"
 #include "debug.h"
@@ -29,6 +30,7 @@
 #include <gst/app/gstappsrc.h>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QMutexLocker>
+
 #define MAX_QUEUE_TIME 20 * GST_SECOND
 
 QT_BEGIN_NAMESPACE
@@ -43,6 +45,7 @@ Pipeline::Pipeline(QObject *parent)
     , m_isStream(false)
     , m_isHttpUrl(false)
     , m_installer(new PluginInstaller(this))
+    , m_reader(0) // Lazy init
     , m_resetting(false)
 {
     qRegisterMetaType<GstState>("GstState");
@@ -51,6 +54,7 @@ Pipeline::Pipeline(QObject *parent)
     gst_object_sink(m_pipeline);
     g_signal_connect(m_pipeline, "video-changed", G_CALLBACK(cb_videoChanged), this);
     g_signal_connect(m_pipeline, "text-tags-changed", G_CALLBACK(cb_textTagsChanged), this);
+    g_signal_connect(m_pipeline, "audio-tags-changed", G_CALLBACK(cb_audioTagsChanged), this);
     g_signal_connect(m_pipeline, "notify::source", G_CALLBACK(cb_setupSource), this);
     g_signal_connect(m_pipeline, "about-to-finish", G_CALLBACK(cb_aboutToFinish), this);
 
@@ -67,6 +71,7 @@ Pipeline::Pipeline(QObject *parent)
     g_signal_connect(bus, "sync-message::element", G_CALLBACK(cb_element), this);
     g_signal_connect(bus, "sync-message::error", G_CALLBACK(cb_error), this);
     g_signal_connect(bus, "sync-message::tag", G_CALLBACK(cb_tag), this);
+    gst_object_unref(bus);
 
     // Set up audio graph
     m_audioGraph = gst_bin_new("audioGraph");
@@ -115,7 +120,7 @@ Pipeline::Pipeline(QObject *parent)
         g_object_set(G_OBJECT(m_audioPipe), "max-size-bytes", 0, NULL);
     }
 
-    connect(m_installer, SIGNAL(failure(const QString&)), this, SLOT(pluginInstallFailure(const QString&)));
+    connect(m_installer, SIGNAL(failure(QString)), this, SLOT(pluginInstallFailure(QString)));
     connect(m_installer, SIGNAL(started()), this, SLOT(pluginInstallStarted()));
     connect(m_installer, SIGNAL(success()), this, SLOT(pluginInstallComplete()));
 }
@@ -148,6 +153,12 @@ void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
     m_resumeAfterInstall = false;
     m_isHttpUrl = false;
     m_metaData.clear();
+    if (m_reader) {
+        m_reader->stop();
+        // Because libphonon stream stuff likes to fail connection assert
+        delete m_reader;
+        m_reader = 0;
+    }
 
     debug() << "New source:" << source.mrl();
     QByteArray gstUri;
@@ -223,8 +234,12 @@ GstElement *Pipeline::element() const
 
 GstStateChangeReturn Pipeline::setState(GstState state)
 {
+    DEBUG_BLOCK;
     m_resumeAfterInstall = true;
     debug() << "Transitioning to state" << GstHelper::stateName(state);
+
+    if (state == GST_STATE_READY && m_reader)
+        m_reader->stop();
 
     return gst_element_set_state(GST_ELEMENT(m_pipeline), state);
 }
@@ -386,6 +401,12 @@ void Pipeline::cb_textTagsChanged(GstElement *playbin, gint stream, gpointer dat
 {
     Pipeline *that = static_cast<Pipeline *>(data);
     emit that->textTagChanged(stream);
+}
+
+void Pipeline::cb_audioTagsChanged(GstElement *playbin, gint stream, gpointer data)
+{
+    Pipeline *that = static_cast<Pipeline *>(data);
+    emit that->audioTagChanged(stream);
 }
 
 bool Pipeline::videoIsAvailable() const
@@ -746,20 +767,20 @@ bool Pipeline::seekToMSec(qint64 time)
 
 bool Pipeline::isSeekable() const
 {
+    gboolean seekable = 0;
     GstQuery *query;
     gboolean result;
     gint64 start, stop;
     query = gst_query_new_seeking(GST_FORMAT_TIME);
     result = gst_element_query (GST_ELEMENT(m_pipeline), query);
     if (result) {
-        gboolean seekable;
         GstFormat format;
         gst_query_parse_seeking(query, &format, &seekable, &start, &stop);
-        return seekable;
     } else {
         //TODO: Log failure
     }
-    return false;
+    gst_query_unref (query);
+    return seekable;
 }
 
 Phonon::State Pipeline::phononState() const
@@ -782,8 +803,10 @@ Phonon::State Pipeline::phononState() const
 
 static void cb_feedAppSrc(GstAppSrc *appSrc, guint buffsize, gpointer data)
 {
+    DEBUG_BLOCK;
     StreamReader *reader = static_cast<StreamReader*>(data);
     GstBuffer *buf = gst_buffer_new_and_alloc(buffsize);
+#warning ret not used!!! WHOOPWHOOPWHOOP
     reader->read(reader->currentPos(), buffsize, (char*)GST_BUFFER_DATA(buf));
     gst_app_src_push_buffer(appSrc, buf);
 }
@@ -791,6 +814,7 @@ static void cb_feedAppSrc(GstAppSrc *appSrc, guint buffsize, gpointer data)
 static void cb_seekAppSrc(GstAppSrc *appSrc, guint64 pos, gpointer data)
 {
     Q_UNUSED(appSrc);
+    DEBUG_BLOCK;
     StreamReader *reader = static_cast<StreamReader*>(data);
     reader->setCurrentPos(pos);
 }
@@ -799,26 +823,29 @@ void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer d
 {
     Q_UNUSED(playbin);
     Q_UNUSED(param);
+    DEBUG_BLOCK;
     GstElement *phononSrc;
     Pipeline *that = static_cast<Pipeline*>(data);
     gst_object_ref(that->m_pipeline);
     g_object_get(that->m_pipeline, "source", &phononSrc, NULL);
     if (that->m_isStream) {
-        StreamReader *reader = new StreamReader(that->m_currentSource, that);
-        if (reader->streamSize() > 0)
-            g_object_set(phononSrc, "size", reader->streamSize(), NULL);
+        if (!that->m_reader)
+            that->m_reader = new StreamReader(that->m_currentSource, that);
+        if (that->m_reader->streamSize() > 0)
+            g_object_set(phononSrc, "size", that->m_reader->streamSize(), NULL);
         int streamType = 0;
-        if (reader->streamSeekable())
+        if (that->m_reader->streamSeekable())
             streamType = GST_APP_STREAM_TYPE_SEEKABLE;
         else
             streamType = GST_APP_STREAM_TYPE_STREAM;
         g_object_set(phononSrc, "stream-type", streamType, NULL);
         g_object_set(phononSrc, "block", TRUE, NULL);
-        g_signal_connect(phononSrc, "need-data", G_CALLBACK(cb_feedAppSrc), reader);
-        g_signal_connect(phononSrc, "seek-data", G_CALLBACK(cb_seekAppSrc), reader);
+        g_signal_connect(phononSrc, "need-data", G_CALLBACK(cb_feedAppSrc), that->m_reader);
+        g_signal_connect(phononSrc, "seek-data", G_CALLBACK(cb_seekAppSrc), that->m_reader);
+        that->m_reader->start();
     } else {
         if (that->currentSource().type() == MediaSource::Url &&
-                that->currentSource().mrl().scheme().startsWith("http")) {
+                that->currentSource().mrl().scheme().startsWith(QLatin1String("http"))) {
             QString userAgent = QCoreApplication::applicationName() + '/' + QCoreApplication::applicationVersion();
             userAgent += QString(" (Phonon/%0; Phonon-GStreamer/%1)").arg(PHONON_VERSION_STR).arg(PHONON_GST_VERSION);
             g_object_set(phononSrc, "user-agent", userAgent.toUtf8().constData(), NULL);
@@ -858,7 +885,7 @@ QByteArray Pipeline::captureDeviceURI(const MediaSource &source) const
     if (source.videoCaptureDevice().isValid()) {
         DeviceAccessList devList = source.videoCaptureDevice().property("deviceAccessList").value<Phonon::DeviceAccessList>();
         QString devPath;
-        foreach (DeviceAccess dev, devList) {
+        foreach (const DeviceAccess &dev, devList) {
             if (dev.first == "v4l2") {
                 return QString("v4l2://%0").arg(dev.second).toUtf8();
             }

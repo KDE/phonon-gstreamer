@@ -42,8 +42,7 @@ class Backend : public QObject, public BackendInterface
     Q_INTERFACES(Phonon::BackendInterface)
 
 public:
-
-    Backend(QObject *parent = 0, const QVariantList & = QVariantList());
+    explicit Backend(QObject *parent = 0, const QVariantList & = QVariantList());
     virtual ~Backend();
 
     DeviceManager* deviceManager() const;

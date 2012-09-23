@@ -17,13 +17,13 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "mediaobject.h"
+
 #include <cmath>
 #include <gst/interfaces/navigation.h>
 #include <gst/interfaces/propertyprobe.h>
-#include "mediaobject.h"
 #include "backend.h"
 #include "streamreader.h"
-#include "phonon-config-gstreamer.h"
 #include "debug.h"
 #include "gsthelper.h"
 #include "pipeline.h"
@@ -77,6 +77,9 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         , m_waitingForNextSource(false)
         , m_waitingForPreviousSource(false)
         , m_skippingEOS(false)
+        , m_doingEOS(false)
+        , m_skipGapless(false)
+        , m_handlingAboutToFinish(false)
 {
     qRegisterMetaType<GstCaps*>("GstCaps*");
     qRegisterMetaType<State>("State");
@@ -93,6 +96,7 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
         m_pipeline = new Pipeline(this);
         m_isValid = true;
         GlobalSubtitles::instance()->register_(this);
+        GlobalAudioChannels::instance()->register_(this);
 
         connect(m_pipeline, SIGNAL(aboutToFinish()),
                 this, SLOT(handleAboutToFinish()), Qt::DirectConnection);
@@ -121,6 +125,8 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
 
         connect(m_pipeline, SIGNAL(textTagChanged(int)),
                 this, SLOT(getSubtitleInfo(int)));
+        connect(m_pipeline, SIGNAL(audioTagChanged(int)),
+                this, SLOT(getAudioChannelInfo(int)));
         connect(m_pipeline, SIGNAL(trackCountChanged(int)),
                 this, SLOT(handleTrackCountChange(int)));
 
@@ -133,9 +139,11 @@ MediaObject::~MediaObject()
     if (m_pipeline) {
         GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_pipeline->element()));
         g_signal_handlers_disconnect_matched(bus, G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, this);
+        gst_object_unref(bus);
         delete m_pipeline;
     }
     GlobalSubtitles::instance()->unregister_(this);
+    GlobalAudioChannels::instance()->unregister_(this);
 }
 
 void MediaObject::saveState()
@@ -253,6 +261,8 @@ Phonon::ErrorType MediaObject::errorType() const
 
 void MediaObject::setError(const QString &errorString, Phonon::ErrorType error)
 {
+    DEBUG_BLOCK;
+    debug() << errorString;
     m_errorString = errorString;
     m_error = error;
     // Perform this asynchronously because this is also called from within the pipeline's cb_error
@@ -298,7 +308,7 @@ void MediaObject::changeSubUri(const Mrl &mrl)
 
     if (customFont.isNull()) {
         QFont videoWidgetFont = QApplication::font("VideoWidget");
-        fontDesc = videoWidgetFont.family() + " " + QString::number(videoWidgetFont.pointSize());
+        fontDesc = videoWidgetFont.family() + ' ' + QString::number(videoWidgetFont.pointSize());
     }
     //FIXME: Try to detect common encodings, like libvlc does
     g_object_set(G_OBJECT(m_pipeline->element()), "suburi", mrl.toEncoded().constData(),
@@ -318,10 +328,10 @@ void MediaObject::autoDetectSubtitle()
 
         // Remove the file extension
         QString absCompleteBaseName = m_source.fileName();
-        absCompleteBaseName.replace(QFileInfo(absCompleteBaseName).suffix(), "");
+        absCompleteBaseName.replace(QFileInfo(absCompleteBaseName).suffix(), QChar());
 
         // Looking for a subtitle in the same directory and matching the same name
-        foreach(QLatin1String ext, exts) {
+        foreach(const QLatin1String &ext, exts) {
             if (QFile::exists(absCompleteBaseName + ext)) {
                 changeSubUri(Mrl("file://" + absCompleteBaseName + ext));
                 break;
@@ -333,23 +343,27 @@ void MediaObject::autoDetectSubtitle()
 void MediaObject::setNextSource(const MediaSource &source)
 {
     DEBUG_BLOCK;
-    debug() << "Got next source. Waiting for end of current.";
 
     m_aboutToFinishLock.lock();
+    if (m_handlingAboutToFinish) {
+        debug() << "Got next source. Waiting for end of current.";
 
-    // If next source is valid and is not empty (an empty source is sent by Phonon if
-    // there are no more sources) skip EOS for the current source in order to seamlessly
-    // pass to the next source.
-    if (source.type() == Phonon::MediaSource::Invalid ||
-        source.type() == Phonon::MediaSource::Empty)
-        m_skippingEOS = false;
-    else
-        m_skippingEOS = true;
+        // If next source is valid and is not empty (an empty source is sent by Phonon if
+        // there are no more sources) skip EOS for the current source in order to seamlessly
+        // pass to the next source.
+        if (source.type() == Phonon::MediaSource::Invalid ||
+            source.type() == Phonon::MediaSource::Empty)
+            m_skippingEOS = false;
+        else
+            m_skippingEOS = true;
 
-    m_waitingForNextSource = true;
-    m_waitingForPreviousSource = false;
-    m_pipeline->setSource(source);
-    m_aboutToFinishWait.wakeAll();
+        m_waitingForNextSource = true;
+        m_waitingForPreviousSource = false;
+        m_skipGapless = false;
+        m_pipeline->setSource(source);
+        m_aboutToFinishWait.wakeAll();
+    } else
+        qDebug() << "Ignoring source as no aboutToFinish handling is in progress.";
     m_aboutToFinishLock.unlock();
 }
 
@@ -382,6 +396,7 @@ void MediaObject::setSource(const MediaSource &source)
     m_source = source;
     autoDetectSubtitle();
     m_pipeline->setSource(source);
+    m_skipGapless = false;
     m_aboutToFinishWait.wakeAll();
     //emit currentSourceChanged(source);
 }
@@ -389,7 +404,38 @@ void MediaObject::setSource(const MediaSource &source)
 // Called when we are ready to leave the loading state
 void MediaObject::loadingComplete()
 {
+    DEBUG_BLOCK;
     link();
+}
+
+void MediaObject::getAudioChannelInfo(int stream)
+{
+    gint channelCount = 0;
+    g_object_get(G_OBJECT(m_pipeline->element()), "n-audio", &channelCount, NULL);
+    if (channelCount)
+        GlobalAudioChannels::instance()->add(this, -1, tr("Default"), "");
+    for (gint i = 0; i < channelCount; ++i) {
+        GstTagList *tags = 0;
+        g_signal_emit_by_name (G_OBJECT(m_pipeline->element()), "get-audio-tags",
+                               i, &tags);
+        if (tags) {
+            gchar *tagLangCode = 0;
+            gchar *tagCodecName = 0;
+            gst_tag_list_get_string (tags, GST_TAG_AUDIO_CODEC, &tagCodecName);
+            gst_tag_list_get_string (tags, GST_TAG_LANGUAGE_CODE, &tagLangCode);
+            QString name;
+            if (tagLangCode)
+                name = QLatin1String(tagLangCode);
+            else
+                name = tr("Unknown");
+            if (tagCodecName)
+                name = QString("%1 [%2]").arg(name, QLatin1String(tagCodecName));
+            GlobalAudioChannels::instance()->add(this, i, name);
+            g_free(tagLangCode);
+            g_free(tagCodecName);
+        }
+    }
+    emit availableAudioChannelsChanged();
 }
 
 void MediaObject::getSubtitleInfo(int stream)
@@ -412,6 +458,9 @@ void MediaObject::getSubtitleInfo(int stream)
             else
                 name = tr("Unknown");
             GlobalSubtitles::instance()->add(this, i, name);
+            // tagLangCode was implicat converted to QString, so we can drop
+            // the ref.
+            g_free(tagLangCode);
         }
     }
     emit availableSubtitlesChanged();
@@ -426,6 +475,7 @@ void MediaObject::setPrefinishMark(qint32 newPrefinishMark)
 
 void MediaObject::pause()
 {
+    DEBUG_BLOCK;
     requestState(Phonon::PausedState);
 }
 
@@ -542,19 +592,28 @@ void MediaObject::handleStateChange(GstState oldState, GstState newState)
     if (newState == GST_STATE_READY)
         emit tick(0);
 
-    emit stateChanged(m_state, prevPhononState);
+    if (!m_doingEOS)
+        emit stateChanged(m_state, prevPhononState);
 }
 
 void MediaObject::handleEndOfStream()
 {
+    DEBUG_BLOCK;
     if (!m_skippingEOS) {
-        emit finished();
-        m_aboutToFinishWait.wakeAll();
-        m_pipeline->setState(GST_STATE_READY);
+        debug() << "not skipping EOS";
+        m_doingEOS = true;
+        { // When working on EOS we do not want signals emitted to avoid bogus UI updates.
+            emit stateChanged(Phonon::StoppedState, m_state);
+            m_aboutToFinishWait.wakeAll();
+            m_aboutToFinishLock.unlock();
+            m_pipeline->setState(GST_STATE_READY);
+            emit finished();
+        }
+        m_doingEOS = false;
     } else {
+        debug() << "skipping EOS";
         GstState state = m_pipeline->state();
         m_pipeline->setState(GST_STATE_READY);
-        m_pipeline->state();
         m_pipeline->setState(state);
         m_skippingEOS = false;
     }
@@ -565,7 +624,7 @@ void MediaObject::handleEndOfStream()
 bool MediaObject::hasInterface(Interface iface) const
 {
     return iface == AddonInterface::TitleInterface || iface == AddonInterface::NavigationInterface
-        || iface == AddonInterface::SubtitleInterface;
+        || iface == AddonInterface::SubtitleInterface || iface == AddonInterface::AudioChannelInterface;
 }
 
 QVariant MediaObject::interfaceCall(Interface iface, int command, const QList<QVariant> &params)
@@ -621,11 +680,46 @@ QVariant MediaObject::interfaceCall(Interface iface, int command, const QList<QV
                     break;
             }
             break;
+        case AudioChannelInterface:
+            switch(command)
+            {
+                case availableAudioChannels:
+                    return QVariant::fromValue(_iface_availableAudioChannels());
+                    break;
+                case currentAudioChannel:
+                    return QVariant::fromValue(_iface_currentAudioChannel());
+                    break;
+                case setCurrentAudioChannel:
+                    if (params.isEmpty() || !params.first().canConvert<AudioChannelDescription>()) {
+                        error() << Q_FUNC_INFO << "arguments invalid";
+                        return QVariant();
+                    }
+                    _iface_setCurrentAudioChannel(params.first().value<AudioChannelDescription>());
+                    break;
+            }
+            break;
         }
     }
     return QVariant();
 }
 #endif
+
+QList<AudioChannelDescription> MediaObject::_iface_availableAudioChannels() const
+{
+    return GlobalAudioChannels::instance()->listFor(this);
+}
+
+AudioChannelDescription MediaObject::_iface_currentAudioChannel() const
+{
+    return m_currentAudioChannel;
+}
+
+void MediaObject::_iface_setCurrentAudioChannel(const AudioChannelDescription &channel)
+{
+    const int localIndex = GlobalAudioChannels::instance()->localIdFor(this, channel.index());
+    g_object_set(G_OBJECT(m_pipeline->element()), "current-audio", localIndex, NULL);
+    m_currentAudioChannel = channel;
+}
 
 QList<MediaController::NavigationMenu> MediaObject::_iface_availableMenus() const
 {
@@ -722,8 +816,8 @@ void MediaObject::_iface_setCurrentSubtitle(const SubtitleDescription &subtitle)
     if (subtitle.property("type").toString() == "file") {
         QString filename = subtitle.name();
 
-        if (!filename.startsWith("file://"))
-            filename.prepend("file://");
+        if (!filename.startsWith(QLatin1String("file://")))
+            filename.prepend(QLatin1String("file://"));
         // It's not possible to change the suburi when the pipeline is PLAYING mainly
         // because the pipeline has not been built with the subtitle element. A workaround
         // consists to restart the pipeline and set the suburi property (totem does exactly the same thing)
@@ -796,6 +890,19 @@ void MediaObject::setMetaData(QMultiMap<QString, QString> newData)
 
 void MediaObject::requestState(Phonon::State state)
 {
+    DEBUG_BLOCK;
+    // Only abort handling here iff the handler is active.
+    if (m_aboutToFinishLock.tryLock()) {
+        // Note that this is not condition to unlocking, so the nesting is
+        // necessary.
+        if (m_handlingAboutToFinish) {
+            qDebug() << "Aborting aboutToFinish handling.";
+            m_skipGapless = true;
+            m_aboutToFinishWait.wakeAll();
+        }
+        m_aboutToFinishLock.unlock();
+    }
+    debug() << state;
     switch (state) {
         case Phonon::PlayingState:
             m_pipeline->setState(GST_STATE_PLAYING);
@@ -818,16 +925,31 @@ void MediaObject::requestState(Phonon::State state)
 
 void MediaObject::handleAboutToFinish()
 {
+    DEBUG_BLOCK;
     debug() << "About to finish";
     m_aboutToFinishLock.lock();
-    emit aboutToFinish();
+    m_handlingAboutToFinish = true;
+    if (!m_waitingForNextSource)
+        emit aboutToFinish();
     // Three seconds should be more than enough for any application to get their act together.
     // Any longer than that and they have bigger issues.  If Phonon does no supply a next source
     // within 3 seconds, treat as if there is no next source to come, and finish the current source.
-    if (m_aboutToFinishWait.wait(&m_aboutToFinishLock, 3000))
-        debug() << "Finally got a source";
-    else
-        m_skippingEOS = false;
+    if (!m_skipGapless) {
+      if (m_aboutToFinishWait.wait(&m_aboutToFinishLock, 3000)) {
+          debug() << "Finally got a source";
+          if (m_skipGapless) { // Was explicitly set by stateChange interrupt
+              debug() << "...oh, no, just got aborted, skipping EOS";
+              m_skippingEOS = false;
+          }
+      } else {
+          warning() << "aboutToFinishWait timed out!";
+          m_skippingEOS = false;
+      }
+    } else {
+      debug() << "Skipping gapless audio";
+      m_skippingEOS = false;
+    }
+    m_handlingAboutToFinish = false;
     m_aboutToFinishLock.unlock();
 }
 

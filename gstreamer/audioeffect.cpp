@@ -15,10 +15,11 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "audioeffect.h"
+
 #include "backend.h"
 #include "medianode.h"
 #include "effectmanager.h"
-#include "audioeffect.h"
 
 #include <gst/gst.h>
 #ifndef QT_NO_PHONON_EFFECT
