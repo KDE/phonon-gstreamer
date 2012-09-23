@@ -93,8 +93,8 @@ void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
 
     VideoFrame *frame = &that->m_frame;
     GstStructure *structure = gst_caps_get_structure(GST_BUFFER_CAPS(buffer), 0);
-    gst_structure_get_uint(structure, "width", &frame->width);
-    gst_structure_get_uint(structure, "height", &frame->height);
+    gst_structure_get_int(structure, "width", (gint*)&frame->width);
+    gst_structure_get_int(structure, "height", (gint*)&frame->height);
     /*frame->aspectRatio =
             static_cast<double>(frame->width/frame->height);*/
 
@@ -105,6 +105,10 @@ void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
             QByteArray::fromRawData(
                 reinterpret_cast<const char*>(GST_BUFFER_DATA(buffer)),
                 GST_BUFFER_SIZE(buffer));
+    frame->pitch[0] = frame->width;
+    frame->visiblePitch[0] = frame->pitch[0];
+    frame->lines[0] = frame->height;
+    frame->visibleLines[0] = frame->height;
 
     that->m_mutex.unlock();
     emit that->frameReady();
@@ -137,7 +141,7 @@ QList<VideoFrame::Format> VideoGraphicsObject::offering(QList<VideoFrame::Format
 
 void VideoGraphicsObject::choose(VideoFrame::Format format)
 {
-    m_format = format;
+    Q_UNUSED(format);
 }
 
 } // namespace Gstreamer

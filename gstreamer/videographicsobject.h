@@ -74,8 +74,6 @@ private:
 
     GstElement *m_bin;
     GstBuffer *m_buffer;
-
-    VideoFrame::Format m_format;
 };
 
 } // namespace Gstreamer
