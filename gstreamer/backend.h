@@ -50,8 +50,6 @@ public:
 
     QObject *createObject(BackendInterface::Class, QObject *parent, const QList<QVariant> &args);
 
-    bool isValid() const;
-    bool supportsVideo() const;
     QStringList availableMimeTypes() const;
 
     QList<int> objectDescriptionIndexes(ObjectDescriptionType type) const;
@@ -69,6 +67,9 @@ Q_SIGNALS:
     void objectDescriptionChanged(ObjectDescriptionType);
 
 private:
+    bool isValid() const;
+    bool supportsVideo() const;
+
     DeviceManager *m_deviceManager;
     EffectManager *m_effectManager;
     bool m_isValid;

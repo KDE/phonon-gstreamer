@@ -82,7 +82,7 @@ Backend::Backend(QObject *parent, const QVariantList &)
     int argc = sizeof(args) / sizeof(*args);
     char **argv = const_cast<char**>(args);
     GError *err = 0;
-    bool wasInit = gst_init_check(&argc, &argv, &err);  //init gstreamer: must be called before any gst-related functions
+    bool wasInit = gst_init_check(&argc, &argv, &err); //init gstreamer: must be called before any gst-related functions
 
     if (err)
         g_error_free(err);
@@ -107,11 +107,13 @@ Backend::Backend(QObject *parent, const QVariantList &)
         debug() << "Using" << versionString;
         g_free(versionString);
     }
-    if (!m_isValid)
-        qWarning("Phonon::GStreamer::Backend: Failed to initialize GStreamer");
 
-    m_deviceManager = new DeviceManager(this);
-    m_effectManager = new EffectManager(this);
+    if (!isValid()) {
+        qWarning("Phonon::GStreamer::Backend: Failed to initialize GStreamer");
+    } else {
+        m_deviceManager = new DeviceManager(this);
+        m_effectManager = new EffectManager(this);
+    }
 }
 
 Backend::~Backend()
@@ -132,6 +134,10 @@ Backend::~Backend()
 QObject *Backend::createObject(BackendInterface::Class c, QObject *parent, const QList<QVariant> &args)
 {
     // Return nothing if dependencies are not met
+    if (!isValid()) {
+        warning() << "Backend class" << c << "is not going to be created because GStreamer init failed.";
+        return 0;
+    }
 
     switch (c) {
     case MediaObjectClass:

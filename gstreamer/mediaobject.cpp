@@ -88,50 +88,45 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
     static int count = 0;
     m_name = "MediaObject" + QString::number(count++);
 
-    if (!m_backend->isValid()) {
-        setError(tr("Cannot start playback. \n\nCheck your GStreamer installation and make sure you "
-                    "\nhave libgstreamer-plugins-base installed."), Phonon::FatalError);
-    } else {
-        m_root = this;
-        m_pipeline = new Pipeline(this);
-        m_isValid = true;
-        GlobalSubtitles::instance()->register_(this);
-        GlobalAudioChannels::instance()->register_(this);
+    m_isValid = true;
+    m_root = this;
+    m_pipeline = new Pipeline(this);
+    GlobalSubtitles::instance()->register_(this);
+    GlobalAudioChannels::instance()->register_(this);
 
-        connect(m_pipeline, SIGNAL(aboutToFinish()),
-                this, SLOT(handleAboutToFinish()), Qt::DirectConnection);
-        connect(m_pipeline, SIGNAL(eos()),
-                this, SLOT(handleEndOfStream()));
-        connect(m_pipeline, SIGNAL(warning(QString)),
-                this, SLOT(logWarning(QString)));
-        connect(m_pipeline, SIGNAL(durationChanged(qint64)),
-                this, SLOT(handleDurationChange(qint64)));
-        connect(m_pipeline, SIGNAL(buffering(int)),
-                this, SIGNAL(bufferStatus(int)));
-        connect(m_pipeline, SIGNAL(stateChanged(GstState,GstState)),
-                this, SLOT(handleStateChange(GstState,GstState)));
-        connect(m_pipeline, SIGNAL(errorMessage(QString,Phonon::ErrorType)),
-                this, SLOT(setError(QString,Phonon::ErrorType)));
-        connect(m_pipeline, SIGNAL(metaDataChanged(QMultiMap<QString,QString>)),
-                this, SIGNAL(metaDataChanged(QMultiMap<QString,QString>)));
-        connect(m_pipeline, SIGNAL(availableMenusChanged(QList<MediaController::NavigationMenu>)),
-                this, SIGNAL(availableMenusChanged(QList<MediaController::NavigationMenu>)));
-        connect(m_pipeline, SIGNAL(videoAvailabilityChanged(bool)),
-                this, SIGNAL(hasVideoChanged(bool)));
-        connect(m_pipeline, SIGNAL(seekableChanged(bool)),
-                this, SIGNAL(seekableChanged(bool)));
-        connect(m_pipeline, SIGNAL(streamChanged()),
-                this, SLOT(handleStreamChange()));
+    connect(m_pipeline, SIGNAL(aboutToFinish()),
+            this, SLOT(handleAboutToFinish()), Qt::DirectConnection);
+    connect(m_pipeline, SIGNAL(eos()),
+            this, SLOT(handleEndOfStream()));
+    connect(m_pipeline, SIGNAL(warning(QString)),
+            this, SLOT(logWarning(QString)));
+    connect(m_pipeline, SIGNAL(durationChanged(qint64)),
+            this, SLOT(handleDurationChange(qint64)));
+    connect(m_pipeline, SIGNAL(buffering(int)),
+            this, SIGNAL(bufferStatus(int)));
+    connect(m_pipeline, SIGNAL(stateChanged(GstState,GstState)),
+            this, SLOT(handleStateChange(GstState,GstState)));
+    connect(m_pipeline, SIGNAL(errorMessage(QString,Phonon::ErrorType)),
+            this, SLOT(setError(QString,Phonon::ErrorType)));
+    connect(m_pipeline, SIGNAL(metaDataChanged(QMultiMap<QString,QString>)),
+            this, SIGNAL(metaDataChanged(QMultiMap<QString,QString>)));
+    connect(m_pipeline, SIGNAL(availableMenusChanged(QList<MediaController::NavigationMenu>)),
+            this, SIGNAL(availableMenusChanged(QList<MediaController::NavigationMenu>)));
+    connect(m_pipeline, SIGNAL(videoAvailabilityChanged(bool)),
+            this, SIGNAL(hasVideoChanged(bool)));
+    connect(m_pipeline, SIGNAL(seekableChanged(bool)),
+            this, SIGNAL(seekableChanged(bool)));
+    connect(m_pipeline, SIGNAL(streamChanged()),
+            this, SLOT(handleStreamChange()));
 
-        connect(m_pipeline, SIGNAL(textTagChanged(int)),
-                this, SLOT(getSubtitleInfo(int)));
-        connect(m_pipeline, SIGNAL(audioTagChanged(int)),
-                this, SLOT(getAudioChannelInfo(int)));
-        connect(m_pipeline, SIGNAL(trackCountChanged(int)),
-                this, SLOT(handleTrackCountChange(int)));
+    connect(m_pipeline, SIGNAL(textTagChanged(int)),
+            this, SLOT(getSubtitleInfo(int)));
+    connect(m_pipeline, SIGNAL(audioTagChanged(int)),
+            this, SLOT(getAudioChannelInfo(int)));
+    connect(m_pipeline, SIGNAL(trackCountChanged(int)),
+            this, SLOT(handleTrackCountChange(int)));
 
-        connect(m_tickTimer, SIGNAL(timeout()), SLOT(emitTick()));
-    }
+    connect(m_tickTimer, SIGNAL(timeout()), SLOT(emitTick()));
 }
 
 MediaObject::~MediaObject()
@@ -382,9 +377,6 @@ qint64 MediaObject::getPipelinePos() const
  */
 void MediaObject::setSource(const MediaSource &source)
 {
-    if (!isValid())
-        return;
-
     DEBUG_BLOCK;
 
     if (source.type() == Phonon::MediaSource::Invalid) {
@@ -487,9 +479,6 @@ void MediaObject::stop()
 
 void MediaObject::seek(qint64 time)
 {
-    if (!isValid())
-        return;
-
     DEBUG_BLOCK;
 
     if (m_waitingForNextSource) {
