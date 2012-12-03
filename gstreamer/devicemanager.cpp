@@ -130,8 +130,7 @@ DeviceManager::DeviceManager(Backend *backend)
         m_videoSinkWidget = settings.value(QLatin1String("videomode"), "Auto").toByteArray().toLower();
     }
 
-    if (m_backend->isValid())
-        updateDeviceList();
+    updateDeviceList();
 }
 
 DeviceManager::~DeviceManager()
@@ -205,70 +204,67 @@ GstElement *DeviceManager::createAudioSink(Category category)
 {
     GstElement *sink = 0;
 
-    if (m_backend && m_backend->isValid())
+    if (m_audioSink == "auto") //this is the default value
     {
-        if (m_audioSink == "auto") //this is the default value
-        {
-            //### TODO : get equivalent KDE settings here
+        //### TODO : get equivalent KDE settings here
 
-            if (!qgetenv("GNOME_DESKTOP_SESSION_ID").isEmpty()) {
-                sink = createGNOMEAudioSink(category);
-                if (canOpenDevice(sink))
-                    m_backend->logMessage("AudioOutput using gconf audio sink");
-                else if (sink) {
-                    gst_object_unref(sink);
-                    sink = 0;
-                }
-            }
-
-            if (!sink) {
-                sink = gst_element_factory_make ("alsasink", NULL);
-                if (canOpenDevice(sink))
-                    m_backend->logMessage("AudioOutput using alsa audio sink");
-                else if (sink) {
-                    gst_object_unref(sink);
-                    sink = 0;
-                }
-            }
-
-            if (!sink) {
-                sink = gst_element_factory_make ("autoaudiosink", NULL);
-                if (canOpenDevice(sink))
-                    m_backend->logMessage("AudioOutput using auto audio sink");
-                else if (sink) {
-                    gst_object_unref(sink);
-                    sink = 0;
-                }
-            }
-
-            if (!sink) {
-                sink = gst_element_factory_make ("osssink", NULL);
-                if (canOpenDevice(sink))
-                    m_backend->logMessage("AudioOutput using oss audio sink");
-                else if (sink) {
-                    gst_object_unref(sink);
-                    sink = 0;
-                }
-            }
-        } else if (m_audioSink == "fake") {
-            //do nothing as a fakesink will be created by default
-        } else if (!m_audioSink.isEmpty()) { //Use a custom sink
-            sink = gst_element_factory_make (m_audioSink, NULL);
+        if (!qgetenv("GNOME_DESKTOP_SESSION_ID").isEmpty()) {
+            sink = createGNOMEAudioSink(category);
             if (canOpenDevice(sink))
+                    m_backend->logMessage("AudioOutput using gconf audio sink");
+            else if (sink) {
+                gst_object_unref(sink);
+                sink = 0;
+            }
+        }
+
+        if (!sink) {
+            sink = gst_element_factory_make ("alsasink", NULL);
+            if (canOpenDevice(sink))
+                    m_backend->logMessage("AudioOutput using alsa audio sink");
+            else if (sink) {
+                gst_object_unref(sink);
+                sink = 0;
+            }
+        }
+
+        if (!sink) {
+            sink = gst_element_factory_make ("autoaudiosink", NULL);
+            if (canOpenDevice(sink))
+                    m_backend->logMessage("AudioOutput using auto audio sink");
+            else if (sink) {
+                gst_object_unref(sink);
+                sink = 0;
+            }
+        }
+
+        if (!sink) {
+            sink = gst_element_factory_make ("osssink", NULL);
+            if (canOpenDevice(sink))
+                    m_backend->logMessage("AudioOutput using oss audio sink");
+            else if (sink) {
+                gst_object_unref(sink);
+                sink = 0;
+            }
+        }
+    } else if (m_audioSink == "fake") {
+        //do nothing as a fakesink will be created by default
+    } else if (!m_audioSink.isEmpty()) { //Use a custom sink
+        sink = gst_element_factory_make (m_audioSink, NULL);
+        if (canOpenDevice(sink))
                 m_backend->logMessage(QString("AudioOutput using %0").arg(QString::fromUtf8(m_audioSink)));
-            else {
-                if (sink) {
-                    gst_object_unref(sink);
-                    sink = 0;
-                }
-                if ("pulsesink" == m_audioSink) {
-                    // We've tried to use PulseAudio support, but the GST plugin
-                    // doesn't exits. Let's try again, but not use PA support this time.
+        else {
+            if (sink) {
+                gst_object_unref(sink);
+                sink = 0;
+            }
+            if ("pulsesink" == m_audioSink) {
+                // We've tried to use PulseAudio support, but the GST plugin
+                // doesn't exits. Let's try again, but not use PA support this time.
                     m_backend->logMessage("PulseAudio support failed. Falling back to 'auto'");
-                    PulseSupport::getInstance()->enable(false);
-                    m_audioSink = "auto";
-                    sink = createAudioSink();
-                }
+                PulseSupport::getInstance()->enable(false);
+                m_audioSink = "auto";
+                sink = createAudioSink();
             }
         }
     }

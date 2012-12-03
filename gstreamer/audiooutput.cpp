@@ -47,35 +47,34 @@ AudioOutput::AudioOutput(Backend *backend, QObject *parent)
 {
     static int count = 0;
     m_name = "AudioOutput" + QString::number(count++);
-    if (m_backend->isValid()) {
-        m_audioBin = gst_bin_new (NULL);
-        gst_object_ref (GST_OBJECT (m_audioBin));
-        gst_object_sink (GST_OBJECT (m_audioBin));
 
-        m_conv = gst_element_factory_make ("audioconvert", NULL);
+    m_audioBin = gst_bin_new (NULL);
+    gst_object_ref (GST_OBJECT (m_audioBin));
+    gst_object_sink (GST_OBJECT (m_audioBin));
 
-        // Get category from parent
-        Phonon::Category category = Phonon::NoCategory;
-        if (Phonon::AudioOutput *audioOutput = qobject_cast<Phonon::AudioOutput *>(parent))
-            category = audioOutput->category();
+    m_conv = gst_element_factory_make ("audioconvert", NULL);
 
-        m_audioSink = m_backend->deviceManager()->createAudioSink(category);
-        m_volumeElement = gst_element_factory_make ("volume", NULL);
-        GstElement *queue = gst_element_factory_make ("queue", NULL);
-        GstElement *audioresample = gst_element_factory_make ("audioresample", NULL);
+    // Get category from parent
+    Phonon::Category category = Phonon::NoCategory;
+    if (Phonon::AudioOutput *audioOutput = qobject_cast<Phonon::AudioOutput *>(parent))
+        category = audioOutput->category();
 
-        if (queue && m_audioBin && m_conv && audioresample && m_audioSink && m_volumeElement) {
-            gst_bin_add_many(GST_BIN(m_audioBin), queue, m_conv,
-                             audioresample, m_volumeElement, m_audioSink, NULL);
+    m_audioSink = m_backend->deviceManager()->createAudioSink(category);
+    m_volumeElement = gst_element_factory_make ("volume", NULL);
+    GstElement *queue = gst_element_factory_make ("queue", NULL);
+    GstElement *audioresample = gst_element_factory_make ("audioresample", NULL);
 
-            if (gst_element_link_many(queue, m_conv, audioresample, m_volumeElement,
-                                      m_audioSink, NULL)) {
-                // Add ghost sink for audiobin
-                GstPad *audiopad = gst_element_get_static_pad (queue, "sink");
-                gst_element_add_pad (m_audioBin, gst_ghost_pad_new ("sink", audiopad));
-                gst_object_unref (audiopad);
-                m_isValid = true; // Initialization ok, accept input
-            }
+    if (queue && m_audioBin && m_conv && audioresample && m_audioSink && m_volumeElement) {
+        gst_bin_add_many(GST_BIN(m_audioBin), queue, m_conv,
+                         audioresample, m_volumeElement, m_audioSink, NULL);
+
+        if (gst_element_link_many(queue, m_conv, audioresample, m_volumeElement,
+                                  m_audioSink, NULL)) {
+            // Add ghost sink for audiobin
+            GstPad *audiopad = gst_element_get_static_pad (queue, "sink");
+            gst_element_add_pad (m_audioBin, gst_ghost_pad_new ("sink", audiopad));
+            gst_object_unref (audiopad);
+            m_isValid = true; // Initialization ok, accept input
         }
     }
 }
