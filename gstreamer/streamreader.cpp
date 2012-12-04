@@ -161,7 +161,8 @@ void StreamReader::stop()
 {
     QMutexLocker locker(&m_mutex);
     DEBUG_BLOCK;
-    enoughData();
+    if (!m_eos)
+        enoughData();
     m_locked = false;
     m_waitingForData.wakeAll();
 }
