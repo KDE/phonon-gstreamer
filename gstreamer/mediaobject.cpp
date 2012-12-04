@@ -920,23 +920,42 @@ void MediaObject::handleAboutToFinish()
     m_handlingAboutToFinish = true;
     if (!m_waitingForNextSource)
         emit aboutToFinish();
-    // Three seconds should be more than enough for any application to get their act together.
-    // Any longer than that and they have bigger issues.  If Phonon does no supply a next source
-    // within 3 seconds, treat as if there is no next source to come, and finish the current source.
+    // As our signal gets emitted queued we need to wait here until either a
+    // new source or a timeout is reached.
+    // If we got a new source in time -> hooray + gapless
+    // If we did not get a new source in time -> boooh + stop()
     if (!m_skipGapless) {
-      if (m_aboutToFinishWait.wait(&m_aboutToFinishLock, 3000)) {
-          debug() << "Finally got a source";
-          if (m_skipGapless) { // Was explicitly set by stateChange interrupt
-              debug() << "...oh, no, just got aborted, skipping EOS";
-              m_skippingEOS = false;
-          }
-      } else {
-          warning() << "aboutToFinishWait timed out!";
-          m_skippingEOS = false;
-      }
+        // Dynamic lock timeout is our friend.
+        // Instead of simply waiting for a fixed amount of ms for the next source, we wait for the
+        // most sensible amount of time. This is whatever amount of time is remaining to play
+        // minus a 0.5 seconds safety delta (time values not precise etc.).
+        // A source for which we have no time or for which the remaining time is < 0.5 seconds is
+        // immediately unlocked again. Otherwise the consumer has as much time as gst gave us to
+        // set a new source.
+        // This in particular prevents pointless excessive locking on sources which have a totalTime
+        // < whatever fixed lock value we have (so that we'd lock longer than what we are playing).
+        // An issue apparent with notification-like sounds, that are rather short and do not need
+        // gapless transitioning. As outlined in https://bugs.kde.org/show_bug.cgi?id=307530
+        unsigned long timeout = 0;
+        if (totalTime() <= 0 || (remainingTime() - 500 <= 0))
+            timeout = 0;
+        else
+            timeout = remainingTime() - 500;
+
+        debug() << "waiting for" << timeout;
+        if (m_aboutToFinishWait.wait(&m_aboutToFinishLock, timeout)) {
+            debug() << "Finally got a source";
+            if (m_skipGapless) { // Was explicitly set by stateChange interrupt
+                debug() << "...oh, no, just got aborted, skipping EOS";
+                m_skippingEOS = false;
+            }
+        } else {
+            warning() << "aboutToFinishWait timed out!";
+            m_skippingEOS = false;
+        }
     } else {
-      debug() << "Skipping gapless audio";
-      m_skippingEOS = false;
+        debug() << "Skipping gapless audio";
+        m_skippingEOS = false;
     }
     m_handlingAboutToFinish = false;
     m_aboutToFinishLock.unlock();
