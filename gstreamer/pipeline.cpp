@@ -809,6 +809,8 @@ static void cb_feedAppSrc(GstAppSrc *appSrc, guint buffsize, gpointer data)
 #warning ret not used!!! WHOOPWHOOPWHOOP
     reader->read(reader->currentPos(), buffsize, (char*)GST_BUFFER_DATA(buf));
     gst_app_src_push_buffer(appSrc, buf);
+    if (GST_BUFFER_SIZE(buf) > 0 && reader->atEnd())
+        gst_app_src_end_of_stream(appSrc);
 }
 
 static void cb_seekAppSrc(GstAppSrc *appSrc, guint64 pos, gpointer data)

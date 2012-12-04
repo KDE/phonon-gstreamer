@@ -53,6 +53,8 @@ public:
     void writeData(const QByteArray &data);
     GstFlowReturn read(quint64 offset, int length, char * buffer);
 
+    bool atEnd() const;
+
     void endOfData();
     void start();
     void stop();

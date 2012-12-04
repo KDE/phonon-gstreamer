@@ -52,6 +52,11 @@ int StreamReader::currentBufferSize() const
     return m_buffer.size();
 }
 
+bool StreamReader::atEnd() const
+{
+    return m_eos;
+}
+
 quint64 StreamReader::currentPos() const
 {
     return m_pos;
