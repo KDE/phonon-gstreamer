@@ -153,12 +153,6 @@ void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
     m_resumeAfterInstall = false;
     m_isHttpUrl = false;
     m_metaData.clear();
-    if (m_reader) {
-        m_reader->stop();
-        // Because libphonon stream stuff likes to fail connection assert
-        delete m_reader;
-        m_reader = 0;
-    }
 
     debug() << "New source:" << source.mrl();
     QByteArray gstUri;
@@ -239,8 +233,10 @@ GstStateChangeReturn Pipeline::setState(GstState state)
     m_resumeAfterInstall = true;
     debug() << "Transitioning to state" << GstHelper::stateName(state);
 
-    if (state == GST_STATE_READY && m_reader)
+    if (state == GST_STATE_READY && m_reader) {
+        debug() << "forcing stop as we are in ready state and have a reader...";
         m_reader->stop();
+    }
 
     return gst_element_set_state(GST_ELEMENT(m_pipeline), state);
 }
@@ -827,13 +823,23 @@ void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer d
     Q_UNUSED(playbin);
     Q_UNUSED(param);
     DEBUG_BLOCK;
+
     GstElement *phononSrc;
     Pipeline *that = static_cast<Pipeline*>(data);
     gst_object_ref(that->m_pipeline);
     g_object_get(that->m_pipeline, "source", &phononSrc, NULL);
+
+    if (that->m_reader) {
+        // Because libphonon stream stuff likes to fail connection asserts
+        // we force a complete reset.
+        that->m_reader->stop();
+        delete that->m_reader;
+        that->m_reader = 0;
+    }
+
     if (that->m_isStream) {
-        if (!that->m_reader)
-            that->m_reader = new StreamReader(that->m_currentSource, that);
+        that->m_reader = new StreamReader(that->m_currentSource, that);
+        that->m_reader->start();
         if (that->m_reader->streamSize() > 0)
             g_object_set(phononSrc, "size", that->m_reader->streamSize(), NULL);
         int streamType = 0;
@@ -845,7 +851,6 @@ void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer d
         g_object_set(phononSrc, "block", TRUE, NULL);
         g_signal_connect(phononSrc, "need-data", G_CALLBACK(cb_feedAppSrc), that->m_reader);
         g_signal_connect(phononSrc, "seek-data", G_CALLBACK(cb_seekAppSrc), that->m_reader);
-        that->m_reader->start();
     } else {
         if (that->currentSource().type() == MediaSource::Url &&
                 that->currentSource().mrl().scheme().startsWith(QLatin1String("http"))) {
