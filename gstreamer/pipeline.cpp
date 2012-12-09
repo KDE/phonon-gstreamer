@@ -852,6 +852,10 @@ void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer d
             QString userAgent = QCoreApplication::applicationName() + '/' + QCoreApplication::applicationVersion();
             userAgent += QString(" (Phonon/%0; Phonon-GStreamer/%1)").arg(PHONON_VERSION_STR).arg(PHONON_GST_VERSION);
             g_object_set(phononSrc, "user-agent", userAgent.toUtf8().constData(), NULL);
+        } else if (that->currentSource().type() == MediaSource::Disc &&
+                   !that->currentSource().deviceName().isEmpty()) {
+            debug() << "setting device prop to" << that->currentSource().deviceName();
+            g_object_set(phononSrc, "device", that->currentSource().deviceName().toUtf8().constData(), NULL);
         }
     }
     gst_object_unref(that->m_pipeline);
