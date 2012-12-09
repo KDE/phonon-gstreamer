@@ -214,6 +214,7 @@ void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
         gst_element_set_state(GST_ELEMENT(m_pipeline), GST_STATE_READY);
     }
 
+    debug() << "uri" << gstUri;
     g_object_set(m_pipeline, "uri", gstUri.constData(), NULL);
 
     if (reset && oldState > GST_STATE_READY) {
