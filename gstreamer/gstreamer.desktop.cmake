@@ -11,7 +11,6 @@ InitialPreference=15
 
 Name=GStreamer
 Name[bg]=GStreamer
-Name[bs]=Gstreamer
 Name[ca]=GStreamer
 Name[ca@valencia]=GStreamer
 Name[cs]=GStreamer
@@ -66,7 +65,6 @@ Name[zh_TW]=GStreamer
 
 Comment=Phonon GStreamer backend
 Comment[bg]=Phonon GStreamer
-Comment[bs]=Gstreamer kao pozadina Phonona
 Comment[ca]=Dorsal GStreamer del Phonon
 Comment[ca@valencia]=Dorsal GStreamer del Phonon
 Comment[cs]=Podpůrná vrstva GStreamer pro Phonon
