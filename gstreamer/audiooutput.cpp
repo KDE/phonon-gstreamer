@@ -141,7 +141,7 @@ bool AudioOutput::setOutputDevice(const AudioOutputDevice &newDevice)
     const QVariant dalProperty = newDevice.property("deviceAccessList");
     if (!dalProperty.isValid())
         return false;
-    const DeviceAccessList deviceAccessList = qVariantValue<DeviceAccessList>(dalProperty);
+    const DeviceAccessList deviceAccessList = dalProperty.value<DeviceAccessList>();
     if (deviceAccessList.isEmpty())
         return false;
 
