@@ -37,6 +37,7 @@ class MediaObject;
 class Backend : public QObject, public BackendInterface
 {
     Q_OBJECT
+    Q_PLUGIN_METADATA(IID "org.kde.Phonon.Gstreamer" FILE "phonon-gstreamer.json")
     Q_INTERFACES(Phonon::BackendInterface)
 
 public:

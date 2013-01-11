@@ -22,7 +22,7 @@
 #include <QtGui/QPalette>
 #include <QtGui/QImage>
 #include <QtGui/QPainter>
-#include <QtGui/QBoxLayout>
+#include <QtWidgets/QBoxLayout>
 #include <QApplication>
 #include <gst/gst.h>
 #include <gst/interfaces/navigation.h>
@@ -485,7 +485,7 @@ void VideoWidget::keyPressEvent(QKeyEvent *event)
         if (navigation) {
             // TODO key code via xlib?
             gst_navigation_send_key_event(navigation, "key-pressed",
-                                          event->text().toAscii());
+                                          event->text().toLatin1());
         }
     }
     QWidget::keyPressEvent(event);
@@ -499,7 +499,7 @@ void VideoWidget::keyReleaseEvent(QKeyEvent *event)
         if (navigation) {
             // TODO key code via xlib?
             gst_navigation_send_key_event(navigation, "key-released",
-                                          event->text().toAscii());
+                                          event->text().toLatin1());
         }
     }
     QWidget::keyReleaseEvent(event);

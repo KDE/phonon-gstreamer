@@ -83,8 +83,9 @@ if (BUILD_PHONON_GSTREAMER)
 
    automoc4_add_library(phonon_gstreamer MODULE ${phonon_gstreamer_SRCS})
    set_target_properties(phonon_gstreamer PROPERTIES PREFIX "")
+   qt5_use_modules(phonon_gstreamer Core Widgets)
    target_link_libraries(phonon_gstreamer
-      ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} ${PHONON_LIBRARY}
+ ${PHONON_LIBRARY}
       ${GSTREAMER_LIBRARIES} ${GSTREAMER_BASE_LIBRARY} ${GSTREAMER_INTERFACE_LIBRARY}
       ${GSTREAMER_PLUGIN_VIDEO_LIBRARY} ${GSTREAMER_PLUGIN_AUDIO_LIBRARY} ${GSTREAMER_PLUGIN_PBUTILS_LIBRARY}
       ${GLIB2_LIBRARIES} ${GOBJECT_LIBRARIES} ${GSTREAMER_APP_LIBRARY})
@@ -92,7 +93,8 @@ if (BUILD_PHONON_GSTREAMER)
        target_link_libraries(phonon_gstreamer ${GSTREAMER_PLUGIN_PBUTILS_LIBRARIES})
    endif(USE_INSTALL_PLUGIN)
    if(OPENGL_FOUND)
-      target_link_libraries(phonon_gstreamer ${QT_QTOPENGL_LIBRARY} ${OPENGL_gl_LIBRARY})
+      qt5_use_modules(phonon_gstreamer OpenGL)
+      target_link_libraries(phonon_gstreamer ${OPENGL_gl_LIBRARY})
    endif(OPENGL_FOUND)
 
    install(TARGETS phonon_gstreamer DESTINATION ${PLUGIN_INSTALL_DIR}/plugins/phonon_backend)

@@ -36,7 +36,7 @@
 #include <QtCore/QStringList>
 #include <QtCore/QTimer>
 #include <QtCore/QVector>
-#include <QtGui/QApplication>
+#include <QtWidgets/QApplication>
 #include <QtGui/QFont>
 #include <phonon/GlobalDescriptionContainer>
 

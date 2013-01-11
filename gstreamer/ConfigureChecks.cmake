@@ -32,6 +32,10 @@ macro_log_feature(LIBXML2_FOUND "LibXml2" "LibXml2 is required to compile the gs
 find_package(OpenGL)
 macro_log_feature(OPENGL_FOUND "OpenGL" "OpenGL support is required to compile the gstreamer backend for Phonon" "" FALSE)
 
+find_package(Qt5OpenGL)
+macro_log_feature(Qt5OpenGL_FOUND "Qt5 OpenGL" "Qt5 OpenGL support is required to compile the gstreamer backend for Phonon" "" FALSE)
+set(QT_QTOPENGL_FOUND Qt5OpenGL_FOUND)
+
 if (GSTREAMER_FOUND AND GSTREAMER_PLUGIN_VIDEO_FOUND AND GSTREAMER_PLUGIN_AUDIO_FOUND AND GSTREAMER_PLUGIN_PBUTILS_FOUND AND GLIB2_FOUND AND GOBJECT_FOUND AND LIBXML2_FOUND)
    set(BUILD_PHONON_GSTREAMER TRUE)
 else (GSTREAMER_FOUND AND GSTREAMER_PLUGIN_VIDEO_FOUND AND GSTREAMER_PLUGIN_AUDIO_FOUND AND GSTREAMER_PLUGIN_PBUTILS_FOUND AND GLIB2_FOUND AND GOBJECT_FOUND AND LIBXML2_FOUND)
