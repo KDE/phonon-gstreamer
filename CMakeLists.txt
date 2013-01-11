@@ -1,4 +1,4 @@
-project(PhononGStreamerQt5Support)
+project(Phonon4Qt5GStreamer)
 cmake_minimum_required(VERSION 2.8.9 FATAL_ERROR)
 
 option(USE_INSTALL_PLUGIN "Use GStreamer codec installation API" TRUE)
