@@ -19,4 +19,4 @@ endif()
 
 include(FindPackageHandleStandardArgs)
 
-find_package_handle_standard_args(Phonon4Qt5  DEFAULT_MSG  Phonon_DIR )
+find_package_handle_standard_args(Phonon4Qt5  DEFAULT_MSG  Phonon4Qt5_DIR )

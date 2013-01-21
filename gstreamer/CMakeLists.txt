@@ -98,7 +98,9 @@ if (BUILD_PHONON_GSTREAMER)
    endif(OPENGL_FOUND)
 
    install(TARGETS phonon_gstreamer DESTINATION ${PLUGIN_INSTALL_DIR}/plugins/phonon_backend)
-   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gstreamer.desktop DESTINATION ${SERVICES_INSTALL_DIR}/phononbackends)
 
-    add_subdirectory(icons)
+   message(WARNING "Desktop file and icons are not supported for lack of KCM/KDE Platform Plugin.")
+   #install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gstreamer.desktop DESTINATION ${SERVICES_INSTALL_DIR}/phononbackends)
+
+   #add_subdirectory(icons)
 endif (BUILD_PHONON_GSTREAMER)
