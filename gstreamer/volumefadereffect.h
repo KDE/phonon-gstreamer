@@ -31,32 +31,38 @@ namespace Phonon
 {
 namespace Gstreamer
 {
-    class VolumeFaderEffect : public Effect, public VolumeFaderInterface
-    {
-        Q_OBJECT
-        Q_INTERFACES(Phonon::VolumeFaderInterface)
+class VolumeFaderEffect : public Effect, public VolumeFaderInterface
+{
+    Q_OBJECT
+    Q_INTERFACES(Phonon::VolumeFaderInterface)
 
-        public:
-            explicit VolumeFaderEffect(Backend *backend, QObject *parent = 0);
-            ~VolumeFaderEffect();
+public:
+    explicit VolumeFaderEffect(Backend *backend, QObject *parent = 0);
+    ~VolumeFaderEffect();
 
-            GstElement* createEffectBin();
-            GstElement *audioElement() { return m_effectBin; }
+    GstElement* createEffectBin();
+    GstElement *audioElement() { return m_effectBin; }
 
-            // VolumeFaderInterface:
-            float volume() const;
-            Phonon::VolumeFaderEffect::FadeCurve fadeCurve() const;
-            void setFadeCurve(Phonon::VolumeFaderEffect::FadeCurve fadeCurve);
-            void fadeTo(float volume, int fadeTime);
-            void setVolume(float v);
+    // VolumeFaderInterface:
+    float volume() const;
+    Phonon::VolumeFaderEffect::FadeCurve fadeCurve() const;
+    void setFadeCurve(Phonon::VolumeFaderEffect::FadeCurve fadeCurve);
+    void fadeTo(float volume, int fadeTime);
+    void setVolume(float v);
 
-            Phonon::VolumeFaderEffect::FadeCurve m_fadeCurve;
-            gdouble m_fadeFromVolume;
-            gdouble m_fadeToVolume;
-            QTimeLine *m_fadeTimeline;
-        private slots:
-            void slotSetVolume(qreal v);
-    };
+private slots:
+    void slotSetVolume(qreal v);
+
+private:
+    void abortFade();
+    inline void setVolumeInternal(float v);
+
+    Phonon::VolumeFaderEffect::FadeCurve m_fadeCurve;
+    gdouble m_fadeFromVolume;
+    gdouble m_fadeToVolume;
+    QTimeLine *m_fadeTimeline;
+
+};
 }} //namespace Phonon::Gstreamer
 #endif //QT_NO_PHONON_VOLUMEFADEREFFECT
 QT_END_NAMESPACE
