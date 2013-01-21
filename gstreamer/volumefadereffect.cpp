@@ -84,7 +84,7 @@ float VolumeFaderEffect::volume() const
 void VolumeFaderEffect::slotSetVolume(qreal volume)
 {
     float gstVolume = m_fadeFromVolume + (volume * (m_fadeToVolume - m_fadeFromVolume));
-    setVolume(gstVolume);
+    setVolumeInternal(gstVolume);
 }
 
 Phonon::VolumeFaderEffect::FadeCurve VolumeFaderEffect::fadeCurve() const
@@ -115,13 +115,14 @@ void VolumeFaderEffect::setFadeCurve(Phonon::VolumeFaderEffect::FadeCurve pFadeC
 
 void VolumeFaderEffect::fadeTo(float targetVolume, int fadeTime)
 {
+    abortFade();
     m_fadeToVolume = targetVolume;
     g_object_get(G_OBJECT(m_effectElement), "volume", &m_fadeFromVolume, NULL);
 
     // Don't call QTimeLine::setDuration() with zero.
     // It is not supported and breaks fading.
     if (fadeTime <= 0) {
-        setVolume(targetVolume);
+        setVolumeInternal(targetVolume);
         return;
     }
 
@@ -130,6 +131,17 @@ void VolumeFaderEffect::fadeTo(float targetVolume, int fadeTime)
 }
 
 void VolumeFaderEffect::setVolume(float v)
+{
+    abortFade();
+    setVolumeInternal(v);
+}
+
+void VolumeFaderEffect::abortFade()
+{
+    m_fadeTimeline->stop();
+}
+
+void VolumeFaderEffect::setVolumeInternal(float v)
 {
     g_object_set(G_OBJECT(m_effectElement), "volume", (gdouble)v, NULL);
     debug() << "Fading to" << v;
