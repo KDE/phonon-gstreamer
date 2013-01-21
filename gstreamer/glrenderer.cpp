@@ -296,7 +296,7 @@ void GLRenderWidgetImplementation::paintEvent(QPaintEvent *)
         const float tx_array[] = { 0, 0, 1, 0, 1, 1, 0, 1};
         const QRectF r = drawFrameRect();
 
-        const float v_array[] = { r.left(), r.top(), r.right(), r.top(), r.right(), r.bottom(), r.left(), r.bottom() };
+        const qreal v_array[] = { r.left(), r.top(), r.right(), r.top(), r.right(), r.bottom(), r.left(), r.bottom() };
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, m_texture[0]);
