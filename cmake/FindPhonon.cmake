@@ -7,8 +7,10 @@
 # For details see the accompanying COPYING-CMAKE-SCRIPTS file.
 
 find_package(Phonon NO_MODULE)
-if(PHONON_FOUND)
+
+if(PHONON_BUILDSYSTEM_DIR)
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PHONON_BUILDSYSTEM_DIR})
+    include(${PHONON_BUILDSYSTEM_DIR}/FindPhononInternal.cmake )
 endif()
 
 include(FindPackageHandleStandardArgs)
