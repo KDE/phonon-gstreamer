@@ -842,8 +842,11 @@ void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer d
         g_signal_connect(phononSrc, "seek-data", G_CALLBACK(cb_seekAppSrc), that->m_reader);
         that->m_reader->start();
     } else {
-        if (that->currentSource().type() == MediaSource::Url &&
-                that->currentSource().mrl().scheme().startsWith("http")) {
+        if (that->currentSource().type() == MediaSource::Url
+                && that->currentSource().mrl().scheme().startsWith(QLatin1String("http"))
+                // Check whether this property exists.
+                // Setting it on a source other than souphttpsrc (which supports it) may break playback.
+                && g_object_class_find_property(G_OBJECT_GET_CLASS(phononSrc), "user-agent")) {
             QString userAgent = QCoreApplication::applicationName() + '/' + QCoreApplication::applicationVersion();
             userAgent += QString(" (Phonon/%0; Phonon-GStreamer/%1)").arg(PHONON_VERSION_STR).arg(PHONON_GST_VERSION);
             g_object_set(phononSrc, "user-agent", userAgent.toUtf8().constData(), NULL);
