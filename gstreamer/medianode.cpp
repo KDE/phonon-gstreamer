@@ -19,7 +19,9 @@
 #include "mediaobject.h"
 #include "backend.h"
 #include "debug.h"
+#include "phonon-config-gstreamer.h"
 
+#include <gst/gst.h>
 #include <gst/gstbin.h>
 #include <gst/gstutils.h>
 
@@ -46,25 +48,41 @@ MediaNode::MediaNode(Backend *backend, NodeDescription description) :
     if (description & AudioSource) {
         m_audioTee = gst_element_factory_make("tee", NULL);
         gst_object_ref (GST_OBJECT (m_audioTee));
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
         gst_object_sink (GST_OBJECT (m_audioTee));
+#else
+        gst_object_ref_sink (GST_OBJECT (m_audioTee));
+#endif
 
         // Fake audio sink to swallow unconnected audio pads
         m_fakeAudioSink = gst_element_factory_make("fakesink", NULL);
         g_object_set (G_OBJECT (m_fakeAudioSink), "sync", TRUE, NULL);
         gst_object_ref (GST_OBJECT (m_fakeAudioSink));
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
         gst_object_sink (GST_OBJECT (m_fakeAudioSink));
+#else
+        gst_object_ref_sink (GST_OBJECT (m_fakeAudioSink));
+#endif
     }
 
     if (description & VideoSource) {
         m_videoTee = gst_element_factory_make("tee", NULL);
         gst_object_ref (GST_OBJECT (m_videoTee));
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
         gst_object_sink (GST_OBJECT (m_videoTee));
+#else
+        gst_object_ref_sink (GST_OBJECT (m_videoTee));
+#endif
 
         // Fake video sink to swallow unconnected video pads
         m_fakeVideoSink = gst_element_factory_make("fakesink", NULL);
         g_object_set (G_OBJECT (m_fakeVideoSink), "sync", TRUE, NULL);
         gst_object_ref (GST_OBJECT (m_fakeVideoSink));
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
         gst_object_sink (GST_OBJECT (m_fakeVideoSink));
+#else
+        gst_object_ref_sink (GST_OBJECT (m_fakeVideoSink));
+#endif
     }
 }
 
