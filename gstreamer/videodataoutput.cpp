@@ -22,7 +22,9 @@
 
 #include "videodataoutput.h"
 #include <phonon/experimental/videoframe2.h>
+#include "phonon-config-gstreamer.h"
 
+#include <gst/gst.h>
 #include <gst/gstbin.h>
 #include <gst/gstghostpad.h>
 #include <gst/gstutils.h>
@@ -42,11 +44,20 @@ VideoDataOutput::VideoDataOutput(Backend *backend, QObject *parent)
 
     m_queue = gst_bin_new(NULL);
     gst_object_ref(GST_OBJECT(m_queue));
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     gst_object_sink(GST_OBJECT(m_queue));
+#else
+    gst_object_ref_sink(GST_OBJECT(m_queue));
+#endif
 
     GstElement* sink = gst_element_factory_make("fakesink", NULL);
     GstElement* queue = gst_element_factory_make("queue", NULL);
-    GstElement* convert = gst_element_factory_make("ffmpegcolorspace", NULL);
+    GstElement* convert =
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+            gst_element_factory_make("ffmpegcolorspace", NULL);
+#else
+            gst_element_factory_make("videoconvert", NULL);
+#endif
 
     g_signal_connect(sink, "handoff", G_CALLBACK(processBuffer), this);
     g_object_set(G_OBJECT(sink), "signal-handoffs", true, NULL);
@@ -79,11 +90,16 @@ VideoDataOutput::~VideoDataOutput()
     gst_object_unref(m_queue);
 }
 
-void VideoDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad*, gpointer gThat)
+void VideoDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad, gpointer gThat)
 {
     VideoDataOutput *that = reinterpret_cast<VideoDataOutput*>(gThat);
 
-    GstStructure* structure = gst_caps_get_structure(GST_BUFFER_CAPS(buffer), 0);
+    GstStructure* structure =
+        #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+            gst_caps_get_structure(GST_BUFFER_CAPS(buffer), 0);
+        #else
+            gst_caps_get_structure(gst_pad_get_current_caps(pad), 0);
+        #endif
     int width;
     int height;
     double aspect;
@@ -91,18 +107,31 @@ void VideoDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad*, gpo
     gst_structure_get_int(structure, "width", &width);
     gst_structure_get_int(structure, "height", &height);
     aspect = (double)width/height;
+#if GST_VERSION > GST_VERSION_CHECK (1,0,0,0)
+    GstMapInfo *info;
+    gst_buffer_map(buffer, info, GST_MAP_READ);
+#endif
     const Experimental::VideoFrame2 f = {
         width,
         height,
         aspect,
         Experimental::VideoFrame2::Format_RGB888,
                 // RGB888 Means the data is 8 bits o' red, 8 bits o' green, and 8 bits o' blue per pixel.
-        QByteArray::fromRawData(reinterpret_cast<const char*>(GST_BUFFER_DATA(buffer)), 3*width*height),
+        QByteArray::fromRawData(reinterpret_cast<const char*>(
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+        GST_BUFFER_DATA(buffer)
+#else
+        info->data
+#endif
+        ), 3*width*height),
         0,
         0
     };
     if (that->m_frontend)
         that->m_frontend->frameReady(f);
+#if GST_VERSION > GST_VERSION_CHECK (1,0,0,0)
+    gst_buffer_unmap(buffer, info);
+#endif
 }
 
 }} // namespace Phonon::Gstreamer
