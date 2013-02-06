@@ -21,6 +21,7 @@
 #include <QtCore/QObject>
 #include <QtCore/QHash>
 #include <gst/gstcaps.h>
+#include <gst/gsttoc.h>
 #include <gst/gstmessage.h>
 #include <gst/pbutils/install-plugins.h>
 #include "phonon-config-gstreamer.h" // krazy:exclude=includes

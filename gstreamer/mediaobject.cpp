@@ -18,10 +18,16 @@
 */
 
 #include "mediaobject.h"
-
 #include <cmath>
+
+#include "phonon-config-gstreamer.h"
+#include <gst/gst.h>
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
 #include <gst/interfaces/navigation.h>
 #include <gst/interfaces/propertyprobe.h>
+#else
+#include <gst/video/navigation.h>
+#endif
 #include "backend.h"
 #include "streamreader.h"
 #include "debug.h"
