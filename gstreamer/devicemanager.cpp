@@ -17,7 +17,6 @@
 
 #include "devicemanager.h"
 
-#include <gst/interfaces/propertyprobe.h>
 #include "phonon-config-gstreamer.h" // krazy:exclude=includes
 #include "backend.h"
 #include "debug.h"
@@ -29,6 +28,8 @@
 #include "widgetrenderer.h"
 #include "x11renderer.h"
 #include <phonon/pulsesupport.h>
+
+#include <gst/gst.h>
 
 #include <QtCore/QSettings>
 
@@ -90,7 +91,7 @@ void DeviceInfo::useGstElement(GstElement *element, const QByteArray &deviceId)
         return;
 
     gchar *deviceName = NULL;
-    if (GST_IS_PROPERTY_PROBE(element) && gst_property_probe_get_property(GST_PROPERTY_PROBE(element), "device")) {
+    if (g_object_class_find_property(G_OBJECT_GET_CLASS(element), "device")){
         g_object_set(G_OBJECT(element), "device", deviceId.constData(), NULL);
         g_object_get(G_OBJECT(element), "device-name", &deviceName, NULL);
         m_name = QString(deviceName);
@@ -98,7 +99,12 @@ void DeviceInfo::useGstElement(GstElement *element, const QByteArray &deviceId)
         if (m_description.isEmpty()) {
             // Construct a description by using the factory name and the device id
             GstElementFactory *factory = gst_element_get_factory(element);
-            const gchar *factoryName = gst_element_factory_get_longname(factory);
+            const gchar *factoryName =
+        #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+                    gst_element_factory_get_longname(factory);
+        #else
+                    gst_element_factory_get_metadata(factory, "Long-name");
+        #endif
             m_description = QString(factoryName) + ": " + deviceId;
         }
 
