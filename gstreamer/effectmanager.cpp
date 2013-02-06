@@ -16,8 +16,9 @@
 */
 
 #include "effectmanager.h"
+#include "phonon-config-gstreamer.h"
+#include <gst/gst.h>
 
-#include <gst/interfaces/propertyprobe.h>
 #include "backend.h"
 #include "gsthelper.h"
 
@@ -41,7 +42,12 @@ EffectManager::EffectManager(Backend *backend)
         : QObject(backend)
         , m_backend(backend)
 {
-    GList *factoryList = gst_registry_get_feature_list(gst_registry_get_default (), GST_TYPE_ELEMENT_FACTORY);
+    GList *factoryList =
+        #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+            gst_registry_get_feature_list(gst_registry_get_default (), GST_TYPE_ELEMENT_FACTORY);
+        #else
+            gst_registry_get_feature_list(gst_registry_get (), GST_TYPE_ELEMENT_FACTORY);
+        #endif
     QString name;
     QString klass;
     QString description;
@@ -50,7 +56,7 @@ EffectManager::EffectManager(Backend *backend)
         GstPluginFeature *feature = GST_PLUGIN_FEATURE(iter->data);
         klass = gst_element_factory_get_klass(GST_ELEMENT_FACTORY(feature));
         if (klass == QLatin1String("Filter/Effect/Audio")) {
-            name = GST_PLUGIN_FEATURE_NAME(feature);
+            name = GST_OBJECT_NAME(feature);
 
             // These plugins simply make no sense to the frontend:
             // "audiorate" Should be internal
