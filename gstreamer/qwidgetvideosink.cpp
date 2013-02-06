@@ -23,6 +23,9 @@
 
 #include "videowidget.h"
 
+#include "phonon-config-gstreamer.h"
+#include <gst/gst.h>
+
 namespace Phonon
 {
 namespace Gstreamer
@@ -84,8 +87,16 @@ GstFlowReturn QWidgetVideoSink<FMT>::render(GstBaseSink* sink, GstBuffer* buf)
     {
         QWidgetVideoSink<FMT> *self = G_TYPE_CHECK_INSTANCE_CAST(sink, QWidgetVideoSinkClass<FMT>::get_type(), QWidgetVideoSink<FMT>);
         QByteArray frame;
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
         frame.resize(buf->size);
         memcpy(frame.data(), buf->data, buf->size);
+#else
+        GstMapInfo *info;
+        gst_buffer_map(buf, info, GST_MAP_READ);
+        frame.resize(info->size);
+        memcpy(frame.data(), info->data, info->size);
+        gst_buffer_unmap(buf, info);
+#endif
         NewFrameEvent *frameEvent = new NewFrameEvent(frame, self->width, self->height);
         QApplication::postEvent(self->renderWidget, frameEvent);
     }
@@ -108,7 +119,18 @@ static GstStaticPadTemplate template_factory_rgb =
     GST_STATIC_PAD_TEMPLATE("sink",
                             GST_PAD_SINK,
                             GST_PAD_ALWAYS,
-                            GST_STATIC_CAPS(GST_VIDEO_CAPS_xRGB_HOST_ENDIAN));
+                            GST_STATIC_CAPS(
+                                #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+                                GST_VIDEO_CAPS_xRGB_HOST_ENDIAN
+                                #else
+                                  #if G_BYTE_ORDER == G_LITTLE_ENDIAN
+                                    GST_VIDEO_CAPS_MAKE("xBGR")
+                                  #elif G_BYTE_ORDER == G_BIG_ENDIAN
+                                    GST_VIDEO_CAPS_MAKE("xRGB")
+                                  #endif
+                                #endif
+                                )
+                            );
 
 template <VideoFormat FMT>
 struct template_factory;
