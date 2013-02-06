@@ -18,17 +18,17 @@ FIND_PACKAGE(PkgConfig REQUIRED)
 
 IF (NOT WIN32)
    # don't make this check required - otherwise you can't use macro_optional_find_package on this one
-   PKG_CHECK_MODULES( PKG_GSTREAMER_PLUGINSBASE gstreamer-plugins-base-0.10 )
+   PKG_CHECK_MODULES( PKG_GSTREAMER_PLUGINSBASE gstreamer-plugins-base-1.0 )
 ENDIF (NOT WIN32)
 
 MACRO(MACRO_FIND_GSTREAMER_PLUGIN _plugin _header)
    STRING(TOUPPER ${_plugin} _upper)
    IF (NOT WIN32)
       # don't make this check required - otherwise you can't use macro_optional_find_package on this one
-      PKG_CHECK_MODULES( PKG_GSTREAMER_${_upper} gstreamer-${_plugin}-0.10 )
+      PKG_CHECK_MODULES( PKG_GSTREAMER_${_upper} gstreamer-${_plugin}-1.0 )
    ENDIF (NOT WIN32)
 
-   FIND_LIBRARY(GSTREAMER_PLUGIN_${_upper}_LIBRARY NAMES gst${_plugin}-0.10
+   FIND_LIBRARY(GSTREAMER_PLUGIN_${_upper}_LIBRARY NAMES gst${_plugin}-1.0
       PATHS
       ${PKG_GSTREAMER_PLUGINSBASE_LIBRARY_DIRS}
       ${PKG_GSTREAMER_${_upper}_LIBRARY_DIRS}
@@ -72,7 +72,7 @@ ENDMACRO(MACRO_FIND_GSTREAMER_PLUGIN)
 #  tag
 #  video
 #
-# The gstinterfaces-0.10 library is found by FindGStreamer.cmake
+# The gstinterfaces-1.0 library is found by FindGStreamer.cmake
 #
 
 SET(GSTREAMER_PLUGINSBASE_FOUND TRUE)
