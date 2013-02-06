@@ -22,10 +22,12 @@
 #include "devicemanager.h"
 #include "mediaobject.h"
 #include "gsthelper.h"
+#include "phonon-config-gstreamer.h"
 #include <phonon/audiooutput.h>
 
 #include <QtCore/QStringBuilder>
 
+#include <gst/gst.h>
 #include <gst/gstbin.h>
 #include <gst/gstghostpad.h>
 #include <gst/gstutils.h>
@@ -49,7 +51,11 @@ AudioOutput::AudioOutput(Backend *backend, QObject *parent)
 
     m_audioBin = gst_bin_new (NULL);
     gst_object_ref (GST_OBJECT (m_audioBin));
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     gst_object_sink (GST_OBJECT (m_audioBin));
+#else
+    gst_object_ref_sink (GST_OBJECT (m_audioBin));
+#endif
 
     m_conv = gst_element_factory_make ("audioconvert", NULL);
 
