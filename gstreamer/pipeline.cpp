@@ -25,8 +25,14 @@
 #include "plugininstaller.h"
 #include "streamreader.h"
 #include "gsthelper.h"
+#include "phonon-config-gstreamer.h"
 #include <gst/pbutils/missing-plugins.h>
+#include <gst/gst.h>
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
 #include <gst/interfaces/navigation.h>
+#else
+#include <gst/video/navigation.h>
+#endif
 #include <gst/app/gstappsrc.h>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QMutexLocker>
@@ -47,9 +53,12 @@ Pipeline::Pipeline(QObject *parent)
     , m_resetting(false)
 {
     qRegisterMetaType<GstState>("GstState");
-    m_pipeline = GST_PIPELINE(gst_element_factory_make("playbin2", NULL));
     gst_object_ref(m_pipeline);
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     gst_object_sink(m_pipeline);
+#else
+    gst_object_ref_sink(m_pipeline);
+#endif
     g_signal_connect(m_pipeline, "video-changed", G_CALLBACK(cb_videoChanged), this);
     g_signal_connect(m_pipeline, "text-tags-changed", G_CALLBACK(cb_textTagsChanged), this);
     g_signal_connect(m_pipeline, "audio-tags-changed", G_CALLBACK(cb_audioTagsChanged), this);
@@ -57,7 +66,11 @@ Pipeline::Pipeline(QObject *parent)
     g_signal_connect(m_pipeline, "about-to-finish", G_CALLBACK(cb_aboutToFinish), this);
 
     GstBus *bus = gst_pipeline_get_bus(m_pipeline);
-    gst_bus_set_sync_handler(bus, gst_bus_sync_signal_handler, NULL);
+    gst_bus_set_sync_handler(bus, gst_bus_sync_signal_handler, NULL,
+                         #if GST_VERSION > GST_VERSION_CHECK (1,0,0,0)
+                             NULL
+                         #endif
+                             );
     g_signal_connect(bus, "sync-message::eos", G_CALLBACK(cb_eos), this);
     g_signal_connect(bus, "sync-message::warning", G_CALLBACK(cb_warning), this);
 
@@ -74,7 +87,11 @@ Pipeline::Pipeline(QObject *parent)
     // Set up audio graph
     m_audioGraph = gst_bin_new("audioGraph");
     gst_object_ref (GST_OBJECT (m_audioGraph));
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     gst_object_sink (GST_OBJECT (m_audioGraph));
+#else
+    gst_object_ref_sink (GST_OBJECT (m_audioGraph));
+#endif
 
     // Note that these queues are only required for streaming content
     // And should ideally be created on demand as they will disable
@@ -100,7 +117,11 @@ Pipeline::Pipeline(QObject *parent)
     // Set up video graph
     m_videoGraph = gst_bin_new("videoGraph");
     gst_object_ref (GST_OBJECT (m_videoGraph));
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     gst_object_sink (GST_OBJECT (m_videoGraph));
+#else
+    gst_object_ref_sink (GST_OBJECT (m_videoGraph));
+#endif
 
     m_videoPipe = gst_element_factory_make("queue", "videoPipe");
     gst_bin_add(GST_BIN(m_videoGraph), m_videoPipe);
@@ -252,7 +273,13 @@ void Pipeline::writeToDot(MediaObject *media, const QString &type)
 
 bool Pipeline::queryDuration(GstFormat *format, gint64 *duration) const
 {
-    return gst_element_query_duration(GST_ELEMENT(m_pipeline), format, duration);
+    return gst_element_query_duration(GST_ELEMENT(m_pipeline),
+                                      #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+                                      format
+                                      #else
+                                      *format
+                                      #endif
+                                      , duration);
 }
 
 GstState Pipeline::state() const
@@ -315,7 +342,7 @@ gboolean Pipeline::cb_buffering(GstBus *bus, GstMessage *gstMessage, gpointer da
     Q_UNUSED(bus)
     Pipeline *that = static_cast<Pipeline*>(data);
     gint percent = 0;
-    gst_structure_get_int (gstMessage->structure, "buffer-percent", &percent); //gst_message_parse_buffering was introduced in 0.10.11
+    gst_structure_get_int (gst_message_get_structure(gstMessage), "buffer-percent", &percent); //gst_message_parse_buffering was introduced in 0.10.11
 
     if (that->m_bufferPercent != percent) {
         emit that->buffering(percent);
@@ -802,10 +829,26 @@ static void cb_feedAppSrc(GstAppSrc *appSrc, guint buffsize, gpointer data)
     StreamReader *reader = static_cast<StreamReader*>(data);
     GstBuffer *buf = gst_buffer_new_and_alloc(buffsize);
 #warning ret not used!!! WHOOPWHOOPWHOOP
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     reader->read(reader->currentPos(), buffsize, (char*)GST_BUFFER_DATA(buf));
+#else
+    GstMapInfo *info;
+    gst_buffer_map(buf, info, GST_MAP_READ);
+    reader->read(reader->currentPos(), info->size, (char*)info->data);
+#endif
     gst_app_src_push_buffer(appSrc, buf);
-    if (GST_BUFFER_SIZE(buf) > 0 && reader->atEnd())
+    if (
+        #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+            GST_BUFFER_SIZE(buf) > 0
+        #else
+            info->size > 0
+        #endif
+            && reader->atEnd())
         gst_app_src_end_of_stream(appSrc);
+
+#if GST_VESION > GST_VERSION_CHECK (1,0,0,0)
+        gst_buffer_unmap(buf, info);
+#endif
 }
 
 static void cb_seekAppSrc(GstAppSrc *appSrc, guint64 pos, gpointer data)
@@ -885,7 +928,13 @@ qint64 Pipeline::position() const
     GstFormat format = GST_FORMAT_TIME;
     if (m_resetting)
         return m_posAtReset;
-    gst_element_query_position (GST_ELEMENT(m_pipeline), &format, &pos);
+    gst_element_query_position (GST_ELEMENT(m_pipeline),
+                                #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+                                &format
+                                #else
+                                format
+                                #endif
+                                , &pos);
     return (pos / GST_MSECOND);
 }
 
