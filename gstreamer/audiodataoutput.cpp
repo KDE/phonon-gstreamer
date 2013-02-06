@@ -25,12 +25,14 @@
 #include "audiodataoutput.h"
 #include "gsthelper.h"
 #include "medianode.h"
+#include "phonon-config-gstreamer.h"
 #include <QtCore/QVector>
 #include <QtCore/QMap>
 #include <phonon/audiooutput.h>
 
 #include <gst/gstghostpad.h>
 #include <gst/gstutils.h>
+#include <gst/gst.h>
 
 namespace Phonon
 {
@@ -46,7 +48,11 @@ AudioDataOutput::AudioDataOutput(Backend *backend, QObject *parent)
 
     m_queue = gst_bin_new(NULL);
     gst_object_ref(GST_OBJECT(m_queue));
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     gst_object_sink(GST_OBJECT(m_queue));
+#else
+    gst_object_ref_sink(GST_OBJECT(m_queue));
+#endif
     GstElement* sink = gst_element_factory_make("fakesink", NULL);
     GstElement* queue = gst_element_factory_make("queue", NULL);
     GstElement* convert = gst_element_factory_make("audioconvert", NULL);
@@ -108,7 +114,7 @@ inline void AudioDataOutput::convertAndEmit()
     emit dataReady(map);
 }
 
-void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad*, gpointer gThat)
+void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad, gpointer gThat)
 {
     // TODO emit endOfMedia
     AudioDataOutput *that = static_cast<AudioDataOutput *>(gThat);
@@ -119,12 +125,28 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad*, gpo
         return;
 
     // determine the number of channels
-    GstStructure *structure = gst_caps_get_structure(GST_BUFFER_CAPS(buffer), 0);
+    GstStructure *structure;
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+    structure = gst_caps_get_structure(GST_BUFFER_CAPS(buffer), 0);
+#else
+    const GstCaps *caps = gst_pad_get_current_caps(GST_PAD(pad));
+    structure = gst_caps_get_structure(caps, 0);
+#endif
     gst_structure_get_int(structure, "channels", &that->m_channels);
 
     // Let's get the buffers
-    gint16 *gstBufferData = reinterpret_cast<gint16 *>(GST_BUFFER_DATA(buffer));
-    guint gstBufferSize = GST_BUFFER_SIZE(buffer) / sizeof(gint16);
+    gint16 *gstBufferData;
+    guint gstBufferSize;
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+    gstBufferData = reinterpret_cast<gint16 *>(GST_BUFFER_DATA(buffer));
+    gstBufferSize = GST_BUFFER_SIZE(buffer) / sizeof(gint16);
+#else
+    GstMapInfo *info;
+    gst_buffer_map(buffer, info, GST_MAP_READ);
+    gstBufferData = reinterpret_cast<gint16 *>(info->data);
+    gstBufferSize = info->size / sizeof(gint16);
+    gst_buffer_unmap(buffer,info);
+#endif
 
     if (gstBufferSize == 0) {
         qWarning() << Q_FUNC_INFO << ": received a buffer of 0 size ... doing nothing";
