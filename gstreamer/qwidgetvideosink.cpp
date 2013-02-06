@@ -23,8 +23,6 @@
 
 #include "videowidget.h"
 
-QT_BEGIN_NAMESPACE
-
 namespace Phonon
 {
 namespace Gstreamer
@@ -217,5 +215,3 @@ GType get_type_RGB()
 
 }
 } //namespace Phonon::Gstreamer
-
-QT_END_NAMESPACE

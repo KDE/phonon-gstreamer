@@ -27,9 +27,6 @@
 #include <phonon/experimental/abstractvideodataoutput.h>
 #include <phonon/experimental/videodataoutputinterface.h>
 
-QT_BEGIN_HEADER
-QT_BEGIN_NAMESPACE
-
 namespace Phonon
 {
 namespace Gstreamer
@@ -64,9 +61,6 @@ class Backend;
     };
 
 }} //namespace Phonon::Gstreamer
-
-QT_END_NAMESPACE
-QT_END_HEADER
 
 // vim: sw=4 ts=4 tw=80
 #endif // Phonon_GSTREAMER_VIDEODATAOUTPUT_H

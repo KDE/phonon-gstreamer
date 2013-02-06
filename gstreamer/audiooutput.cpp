@@ -30,8 +30,6 @@
 #include <gst/gstghostpad.h>
 #include <gst/gstutils.h>
 
-QT_BEGIN_NAMESPACE
-
 namespace Phonon
 {
 namespace Gstreamer
@@ -213,6 +211,4 @@ bool AudioOutput::setOutputDevice(const QByteArray &driver, const QString &devic
 
 }
 } //namespace Phonon::Gstreamer
-
-QT_END_NAMESPACE
 #include "moc_audiooutput.cpp"

@@ -24,8 +24,6 @@
 
 #include <QtCore/QList>
 
-QT_BEGIN_NAMESPACE
-
 namespace Phonon
 {
 namespace Gstreamer
@@ -130,5 +128,3 @@ QString GstHelper::stateName(GstState state)
 
 } //namespace Gstreamer
 } //namespace Phonon
-
-QT_END_NAMESPACE

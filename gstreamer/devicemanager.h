@@ -25,8 +25,6 @@
 
 #include <gst/gstelement.h>
 
-QT_BEGIN_NAMESPACE
-
 namespace Phonon {
 namespace Gstreamer {
 
@@ -118,7 +116,5 @@ private:
 };
 }
 } // namespace Phonon::Gstreamer
-
-QT_END_NAMESPACE
 
 #endif // Phonon_GSTREAMER_DEVICEMANAGER_H

@@ -23,8 +23,6 @@
 #include <gst/gstbin.h>
 #include <gst/gstutils.h>
 
-QT_BEGIN_NAMESPACE
-
 namespace Phonon
 {
 namespace Gstreamer
@@ -439,5 +437,3 @@ void MediaNode::finalizeLink()
 
 } // ns Gstreamer
 } // ns Phonon
-
-QT_END_NAMESPACE

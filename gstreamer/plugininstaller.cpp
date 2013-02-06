@@ -28,8 +28,6 @@
 #include <gst/pbutils/pbutils.h>
 #endif
 
-QT_BEGIN_NAMESPACE
-
 namespace Phonon
 {
 namespace Gstreamer
@@ -288,7 +286,5 @@ void PluginInstaller::reset()
 
 } // ns Gstreamer
 } // ns Phonon
-
-QT_END_NAMESPACE
 
 #include "moc_plugininstaller.cpp"

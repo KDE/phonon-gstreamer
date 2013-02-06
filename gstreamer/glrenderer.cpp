@@ -45,8 +45,6 @@
 # define GL_TEXTURE2    0x84C2
 #endif
 
-QT_BEGIN_NAMESPACE
-
 static void frameRendered()
 {
     static QString displayFps = qgetenv("PHONON_GST_FPS");
@@ -324,8 +322,6 @@ void GLRenderWidgetImplementation::paintEvent(QPaintEvent *)
 }
 }
 } //namespace Phonon::Gstreamer
-
-QT_END_NAMESPACE
 
 #endif // QT_OPENGL_ES
 #endif // QT_NO_OPENGL

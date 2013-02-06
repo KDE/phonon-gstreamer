@@ -25,8 +25,6 @@
 #include <QtOpenGL/QGLWidget>
 
 #ifndef QT_OPENGL_ES
-QT_BEGIN_NAMESPACE
-
 class QString;
 class QGLFormat;
 
@@ -91,8 +89,6 @@ private:
 
 }
 } //namespace Phonon::Gstreamer
-
-QT_END_NAMESPACE
 
 #endif //QT_OPENGL_ES
 #endif // QT_NO_OPENGL

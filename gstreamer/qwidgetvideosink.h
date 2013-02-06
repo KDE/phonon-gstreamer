@@ -22,8 +22,6 @@
 
 #include <gst/video/gstvideosink.h>
 
-QT_BEGIN_NAMESPACE
-
 class QWidget;
 
 class NewFrameEvent : public QEvent
@@ -90,7 +88,5 @@ GType get_type_RGB();
 
 }
 } //namespace Phonon::Gstreamer
-
-QT_END_NAMESPACE
 
 #endif // PHONON_GSTREAMER_QWIDGETVIDEOSINK_H

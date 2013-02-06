@@ -37,8 +37,6 @@
 #endif
 
 #ifndef QT_NO_PHONON_VIDEO
-QT_BEGIN_NAMESPACE
-
 static void frameRendered()
 {
     static QString displayFps = qgetenv("PHONON_GST_FPS");
@@ -138,6 +136,4 @@ bool WidgetRenderer::eventFilter(QEvent * event)
 
 }
 } //namespace Phonon::Gstreamer
-
-QT_END_NAMESPACE
 #endif //QT_NO_PHONON_VIDEO

@@ -20,8 +20,6 @@
 
 #include "abstractrenderer.h"
 
-QT_BEGIN_NAMESPACE
-
 #ifndef Q_WS_QWS
 
 class QString;
@@ -58,7 +56,5 @@ private:
 } //namespace Phonon::Gstreamer
 
 #endif // Q_WS_QWS
-
-QT_END_NAMESPACE
 
 #endif // Phonon_GSTREAMER_X11RENDERER_H

@@ -25,8 +25,6 @@
 #include <gst/pbutils/install-plugins.h>
 #include "phonon-config-gstreamer.h" // krazy:exclude=includes
 
-QT_BEGIN_NAMESPACE
-
 namespace Phonon
 {
 namespace Gstreamer
@@ -97,7 +95,5 @@ class PluginInstaller : public QObject {
 
 } // ns Gstreamer
 } // ns Phonon 
-
-QT_END_NAMESPACE
 
 #endif // Phonon_GSTREAMER_PLUGININSTALLER_H

@@ -23,9 +23,7 @@
 
 #include <gst/gst.h>
 
-#ifndef QT_NO_PHONON_EFFECT
-QT_BEGIN_NAMESPACE
-namespace Phonon
+#ifndef QT_NO_PHONON_EFFECTnamespace Phonon
 {
 namespace Gstreamer
 {
@@ -239,7 +237,5 @@ void Effect::setParameterValue(const EffectParameter &p, const QVariant &v)
 }
 
 }
-} //namespace Phonon::Gstreamer
-QT_END_NAMESPACE
-#endif //QT_NO_PHONON_EFFECT
+} //namespace Phonon::Gstreamer#endif //QT_NO_PHONON_EFFECT
 #include "moc_effect.cpp"

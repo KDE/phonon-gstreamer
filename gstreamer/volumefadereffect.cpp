@@ -25,8 +25,6 @@
 
 #include <QtCore/QTimeLine>
 
-QT_BEGIN_NAMESPACE
-
 #ifndef QT_NO_PHONON_VOLUMEFADEREFFECT
 namespace Phonon
 {
@@ -150,6 +148,4 @@ void VolumeFaderEffect::setVolumeInternal(float v)
 
 }} //namespace Phonon::Gstreamer
 #endif //QT_NO_PHONON_VOLUMEFADEREFFECT
-QT_END_NAMESPACE
-
 #include "moc_volumefadereffect.cpp"

@@ -26,8 +26,6 @@
  * available audio effects.
  */
 
-QT_BEGIN_NAMESPACE
-
 namespace Phonon
 {
 namespace Gstreamer
@@ -119,5 +117,3 @@ const QList<EffectInfo*> EffectManager::audioEffects() const
 
 }
 }
-
-QT_END_NAMESPACE

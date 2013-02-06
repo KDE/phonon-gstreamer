@@ -24,8 +24,6 @@
 #include <phonon/MediaController>
 #include <QtCore/QMutex>
 
-QT_BEGIN_NAMESPACE
-
 typedef QMultiMap<QString, QString> TagMap;
 
 namespace Phonon

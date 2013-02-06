@@ -25,8 +25,6 @@
 
 #include <gst/gstelement.h>
 
-QT_BEGIN_NAMESPACE
-
 namespace Phonon {
 namespace Gstreamer {
 
@@ -121,7 +119,5 @@ Q_DECLARE_OPERATORS_FOR_FLAGS(MediaNode::NodeDescription)
 } // ns Phonon
 
 Q_DECLARE_INTERFACE(Phonon::Gstreamer::MediaNode, "org.phonon.gstreamer.MediaNode")
-
-QT_END_NAMESPACE
 
 #endif // Phonon_GSTREAMER_MEDIANODE_H

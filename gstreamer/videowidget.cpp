@@ -39,8 +39,6 @@
 #include "widgetrenderer.h"
 
 #ifndef QT_NO_PHONON_VIDEO
-QT_BEGIN_NAMESPACE
-
 namespace Phonon
 {
 namespace Gstreamer
@@ -587,8 +585,6 @@ void VideoWidget::mouseOverActive(bool active)
 
 }
 } //namespace Phonon::Gstreamer
-
-QT_END_NAMESPACE
 #endif //QT_NO_PHONON_VIDEO
 
 #include "moc_videowidget.cpp"

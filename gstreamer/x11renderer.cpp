@@ -32,8 +32,6 @@
 #include <gst/interfaces/xoverlay.h>
 #include <gst/interfaces/propertyprobe.h>
 
-QT_BEGIN_NAMESPACE
-
 namespace Phonon
 {
 namespace Gstreamer
@@ -186,7 +184,5 @@ void X11Renderer::windowExposed()
 
 }
 } //namespace Phonon::Gstreamer
-
-QT_END_NAMESPACE
 
 #endif // Q_WS_QWS

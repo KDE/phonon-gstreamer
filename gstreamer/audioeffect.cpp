@@ -23,8 +23,6 @@
 
 #include <gst/gst.h>
 #ifndef QT_NO_PHONON_EFFECT
-QT_BEGIN_NAMESPACE
-
 namespace Phonon
 {
 namespace Gstreamer
@@ -77,7 +75,5 @@ GstElement* AudioEffect::createEffectBin()
 
 }
 } //namespace Phonon::Gstreamer
-
-QT_END_NAMESPACE
 #endif //QT_NO_PHONON_EFFECT
 #include "moc_audioeffect.cpp"

@@ -24,8 +24,6 @@
 #include <gst/gstelement.h>
 #include <gst/gstbin.h>
 
-QT_BEGIN_NAMESPACE
-
 template<class T> class QList;
 class QByteArray;
 
@@ -46,7 +44,5 @@ public:
 
 } // ns Gstreamer
 } // ns Phonon
-
-QT_END_NAMESPACE
 
 #endif // Phonon_GSTREAMER_GSTHELPER_H

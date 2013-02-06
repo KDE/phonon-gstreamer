@@ -21,8 +21,6 @@
 #include <QtCore/QObject>
 #include <QtCore/QStringList>
 
-QT_BEGIN_NAMESPACE
-
 namespace Phonon
 {
 namespace Gstreamer
@@ -84,7 +82,5 @@ private:
 };
 }
 } // namespace Phonon::Gstreamer
-
-QT_END_NAMESPACE
 
 #endif // Phonon_GSTREAMER_EFFECTMANAGER_H

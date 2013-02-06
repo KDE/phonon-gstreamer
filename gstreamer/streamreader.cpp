@@ -19,8 +19,6 @@
 #include "streamreader.h"
 
 #include "debug.h"
-
-QT_BEGIN_NAMESPACE
 #ifndef QT_NO_PHONON_ABSTRACTMEDIASTREAM
 namespace Phonon
 {
@@ -187,7 +185,5 @@ void StreamReader::setStreamSeekable(bool seekable)
 }
 }
 #endif //QT_NO_PHONON_ABSTRACTMEDIASTREAM
-
-QT_END_NAMESPACE
 
 #include "moc_streamreader.cpp"

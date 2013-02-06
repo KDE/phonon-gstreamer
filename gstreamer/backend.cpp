@@ -40,8 +40,6 @@
 
 #include <cstring>
 
-QT_BEGIN_NAMESPACE
-
 Q_EXPORT_PLUGIN2(phonon_gstreamer, Phonon::Gstreamer::Backend)
 
 namespace Phonon
@@ -456,7 +454,5 @@ EffectManager* Backend::effectManager() const
 
 }
 }
-
-QT_END_NAMESPACE
 
 #include "moc_backend.cpp"

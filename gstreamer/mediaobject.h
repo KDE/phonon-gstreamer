@@ -35,8 +35,6 @@
 
 #include "phonon-config-gstreamer.h" // krazy:exclude=includes
 
-QT_BEGIN_NAMESPACE
-
 class QTimer;
 typedef QMultiMap<QString, QString> TagMap;
 
@@ -295,7 +293,5 @@ private:
 };
 }
 } //namespace Phonon::Gstreamer
-
-QT_END_NAMESPACE
 
 #endif // Phonon_GSTREAMER_MEDIAOBJECT_H

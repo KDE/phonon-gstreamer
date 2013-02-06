@@ -44,8 +44,6 @@
 #define MAX_QUEUE_TIME 20 * GST_SECOND
 #define GST_PLAY_FLAG_TEXT (1 << 2)
 
-QT_BEGIN_NAMESPACE
-
 namespace Phonon
 {
 namespace Gstreamer
@@ -963,7 +961,5 @@ void MediaObject::handleAboutToFinish()
 
 } // ns Gstreamer
 } // ns Phonon
-
-QT_END_NAMESPACE
 
 #include "moc_mediaobject.cpp"

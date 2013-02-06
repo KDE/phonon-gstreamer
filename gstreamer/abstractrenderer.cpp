@@ -18,8 +18,6 @@
 #include "abstractrenderer.h"
 
 #ifndef QT_NO_PHONON_VIDEO
-QT_BEGIN_NAMESPACE
-
 namespace Phonon
 {
 namespace Gstreamer
@@ -51,7 +49,5 @@ void AbstractRenderer::movieSizeChanged(const QSize &size)
 
 }
 } //namespace Phonon::Gstreamer
-
-QT_END_NAMESPACE
 #endif //QT_NO_PHONON_VIDEO
 

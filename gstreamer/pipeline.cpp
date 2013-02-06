@@ -32,8 +32,6 @@
 #include <QtCore/QMutexLocker>
 
 #define MAX_QUEUE_TIME 20 * GST_SECOND
-
-QT_BEGIN_NAMESPACE
 namespace Phonon
 {
 namespace Gstreamer
