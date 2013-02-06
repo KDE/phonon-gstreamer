@@ -251,7 +251,13 @@ PluginInstaller::InstallStatus PluginInstaller::checkInstalledPlugins()
         return m_state;
     bool allFound = true;
     foreach (const QString &plugin, m_pluginList.keys()) {
-        if (!gst_default_registry_check_feature_version(plugin.toLocal8Bit().data(), 0, 10, 0)) {
+        if (
+        #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+            !gst_default_registry_check_feature_version(plugin.toLocal8Bit().data(), 0, 10, 0)
+        #else
+            !gst_registry_check_feature_version(gst_registry_get(), plugin.toLocal8Bit().data(), 1, 0, 0)
+        #endif
+            ) {
             allFound = false;
             break;
         }
