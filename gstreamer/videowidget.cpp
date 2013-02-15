@@ -25,8 +25,6 @@
 #include <QtGui/QBoxLayout>
 #include <QApplication>
 #include <gst/gst.h>
-#include <gst/interfaces/navigation.h>
-#include <gst/interfaces/propertyprobe.h>
 #include <gst/pbutils/gstpluginsbaseversion.h>
 #include <gst/video/video.h>
 #include "abstractrenderer.h"
@@ -35,6 +33,15 @@
 #include "devicemanager.h"
 #include "mediaobject.h"
 #include "x11renderer.h"
+#include "phonon-config-gstreamer.h"
+
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+#include <gst/interfaces/navigation.h>
+#include <gst/interfaces/propertyprobe.h>
+#else
+#include <gst/video/navigation.h>
+#endif
+
 
 #include "widgetrenderer.h"
 
@@ -103,7 +110,11 @@ void VideoWidget::setupVideoBin()
     m_videoBin = gst_bin_new (NULL);
     Q_ASSERT(m_videoBin);
     gst_object_ref (GST_OBJECT (m_videoBin)); //Take ownership
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     gst_object_sink (GST_OBJECT (m_videoBin));
+#else
+    gst_object_ref_sink (GST_OBJECT (m_videoBin));
+#endif
     QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
     if (tegraEnv.isEmpty()) {
         //The videoplug element is the final element before the pluggable videosink
@@ -298,14 +309,19 @@ QImage VideoWidget::snapshot() const
     // for gst_video_convert_frame()
 #if GST_CHECK_PLUGINS_BASE_VERSION(0,10,31)
     GstElement *videosink = m_renderer->videoSink();
-    GstBuffer *videobuffer = NULL;
 
     // in case we get called just after a flush (e.g. seeking), wait for the
     // pipeline state change to complete first (with a timeout) so that
     // last-buffer will be populated
     gst_element_get_state(videosink, NULL, NULL, GST_SECOND);
 
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+    GstBuffer *videobuffer = NULL;
     g_object_get(G_OBJECT(videosink), "last-buffer", &videobuffer, NULL);
+#else
+    GstSample *videobuffer = NULL;
+    g_object_get(G_OBJECT(videosink), "last-sample", &videobuffer, NULL);
+#endif
 
     if (videobuffer) {
         GstCaps *snapcaps = gst_caps_new_simple("video/x-raw-rgb",
@@ -316,16 +332,29 @@ QImage VideoWidget::snapshot() const
                                                 "green_mask", G_TYPE_INT, 0x00ff00,
                                                 "blue_mask", G_TYPE_INT, 0x0000ff,
                                                 NULL);
-
-        GstBuffer *snapbuffer = gst_video_convert_frame(videobuffer, snapcaps, GST_SECOND, NULL);
-
+        GstBuffer *snapbuffer;
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+        snapbuffer = gst_video_convert_frame(videobuffer, snapcaps, GST_SECOND, NULL);
         gst_buffer_unref(videobuffer);
+#else
+        GstSample *sample = gst_video_convert_sample(videobuffer, snapcaps, GST_SECOND, NULL);
+        snapbuffer = gst_sample_get_buffer(sample);
+        GstMapInfo *info;
+        gst_buffer_map(snapbuffer, info, GST_MAP_READ);
+        gst_sample_unref(videobuffer);
+#endif
+
         gst_caps_unref(snapcaps);
 
         if (snapbuffer) {
             gint width, height;
             gboolean ret;
-            GstStructure *s = gst_caps_get_structure(GST_BUFFER_CAPS(snapbuffer), 0);
+            GstStructure *s =
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+                    gst_caps_get_structure(GST_BUFFER_CAPS(snapbuffer), 0);
+#else
+                    gst_caps_get_structure(gst_sample_get_caps(sample), 0);
+#endif
 
             ret  = gst_structure_get_int(s, "width", &width);
             ret &= gst_structure_get_int(s, "height", &height);
@@ -334,10 +363,15 @@ QImage VideoWidget::snapshot() const
                 QImage snapimage(width, height, QImage::Format_RGB888);
 
                 for (int i = 0; i < height; ++i)
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
                     memcpy(snapimage.scanLine(i),
                            GST_BUFFER_DATA(snapbuffer) + i * GST_ROUND_UP_4(width * 3),
                            width * 3);
-
+#else
+                    memcpy(snapimage.scanLine(i),
+                           info->data + i * GST_ROUND_UP_4(width * 3),
+                           width * 3);
+#endif
                 gst_buffer_unref(snapbuffer);
                 return snapimage;
             }
@@ -570,7 +604,14 @@ void VideoWidget::cb_capsChanged(GstPad *pad, GParamSpec *spec, gpointer data)
     gint height;
     //FIXME: This sometimes gives a gstreamer warning. Feels like GStreamer shouldn't, and instead
     //just quietly return false, probably a bug.
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     if (gst_video_get_size(pad, &width, &height)) {
+#else
+    GstVideoInfo *info;
+    if (gst_video_info_from_caps(info, gst_pad_query_caps(pad, NULL))) {
+        width = info->width;
+        height = info->height;
+#endif
         QMetaObject::invokeMethod(that, "setMovieSize", Q_ARG(QSize, QSize(width, height)));
     }
 }
