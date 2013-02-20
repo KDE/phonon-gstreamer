@@ -81,7 +81,11 @@ GLRenderer::GLRenderer(VideoWidget* videoWidget) :
 
     if ((m_videoSink = m_glWindow->createVideoSink())) {    //if ((m_videoSink = m_glWindow->createVideoSink())) {
         gst_object_ref (GST_OBJECT (m_videoSink)); //Take ownership
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
         gst_object_sink (GST_OBJECT (m_videoSink));
+#else
+        gst_object_ref_sink (GST_OBJECT (m_videoSink));
+#endif
 
         QWidgetVideoSinkBase*  sink = reinterpret_cast<QWidgetVideoSinkBase*>(m_videoSink);
         // Let the videosink know which widget to direct frame updates to

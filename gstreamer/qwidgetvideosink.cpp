@@ -109,7 +109,12 @@ static GstStaticPadTemplate template_factory_yuv =
     GST_STATIC_PAD_TEMPLATE("sink",
                             GST_PAD_SINK,
                             GST_PAD_ALWAYS,
-                            GST_STATIC_CAPS("video/x-raw-yuv, "
+                            GST_STATIC_CAPS(
+                                #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+                                "video/x-raw-yuv, "
+                                #else
+                                "video/x-raw, "
+                                #endif
                                             "framerate = (fraction) [ 0, MAX ], "
                                             "width = (int) [ 1, MAX ], "
                                             "height = (int) [ 1, MAX ],"

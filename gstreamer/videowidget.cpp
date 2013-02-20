@@ -121,7 +121,13 @@ void VideoWidget::setupVideoBin()
         m_videoplug = gst_element_factory_make ("identity", NULL);
 
         //Colorspace ensures that the output of the stream matches the input format accepted by our video sink
-        m_colorspace = gst_element_factory_make ("ffmpegcolorspace", NULL);
+        m_colorspace = gst_element_factory_make (
+            #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+                    "ffmpegcolorspace"
+            #else
+                    "videoconvert"
+            #endif
+                    , NULL);
 
         //Video scale is used to prepare the correct aspect ratio and scale.
         GstElement *videoScale = gst_element_factory_make ("videoscale", NULL);
@@ -139,7 +145,13 @@ void VideoWidget::setupVideoBin()
                 // For video balance to work we have to first ensure that the video is in YUV colorspace,
                 // then hand it off to the videobalance filter before finally converting it back to RGB.
                 // Hence we nede a videoFilter to convert the colorspace before and after videobalance
-                GstElement *m_colorspace2 = gst_element_factory_make ("ffmpegcolorspace", NULL);
+                GstElement *m_colorspace2 = gst_element_factory_make (
+            #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+                    "ffmpegcolorspace"
+            #else
+                    "videoconvert"
+            #endif
+                    , NULL);
                 gst_bin_add_many(GST_BIN(m_videoBin), m_videoBalance, m_colorspace2, NULL);
                 success = gst_element_link_many(queue, m_colorspace, m_videoBalance, m_colorspace2, videoScale, m_videoplug, videoSink, NULL);
             } else {
@@ -324,7 +336,12 @@ QImage VideoWidget::snapshot() const
 #endif
 
     if (videobuffer) {
-        GstCaps *snapcaps = gst_caps_new_simple("video/x-raw-rgb",
+        GstCaps *snapcaps = gst_caps_new_simple(
+            #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+                    "video/x-raw-rgb",
+            #else
+                    "video/x-raw",
+            #endif
                                                 "bpp", G_TYPE_INT, 24,
                                                 "depth", G_TYPE_INT, 24,
                                                 "endianness", G_TYPE_INT, G_BIG_ENDIAN,
@@ -371,6 +388,9 @@ QImage VideoWidget::snapshot() const
                     memcpy(snapimage.scanLine(i),
                            info->data + i * GST_ROUND_UP_4(width * 3),
                            width * 3);
+#endif
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+                gst_buffer_unmap(snapbuffer, info);
 #endif
                 gst_buffer_unref(snapbuffer);
                 return snapimage;
@@ -607,10 +627,10 @@ void VideoWidget::cb_capsChanged(GstPad *pad, GParamSpec *spec, gpointer data)
 #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     if (gst_video_get_size(pad, &width, &height)) {
 #else
-    GstVideoInfo *info;
-    if (gst_video_info_from_caps(info, gst_pad_query_caps(pad, NULL))) {
-        width = info->width;
-        height = info->height;
+    GstVideoInfo info;
+    if (gst_video_info_from_caps(&info, gst_pad_get_current_caps(pad))) {
+        width = info.width;
+        height = info.height;
 #endif
         QMetaObject::invokeMethod(that, "setMovieSize", Q_ARG(QSize, QSize(width, height)));
     }

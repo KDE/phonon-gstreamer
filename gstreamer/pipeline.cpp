@@ -53,10 +53,13 @@ Pipeline::Pipeline(QObject *parent)
     , m_resetting(false)
 {
     qRegisterMetaType<GstState>("GstState");
-    gst_object_ref(m_pipeline);
 #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+    m_pipeline = GST_PIPELINE(gst_element_factory_make("playbin2", NULL));
+    gst_object_ref(m_pipeline);
     gst_object_sink(m_pipeline);
 #else
+    m_pipeline = GST_PIPELINE(gst_element_factory_make("playbin", NULL));
+    gst_object_ref(m_pipeline);
     gst_object_ref_sink(m_pipeline);
 #endif
     g_signal_connect(m_pipeline, "video-changed", G_CALLBACK(cb_videoChanged), this);
@@ -473,7 +476,14 @@ gboolean Pipeline::cb_element(GstBus *bus, GstMessage *gstMessage, gpointer data
     }
     // Currently undocumented, but discovered via gst-plugins-base commit 7e674d
     // gst 0.10.25.1
-    if (gst_structure_has_name(str, "playbin2-stream-changed")) {
+    if (gst_structure_has_name(str,
+                           #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+                             "playbin2-stream-changed"
+                           #else
+                             "playbin-stream-changed"
+                           #endif
+                               )) {
+
         gchar *uri;
         g_object_get(that->m_pipeline, "uri", &uri, NULL);
         debug() << "Stream changed to" << uri;
@@ -481,7 +491,7 @@ gboolean Pipeline::cb_element(GstBus *bus, GstMessage *gstMessage, gpointer data
         if (!that->m_resetting)
             emit that->streamChanged();
     }
-    if (gst_structure_has_name(str, "prepare-xwindow-id"))
+    if (gst_structure_has_name(str, "prepare-xwindow-id") || gst_structure_has_name(str, "prepare-window-handle"))
         emit that->windowIDNeeded();
     return true;
 }

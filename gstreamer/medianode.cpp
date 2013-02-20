@@ -289,7 +289,13 @@ bool MediaNode::addOutput(MediaNode *output, GstElement *tee)
         return false;
 
     GstState state = root()->pipeline()->state();
-    GstPad *srcPad = gst_element_get_request_pad (tee, "src%d");
+    GstPad *srcPad;
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+    srcPad = gst_element_get_request_pad (tee,"src%d");
+#else
+    GstPadTemplate* tee_src_pad_template = gst_element_class_get_pad_template (GST_ELEMENT_GET_CLASS (tee), "src_%u");
+    srcPad = gst_element_request_pad (tee, tee_src_pad_template, NULL, NULL);
+#endif
     GstPad *sinkPad = gst_element_get_static_pad (sinkElement, "sink");
 
     if (!sinkPad) {
@@ -332,7 +338,14 @@ bool MediaNode::connectToFakeSink(GstElement *tee, GstElement *sink, GstElement 
         return true;
     }
 
-    GstPad *srcPad = gst_element_get_request_pad (tee, "src%d");
+    GstPad *srcPad;
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+    srcPad = gst_element_get_request_pad (tee,"src%d");
+#else
+    GstPadTemplate* tee_src_pad_template = gst_element_class_get_pad_template (GST_ELEMENT_GET_CLASS (tee), "src_%u");
+    srcPad = gst_element_request_pad (tee, tee_src_pad_template, NULL, NULL);
+#endif
+
     gst_bin_add(GST_BIN(bin), sink);
     if (success)
         success = (gst_pad_link (srcPad, sinkPad) == GST_PAD_LINK_OK);

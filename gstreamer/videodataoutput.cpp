@@ -64,7 +64,12 @@ VideoDataOutput::VideoDataOutput(Backend *backend, QObject *parent)
 
         // Save ourselves a metric crapton of work by simply requesting
         // a format native to Qt.
-    GstCaps *caps = gst_caps_new_simple("video/x-raw-rgb",
+    GstCaps *caps = gst_caps_new_simple(
+            #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+                "video/x-raw-rgb",
+            #else
+                "video/x-raw",
+            #endif
                                         "bpp", G_TYPE_INT, 24,
                                         "depth", G_TYPE_INT, 24,
                                         "endianess", G_TYPE_INT, G_BYTE_ORDER,
