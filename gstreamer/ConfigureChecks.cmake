@@ -19,7 +19,7 @@ if (GSTREAMER_FOUND)
     find_package(GStreamerPlugins REQUIRED)
 else()
     find_package(GStreamer0.10 REQUIRED)
-    macro_log_feature(GSTREAMER_FOUND "GStreamer" "gstreamer 0.10 is required for the multimedia backend" "http://gstreamer.freedesktop.org/modules/" TRUE "0.10" REQUIRED)
+    macro_log_feature(GSTREAMER_FOUND "GStreamer" "gstreamer 0.10 is required for the multimedia backend" "http://gstreamer.freedesktop.org/modules/" TRUE "0.10")
     find_package(GStreamerPlugins0.10 REQUIRED)
 endif (GSTREAMER_FOUND)
 
