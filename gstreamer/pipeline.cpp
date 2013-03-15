@@ -842,22 +842,22 @@ static void cb_feedAppSrc(GstAppSrc *appSrc, guint buffsize, gpointer data)
 #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     reader->read(reader->currentPos(), buffsize, (char*)GST_BUFFER_DATA(buf));
 #else
-    GstMapInfo *info;
-    gst_buffer_map(buf, info, GST_MAP_READ);
-    reader->read(reader->currentPos(), info->size, (char*)info->data);
+    GstMapInfo info;
+    gst_buffer_map(buf, &info, GST_MAP_READ);
+    reader->read(reader->currentPos(), info.size, (char*)info.data);
 #endif
     gst_app_src_push_buffer(appSrc, buf);
     if (
         #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
             GST_BUFFER_SIZE(buf) > 0
         #else
-            info->size > 0
+            info.size > 0
         #endif
             && reader->atEnd())
         gst_app_src_end_of_stream(appSrc);
 
-#if GST_VESION > GST_VERSION_CHECK (1,0,0,0)
-        gst_buffer_unmap(buf, info);
+#if GST_VERSION > GST_VERSION_CHECK (1,0,0,0)
+        gst_buffer_unmap(buf, &info);
 #endif
 }
 

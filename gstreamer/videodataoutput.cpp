@@ -113,8 +113,8 @@ void VideoDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad,
     gst_structure_get_int(structure, "height", &height);
     aspect = (double)width/height;
 #if GST_VERSION > GST_VERSION_CHECK (1,0,0,0)
-    GstMapInfo *info;
-    gst_buffer_map(buffer, info, GST_MAP_READ);
+    GstMapInfo info;
+    gst_buffer_map(buffer, &info, GST_MAP_READ);
 #endif
     const Experimental::VideoFrame2 f = {
         width,
@@ -126,7 +126,7 @@ void VideoDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad,
 #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
         GST_BUFFER_DATA(buffer)
 #else
-        info->data
+        info.data
 #endif
         ), 3*width*height),
         0,
@@ -135,7 +135,7 @@ void VideoDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad,
     if (that->m_frontend)
         that->m_frontend->frameReady(f);
 #if GST_VERSION > GST_VERSION_CHECK (1,0,0,0)
-    gst_buffer_unmap(buffer, info);
+    gst_buffer_unmap(buffer, &info);
 #endif
 }
 

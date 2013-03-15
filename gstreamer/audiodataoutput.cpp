@@ -141,11 +141,11 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad,
     gstBufferData = reinterpret_cast<gint16 *>(GST_BUFFER_DATA(buffer));
     gstBufferSize = GST_BUFFER_SIZE(buffer) / sizeof(gint16);
 #else
-    GstMapInfo *info;
-    gst_buffer_map(buffer, info, GST_MAP_READ);
-    gstBufferData = reinterpret_cast<gint16 *>(info->data);
-    gstBufferSize = info->size / sizeof(gint16);
-    gst_buffer_unmap(buffer,info);
+    GstMapInfo info;
+    gst_buffer_map(buffer, &info, GST_MAP_READ);
+    gstBufferData = reinterpret_cast<gint16 *>(info.data);
+    gstBufferSize = info.size / sizeof(gint16);
+    gst_buffer_unmap(buffer,&info);
 #endif
 
     if (gstBufferSize == 0) {

@@ -356,8 +356,8 @@ QImage VideoWidget::snapshot() const
 #else
         GstSample *sample = gst_video_convert_sample(videobuffer, snapcaps, GST_SECOND, NULL);
         snapbuffer = gst_sample_get_buffer(sample);
-        GstMapInfo *info;
-        gst_buffer_map(snapbuffer, info, GST_MAP_READ);
+        GstMapInfo info;
+        gst_buffer_map(snapbuffer, &info, GST_MAP_READ);
         gst_sample_unref(videobuffer);
 #endif
 
@@ -386,11 +386,11 @@ QImage VideoWidget::snapshot() const
                            width * 3);
 #else
                     memcpy(snapimage.scanLine(i),
-                           info->data + i * GST_ROUND_UP_4(width * 3),
+                           info.data + i * GST_ROUND_UP_4(width * 3),
                            width * 3);
 #endif
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-                gst_buffer_unmap(snapbuffer, info);
+#if GST_VERSION > GST_VERSION_CHECK (1,0,0,0)
+                gst_buffer_unmap(snapbuffer, &info);
 #endif
                 gst_buffer_unref(snapbuffer);
                 return snapimage;

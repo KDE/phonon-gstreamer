@@ -91,11 +91,11 @@ GstFlowReturn QWidgetVideoSink<FMT>::render(GstBaseSink* sink, GstBuffer* buf)
         frame.resize(buf->size);
         memcpy(frame.data(), buf->data, buf->size);
 #else
-        GstMapInfo *info;
-        gst_buffer_map(buf, info, GST_MAP_READ);
-        frame.resize(info->size);
-        memcpy(frame.data(), info->data, info->size);
-        gst_buffer_unmap(buf, info);
+        GstMapInfo info;
+        gst_buffer_map(buf, &info, GST_MAP_READ);
+        frame.resize(info.size);
+        memcpy(frame.data(), info.data, info.size);
+        gst_buffer_unmap(buf, &info);
 #endif
         NewFrameEvent *frameEvent = new NewFrameEvent(frame, self->width, self->height);
         QApplication::postEvent(self->renderWidget, frameEvent);
