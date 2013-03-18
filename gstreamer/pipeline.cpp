@@ -69,9 +69,9 @@ Pipeline::Pipeline(QObject *parent)
     g_signal_connect(m_pipeline, "about-to-finish", G_CALLBACK(cb_aboutToFinish), this);
 
     GstBus *bus = gst_pipeline_get_bus(m_pipeline);
-    gst_bus_set_sync_handler(bus, gst_bus_sync_signal_handler, NULL,
+    gst_bus_set_sync_handler(bus, gst_bus_sync_signal_handler, NULL
                          #if GST_VERSION > GST_VERSION_CHECK (1,0,0,0)
-                             NULL
+                             ,NULL
                          #endif
                              );
     g_signal_connect(bus, "sync-message::eos", G_CALLBACK(cb_eos), this);
