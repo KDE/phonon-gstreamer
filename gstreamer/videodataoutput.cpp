@@ -29,6 +29,10 @@
 #include <gst/gstghostpad.h>
 #include <gst/gstutils.h>
 
+#if GST_VERSION > GST_VERSION_CHECK (1,0,0,0)
+#include <gst/video/video-format.h>
+#endif
+
 namespace Phonon
 {
 namespace Gstreamer
@@ -64,16 +68,18 @@ VideoDataOutput::VideoDataOutput(Backend *backend, QObject *parent)
 
         // Save ourselves a metric crapton of work by simply requesting
         // a format native to Qt.
-    GstCaps *caps = gst_caps_new_simple(
-            #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-                "video/x-raw-rgb",
-            #else
-                "video/x-raw",
-            #endif
+    GstCaps *caps =
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+                    gst_caps_new_simple("video/x-raw-rgb",
                                         "bpp", G_TYPE_INT, 24,
                                         "depth", G_TYPE_INT, 24,
                                         "endianess", G_TYPE_INT, G_BYTE_ORDER,
                                         NULL);
+#else
+                    gst_caps_new_simple("video/x-raw",
+                                        "format = (string)", G_TYPE_STRING, GST_VIDEO_NE(RGB),
+                                        NULL);
+#endif
 
     gst_bin_add_many(GST_BIN(m_queue), sink, convert, queue, NULL);
     gst_element_link(queue, convert);

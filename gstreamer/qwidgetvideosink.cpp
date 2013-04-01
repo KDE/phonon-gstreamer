@@ -111,14 +111,17 @@ static GstStaticPadTemplate template_factory_yuv =
                             GST_PAD_ALWAYS,
                             GST_STATIC_CAPS(
                                 #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-                                "video/x-raw-yuv, "
+                                    "video/x-raw-yuv, "
+                                    "framerate = (fraction) [ 0, MAX ], "
+                                    "width = (int) [ 1, MAX ], "
+                                    "height = (int) [ 1, MAX ],"
+                                    "bpp = (int) 32"
                                 #else
-                                "video/x-raw, "
+                                    "video/x-raw, "
+                                    "format = (string) {YUY2, YVYU, UYVY, Y41P, IYU2, Y42B, YV12, I420, Y41B, YUV9, YVU9, Y800}"
                                 #endif
-                                            "framerate = (fraction) [ 0, MAX ], "
-                                            "width = (int) [ 1, MAX ], "
-                                            "height = (int) [ 1, MAX ],"
-                                            "bpp = (int) 32"));
+                                )
+);
 
 static GstStaticPadTemplate template_factory_rgb =
     GST_STATIC_PAD_TEMPLATE("sink",
@@ -126,13 +129,9 @@ static GstStaticPadTemplate template_factory_rgb =
                             GST_PAD_ALWAYS,
                             GST_STATIC_CAPS(
                                 #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-                                GST_VIDEO_CAPS_xRGB_HOST_ENDIAN
+                                    GST_VIDEO_CAPS_xRGB_HOST_ENDIAN
                                 #else
-                                  #if G_BYTE_ORDER == G_LITTLE_ENDIAN
-                                    GST_VIDEO_CAPS_MAKE("xBGR")
-                                  #elif G_BYTE_ORDER == G_BIG_ENDIAN
                                     GST_VIDEO_CAPS_MAKE("xRGB")
-                                  #endif
                                 #endif
                                 )
                             );

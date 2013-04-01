@@ -40,6 +40,7 @@
 #include <gst/interfaces/propertyprobe.h>
 #else
 #include <gst/video/navigation.h>
+#include <gst/video/video-format.h>
 #endif
 
 
@@ -336,19 +337,22 @@ QImage VideoWidget::snapshot() const
 #endif
 
     if (videobuffer) {
-        GstCaps *snapcaps = gst_caps_new_simple(
-            #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-                    "video/x-raw-rgb",
-            #else
-                    "video/x-raw",
-            #endif
-                                                "bpp", G_TYPE_INT, 24,
-                                                "depth", G_TYPE_INT, 24,
-                                                "endianness", G_TYPE_INT, G_BIG_ENDIAN,
-                                                "red_mask", G_TYPE_INT, 0xff0000,
-                                                "green_mask", G_TYPE_INT, 0x00ff00,
-                                                "blue_mask", G_TYPE_INT, 0x0000ff,
-                                                NULL);
+        GstCaps *snapcaps =
+        #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
+                gst_caps_new_simple("video/x-raw-rgb",
+                                    "bpp", G_TYPE_INT, 24,
+                                    "depth", G_TYPE_INT, 24,
+                                    "endianness", G_TYPE_INT, G_BIG_ENDIAN,
+                                    "red_mask", G_TYPE_INT, 0xff0000,
+                                    "green_mask", G_TYPE_INT, 0x00ff00,
+                                    "blue_mask", G_TYPE_INT, 0x0000ff,
+                                    NULL);
+#else
+                gst_caps_new_simple("video/x-raw",
+                                    "format = (string)", G_TYPE_STRING, GST_VIDEO_NE(RGB),
+                                    NULL);
+#endif
+
         GstBuffer *snapbuffer;
 #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
         snapbuffer = gst_video_convert_frame(videobuffer, snapcaps, GST_SECOND, NULL);
