@@ -725,18 +725,8 @@ gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
                 else
                     that->m_metaData.insert("ALBUM", "Streaming Data");
             }
-            // As we manipulate the title, we need to recompare
-            // oldMap and m_metaData here...
-            //if (oldMap != m_metaData && !m_loading)
 
-            // Only emit signal if we're on a live stream.
-            // Its a kludgy hack that for 99% of cases of streaming should work.
-            // If not, this needs fixed in mediaobject.cpp.
-            guint kbps;
-            g_object_get(that->m_pipeline, "connection-speed", &kbps, NULL);
-	    // This hack does not work now.
-            // if (that->m_currentSource.discType() == Phonon::Cd || kbps != 0)
-                emit that->metaDataChanged(that->m_metaData);
+            emit that->metaDataChanged(that->m_metaData);
         }
     }
     return true;
