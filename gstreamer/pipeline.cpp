@@ -52,6 +52,7 @@ Pipeline::Pipeline(QObject *parent)
     , m_reader(0) // Lazy init
     , m_resetting(false)
 {
+    DEBUG_BLOCK;
     qRegisterMetaType<GstState>("GstState");
 #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     m_pipeline = GST_PIPELINE(gst_element_factory_make("playbin2", NULL));
@@ -149,26 +150,31 @@ Pipeline::Pipeline(QObject *parent)
 
 GstElement *Pipeline::audioPipe()
 {
+    DEBUG_BLOCK;
     return m_audioPipe;
 }
 
 GstElement *Pipeline::videoPipe()
 {
+    DEBUG_BLOCK;
     return m_videoPipe;
 }
 
 GstElement *Pipeline::audioGraph()
 {
+    DEBUG_BLOCK;
     return m_audioGraph;
 }
 
 GstElement *Pipeline::videoGraph()
 {
+    DEBUG_BLOCK;
     return m_videoGraph;
 }
 
 void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
 {
+    DEBUG_BLOCK;
     m_isStream = false;
     m_seeking = false;
     m_installer->reset();
@@ -246,6 +252,7 @@ Pipeline::~Pipeline()
 
 GstElement *Pipeline::element() const
 {
+    DEBUG_BLOCK;
     return GST_ELEMENT(m_pipeline);
 }
 
@@ -276,6 +283,7 @@ void Pipeline::writeToDot(MediaObject *media, const QString &type)
 
 bool Pipeline::queryDuration(GstFormat *format, gint64 *duration) const
 {
+    DEBUG_BLOCK;
     return gst_element_query_duration(GST_ELEMENT(m_pipeline),
                                       #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
                                       format
@@ -287,6 +295,7 @@ bool Pipeline::queryDuration(GstFormat *format, gint64 *duration) const
 
 GstState Pipeline::state() const
 {
+    DEBUG_BLOCK;
     GstState state;
     gst_element_get_state(GST_ELEMENT(m_pipeline), &state, NULL, 1000);
     return state;
@@ -294,6 +303,7 @@ GstState Pipeline::state() const
 
 gboolean Pipeline::cb_eos(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
+    DEBUG_BLOCK;
     Q_UNUSED(bus)
     Pipeline *that = static_cast<Pipeline*>(data);
     emit that->eos();
@@ -302,6 +312,7 @@ gboolean Pipeline::cb_eos(GstBus *bus, GstMessage *gstMessage, gpointer data)
 
 gboolean Pipeline::cb_warning(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
+    DEBUG_BLOCK;
     Q_UNUSED(bus)
     gchar *debug;
     GError *err;
@@ -317,6 +328,7 @@ gboolean Pipeline::cb_warning(GstBus *bus, GstMessage *gstMessage, gpointer data
 
 gboolean Pipeline::cb_duration(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
+    DEBUG_BLOCK;
     Q_UNUSED(bus)
     gint64 duration;
     GstFormat format;
@@ -342,6 +354,7 @@ qint64 Pipeline::totalDuration() const
 
 gboolean Pipeline::cb_buffering(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
+    DEBUG_BLOCK;
     Q_UNUSED(bus)
     Pipeline *that = static_cast<Pipeline*>(data);
     gint percent = 0;
@@ -357,6 +370,7 @@ gboolean Pipeline::cb_buffering(GstBus *bus, GstMessage *gstMessage, gpointer da
 
 gboolean Pipeline::cb_state(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
+    DEBUG_BLOCK;
     Q_UNUSED(bus)
     GstState oldState;
     GstState newState;
@@ -411,6 +425,7 @@ gboolean Pipeline::cb_state(GstBus *bus, GstMessage *gstMessage, gpointer data)
 
 void Pipeline::cb_videoChanged(GstElement *playbin, gpointer data)
 {
+    DEBUG_BLOCK;
     gint videoCount;
     bool videoAvailable;
     Pipeline *that = static_cast<Pipeline*>(data);
@@ -424,12 +439,14 @@ void Pipeline::cb_videoChanged(GstElement *playbin, gpointer data)
 
 void Pipeline::cb_textTagsChanged(GstElement *playbin, gint stream, gpointer data)
 {
+    DEBUG_BLOCK;
     Pipeline *that = static_cast<Pipeline *>(data);
     emit that->textTagChanged(stream);
 }
 
 void Pipeline::cb_audioTagsChanged(GstElement *playbin, gint stream, gpointer data)
 {
+    DEBUG_BLOCK;
     Pipeline *that = static_cast<Pipeline *>(data);
     emit that->audioTagChanged(stream);
 }
@@ -450,6 +467,7 @@ bool Pipeline::audioIsAvailable() const
 
 gboolean Pipeline::cb_element(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
+    DEBUG_BLOCK;
     Q_UNUSED(bus)
     Pipeline *that = static_cast<Pipeline*>(data);
     const GstStructure *str = gst_message_get_structure(gstMessage);
@@ -520,6 +538,7 @@ void Pipeline::pluginInstallComplete()
 
 gboolean Pipeline::cb_error(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
+    DEBUG_BLOCK;
     Q_UNUSED(bus)
     Pipeline *that = static_cast<Pipeline*>(data);
     PluginInstaller::InstallStatus status = that->m_installer->checkInstalledPlugins();
@@ -603,6 +622,7 @@ void foreach_tag_function(const GstTagList *list, const gchar *tag, gpointer use
 
 gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
 {
+    DEBUG_BLOCK;
     Q_UNUSED(bus)
     Pipeline *that = static_cast<Pipeline*>(data);
     QMutexLocker lock(&that->m_tagLock);
@@ -787,6 +807,7 @@ QList<MediaController::NavigationMenu> Pipeline::availableMenus() const
 
 bool Pipeline::seekToMSec(qint64 time)
 {
+    DEBUG_BLOCK;
     m_posAtReset = time;
     if (m_resetting)
         return true;
@@ -799,6 +820,7 @@ bool Pipeline::seekToMSec(qint64 time)
 
 bool Pipeline::isSeekable() const
 {
+    DEBUG_BLOCK;
     gboolean seekable = 0;
     GstQuery *query;
     gboolean result;
@@ -922,6 +944,7 @@ void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer d
 
 void Pipeline::cb_aboutToFinish(GstElement *appSrc, gpointer data)
 {
+    DEBUG_BLOCK;
     Q_UNUSED(appSrc);
     Pipeline *that = static_cast<Pipeline*>(data);
     emit that->aboutToFinish();
@@ -934,6 +957,7 @@ Phonon::MediaSource Pipeline::currentSource() const
 
 qint64 Pipeline::position() const
 {
+    DEBUG_BLOCK;
     gint64 pos = 0;
     GstFormat format = GST_FORMAT_TIME;
     if (m_resetting)
