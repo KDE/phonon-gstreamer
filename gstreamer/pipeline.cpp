@@ -566,51 +566,51 @@ void foreach_tag_function(const GstTagList *list, const gchar *tag, gpointer use
     QString value;
     GType type = gst_tag_get_type(tag);
     switch (type) {
-    case G_TYPE_STRING: {
-            char *str = 0;
-            gst_tag_list_get_string(list, tag, &str);
-            value = QString::fromUtf8(str);
-            g_free(str);
-        }
-        break;
+//    case G_TYPE_STRING: {
+//            char *str = 0;
+//            gst_tag_list_get_string(list, tag, &str);
+//            value = QString::fromUtf8(str);
+//            g_free(str);
+//        }
+//        break;
 
-    case G_TYPE_BOOLEAN: {
-            int bval;
-            gst_tag_list_get_boolean(list, tag, &bval);
-            value = QString::number(bval);
-        }
-        break;
+//    case G_TYPE_BOOLEAN: {
+//            int bval;
+//            gst_tag_list_get_boolean(list, tag, &bval);
+//            value = QString::number(bval);
+//        }
+//        break;
 
-    case G_TYPE_INT: {
-            int ival;
-            gst_tag_list_get_int(list, tag, &ival);
-            value = QString::number(ival);
-        }
-        break;
+//    case G_TYPE_INT: {
+//            int ival;
+//            gst_tag_list_get_int(list, tag, &ival);
+//            value = QString::number(ival);
+//        }
+//        break;
 
-    case G_TYPE_UINT: {
-            unsigned int uival;
-            gst_tag_list_get_uint(list, tag, &uival);
-            value = QString::number(uival);
-        }
-        break;
+//    case G_TYPE_UINT: {
+//            unsigned int uival;
+//            gst_tag_list_get_uint(list, tag, &uival);
+//            value = QString::number(uival);
+//        }
+//        break;
 
-    case G_TYPE_FLOAT: {
-            float fval;
-            gst_tag_list_get_float(list, tag, &fval);
-            value = QString::number(fval);
-        }
-        break;
+//    case G_TYPE_FLOAT: {
+//            float fval;
+//            gst_tag_list_get_float(list, tag, &fval);
+//            value = QString::number(fval);
+//        }
+//        break;
 
-    case G_TYPE_DOUBLE: {
-            double dval;
-            gst_tag_list_get_double(list, tag, &dval);
-            value = QString::number(dval);
-        }
-        break;
+//    case G_TYPE_DOUBLE: {
+//            double dval;
+//            gst_tag_list_get_double(list, tag, &dval);
+//            value = QString::number(dval);
+//        }
+//        break;
 
     default:
-        //debug() << "Unsupported tag type:" << g_type_name(type);
+        debug() << "Unsuppoted tag type:" << g_type_name(type);
         break;
     }
 
@@ -624,121 +624,122 @@ gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
 {
     DEBUG_BLOCK;
     Q_UNUSED(bus)
-//    Pipeline *that = static_cast<Pipeline*>(data);
-//    QMutexLocker lock(&that->m_tagLock);
 
-//    bool isStream = that->m_isStream || that->m_isHttpUrl;
-//    GstTagList* tag_list = 0;
-//    gst_message_parse_tag(msg, &tag_list);
-//    if (tag_list) {
-//        TagMap newTags;
-//        gst_tag_list_foreach (tag_list, &foreach_tag_function, &newTags);
-//        gst_tag_list_free(tag_list);
+    Pipeline *that = static_cast<Pipeline*>(data);
+    QMutexLocker lock(&that->m_tagLock);
 
-//        // Determine if we should no fake the album/artist tags.
-//        // This is a little confusing as we want to fake it on initial
-//        // connection where title, album and artist are all missing.
-//        // There are however times when we get just other information,
-//        // e.g. codec, and so we want to only do clever stuff if we
-//        // have a commonly available tag (ORGANIZATION) or we have a
-//        // change in title
-//        bool fake_it =
-//           (isStream
-//            && ((!newTags.contains("TITLE")
-//                 && newTags.contains("ORGANIZATION"))
-//                || (newTags.contains("TITLE")
-//                    && that->m_metaData.value("TITLE") != newTags.value("TITLE")))
-//            && !newTags.contains("ALBUM")
-//            && !newTags.contains("ARTIST"));
+    bool isStream = that->m_isStream || that->m_isHttpUrl;
+    GstTagList* tag_list = 0;
+    gst_message_parse_tag(msg, &tag_list);
+    if (tag_list) {
+        TagMap newTags;
+        gst_tag_list_foreach (tag_list, &foreach_tag_function, &newTags);
+        gst_tag_list_free(tag_list);
 
-//        TagMap oldMap = that->m_metaData; // Keep a copy of the old one for reference
+        // Determine if we should no fake the album/artist tags.
+        // This is a little confusing as we want to fake it on initial
+        // connection where title, album and artist are all missing.
+        // There are however times when we get just other information,
+        // e.g. codec, and so we want to only do clever stuff if we
+        // have a commonly available tag (ORGANIZATION) or we have a
+        // change in title
+        bool fake_it =
+           (isStream
+            && ((!newTags.contains("TITLE")
+                 && newTags.contains("ORGANIZATION"))
+                || (newTags.contains("TITLE")
+                    && that->m_metaData.value("TITLE") != newTags.value("TITLE")))
+            && !newTags.contains("ALBUM")
+            && !newTags.contains("ARTIST"));
 
-//        // Now we've checked the new data, append any new meta tags to the existing tag list
-//        // We cannot use TagMap::iterator as this is a multimap and when streaming data
-//        // could in theory be lost.
-//        QList<QString> keys = newTags.keys();
-//        for (QList<QString>::iterator i = keys.begin(); i != keys.end(); ++i) {
-//            QString key = *i;
-//            if (isStream) {
-//                // If we're streaming, we need to remove data in m_metaData
-//                // in order to stop it filling up indefinitely (as it's a multimap)
-//                that->m_metaData.remove(key);
-//            }
-//            QList<QString> values = newTags.values(key);
-//            for (QList<QString>::iterator j = values.begin(); j != values.end(); ++j) {
-//                QString value = *j;
-//                QString currVal = that->m_metaData.value(key);
-//                if (!that->m_metaData.contains(key) || currVal != value) {
-//                    that->m_metaData.insert(key, value);
-//                }
-//            }
-//        }
+        TagMap oldMap = that->m_metaData; // Keep a copy of the old one for reference
 
-//        if (that->m_metaData.contains("TRACK-COUNT")) {
-//            that->m_metaData.insert("TRACKNUMBER", newTags.value("TRACK-COUNT"));
-//            emit that->trackCountChanged(newTags.value("TRACK-COUNT").toInt());
-//        }
-//        if (that->m_metaData.contains("MUSICBRAINZ-DISCID")) {
-//            that->m_metaData.insert("MUSICBRAINZ_DISCID", newTags.value("MUSICBRAINZ-DISCID"));
-//        }
+        // Now we've checked the new data, append any new meta tags to the existing tag list
+        // We cannot use TagMap::iterator as this is a multimap and when streaming data
+        // could in theory be lost.
+        QList<QString> keys = newTags.keys();
+        for (QList<QString>::iterator i = keys.begin(); i != keys.end(); ++i) {
+            QString key = *i;
+            if (isStream) {
+                // If we're streaming, we need to remove data in m_metaData
+                // in order to stop it filling up indefinitely (as it's a multimap)
+                that->m_metaData.remove(key);
+            }
+            QList<QString> values = newTags.values(key);
+            for (QList<QString>::iterator j = values.begin(); j != values.end(); ++j) {
+                QString value = *j;
+                QString currVal = that->m_metaData.value(key);
+                if (!that->m_metaData.contains(key) || currVal != value) {
+                    that->m_metaData.insert(key, value);
+                }
+            }
+        }
 
-//        //debug() << this << "Meta tags found";
-//        if (oldMap != that->m_metaData) {
-//            // This is a bit of a hack to ensure that stream metadata is
-//            // returned. We get as much as we can from the Shoutcast server's
-//            // StreamTitle= header. If further info is decoded from the stream
-//            // itself later, then it will overwrite this info.
-//            if (fake_it) {
-//                that->m_metaData.remove("ALBUM");
-//                that->m_metaData.remove("ARTIST");
+        if (that->m_metaData.contains("TRACK-COUNT")) {
+            that->m_metaData.insert("TRACKNUMBER", newTags.value("TRACK-COUNT"));
+            emit that->trackCountChanged(newTags.value("TRACK-COUNT").toInt());
+        }
+        if (that->m_metaData.contains("MUSICBRAINZ-DISCID")) {
+            that->m_metaData.insert("MUSICBRAINZ_DISCID", newTags.value("MUSICBRAINZ-DISCID"));
+        }
 
-//                // Detect whether we want to "fill in the blanks"
-//                QString str;
-//                if (that->m_metaData.contains("TITLE"))
-//                {
-//                    str = that->m_metaData.value("TITLE");
-//                    int splitpoint;
-//                    // Check to see if our title matches "%s - %s"
-//                    // Where neither %s are empty...
-//                    if ((splitpoint = str.indexOf(" - ")) > 0
-//                        && str.size() > (splitpoint+3)) {
-//                        that->m_metaData.insert("ARTIST", str.left(splitpoint));
-//                        that->m_metaData.replace("TITLE", str.mid(splitpoint+3));
-//                    }
-//                } else {
-//                    str = that->m_metaData.value("GENRE");
-//                    if (!str.isEmpty())
-//                        that->m_metaData.insert("TITLE", str);
-//                    else
-//                        that->m_metaData.insert("TITLE", "Streaming Data");
-//                }
-//                if (!that->m_metaData.contains("ARTIST")) {
-//                    str = that->m_metaData.value("LOCATION");
-//                    if (!str.isEmpty())
-//                        that->m_metaData.insert("ARTIST", str);
-//                    else
-//                        that->m_metaData.insert("ARTIST", "Streaming Data");
-//                }
-//                str = that->m_metaData.value("ORGANIZATION");
-//                if (!str.isEmpty())
-//                    that->m_metaData.insert("ALBUM", str);
-//                else
-//                    that->m_metaData.insert("ALBUM", "Streaming Data");
-//            }
-//            // As we manipulate the title, we need to recompare
-//            // oldMap and m_metaData here...
-//            //if (oldMap != m_metaData && !m_loading)
+        //debug() << this << "Meta tags found";
+        if (oldMap != that->m_metaData) {
+            // This is a bit of a hack to ensure that stream metadata is
+            // returned. We get as much as we can from the Shoutcast server's
+            // StreamTitle= header. If further info is decoded from the stream
+            // itself later, then it will overwrite this info.
+            if (fake_it) {
+                that->m_metaData.remove("ALBUM");
+                that->m_metaData.remove("ARTIST");
 
-//            // Only emit signal if we're on a live stream.
-//            // Its a kludgy hack that for 99% of cases of streaming should work.
-//            // If not, this needs fixed in mediaobject.cpp.
-//            guint kbps;
-//            g_object_get(that->m_pipeline, "connection-speed", &kbps, NULL);
-//	    // This hack does not work now.
-//            // if (that->m_currentSource.discType() == Phonon::Cd || kbps != 0)
-//                emit that->metaDataChanged(that->m_metaData);
-//        }
-//    }
+                // Detect whether we want to "fill in the blanks"
+                QString str;
+                if (that->m_metaData.contains("TITLE"))
+                {
+                    str = that->m_metaData.value("TITLE");
+                    int splitpoint;
+                    // Check to see if our title matches "%s - %s"
+                    // Where neither %s are empty...
+                    if ((splitpoint = str.indexOf(" - ")) > 0
+                        && str.size() > (splitpoint+3)) {
+                        that->m_metaData.insert("ARTIST", str.left(splitpoint));
+                        that->m_metaData.replace("TITLE", str.mid(splitpoint+3));
+                    }
+                } else {
+                    str = that->m_metaData.value("GENRE");
+                    if (!str.isEmpty())
+                        that->m_metaData.insert("TITLE", str);
+                    else
+                        that->m_metaData.insert("TITLE", "Streaming Data");
+                }
+                if (!that->m_metaData.contains("ARTIST")) {
+                    str = that->m_metaData.value("LOCATION");
+                    if (!str.isEmpty())
+                        that->m_metaData.insert("ARTIST", str);
+                    else
+                        that->m_metaData.insert("ARTIST", "Streaming Data");
+                }
+                str = that->m_metaData.value("ORGANIZATION");
+                if (!str.isEmpty())
+                    that->m_metaData.insert("ALBUM", str);
+                else
+                    that->m_metaData.insert("ALBUM", "Streaming Data");
+            }
+            // As we manipulate the title, we need to recompare
+            // oldMap and m_metaData here...
+            //if (oldMap != m_metaData && !m_loading)
+
+            // Only emit signal if we're on a live stream.
+            // Its a kludgy hack that for 99% of cases of streaming should work.
+            // If not, this needs fixed in mediaobject.cpp.
+            guint kbps;
+            g_object_get(that->m_pipeline, "connection-speed", &kbps, NULL);
+        // This hack does not work now.
+            // if (that->m_currentSource.discType() == Phonon::Cd || kbps != 0)
+                emit that->metaDataChanged(that->m_metaData);
+        }
+    }
     return true;
 }
 
