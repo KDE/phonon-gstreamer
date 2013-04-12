@@ -342,10 +342,21 @@ qint64 Pipeline::totalDuration() const
 
 gboolean Pipeline::cb_buffering(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
+    DEBUG_BLOCK;
     Q_UNUSED(bus)
     Pipeline *that = static_cast<Pipeline*>(data);
     gint percent = 0;
-    gst_structure_get_int (gst_message_get_structure(gstMessage), "buffer-percent", &percent); //gst_message_parse_buffering was introduced in 0.10.11
+    gst_message_parse_buffering(gstMessage, &percent);
+
+    debug() << Q_FUNC_INFO << "Buffering :" << percent;
+
+    // Instead of playing when the pipeline is still streaming, we pause
+    // and let gst finish streaming.
+    if ( percent < 100 && gstMessage->type == GST_MESSAGE_BUFFERING) {
+        that->setState(GST_STATE_PAUSED);
+    } else {
+        that->setState(GST_STATE_PLAYING);
+    }
 
     if (that->m_bufferPercent != percent) {
         emit that->buffering(percent);
