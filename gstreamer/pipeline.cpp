@@ -840,13 +840,19 @@ static void cb_feedAppSrc(GstAppSrc *appSrc, guint buffsize, gpointer data)
     StreamReader *reader = static_cast<StreamReader*>(data);
     GstBuffer *buf = gst_buffer_new_and_alloc(buffsize);
 #warning ret not used!!! WHOOPWHOOPWHOOP
+
 #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     reader->read(reader->currentPos(), buffsize, (char*)GST_BUFFER_DATA(buf));
 #else
     GstMapInfo info;
-    gst_buffer_map(buf, &info, GST_MAP_READ);
+    gst_buffer_map(buf, &info, GST_MAP_WRITE);
     reader->read(reader->currentPos(), info.size, (char*)info.data);
 #endif
+
+#if GST_VERSION > GST_VERSION_CHECK (1,0,0,0)
+        gst_buffer_unmap(buf, &info);
+#endif
+
     gst_app_src_push_buffer(appSrc, buf);
     if (
         #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
@@ -857,9 +863,6 @@ static void cb_feedAppSrc(GstAppSrc *appSrc, guint buffsize, gpointer data)
             && reader->atEnd())
         gst_app_src_end_of_stream(appSrc);
 
-#if GST_VERSION > GST_VERSION_CHECK (1,0,0,0)
-        gst_buffer_unmap(buf, &info);
-#endif
 }
 
 static void cb_seekAppSrc(GstAppSrc *appSrc, guint64 pos, gpointer data)
