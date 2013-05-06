@@ -134,6 +134,7 @@ GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
         if (oldSize == currentBufferSize()) {
             // We didn't get any data, check if we are at the end of stream already.
             if (m_eos) {
+                return
             #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
               GST_FLOW_UNEXPECTED;
             #else
