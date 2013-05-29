@@ -24,7 +24,9 @@
 #include "audioeffect.h"
 #include "debug.h"
 #include "mediaobject.h"
+#ifndef PHONON_NO_GRAPHICSVIEW
 #include "videographicsobject.h"
+#endif
 #include "videowidget.h"
 #include "devicemanager.h"
 #include "effectmanager.h"
@@ -162,13 +164,15 @@ QObject *Backend::createObject(BackendInterface::Class c, QObject *parent, const
             QWidget *widget =  qobject_cast<QWidget*>(parent);
             return new VideoWidget(this, widget);
         }
+#ifndef PHONON_NO_GRAPHICSVIEW
     case VideoGraphicsObjectClass:
         return new VideoGraphicsObject(this, parent);
-#endif //QT_NO_PHONON_VIDEO
+#endif // PHONON_NO_GRAPHICSVIEW
+#endif // QT_NO_PHONON_VIDEO
 #ifndef QT_NO_PHONON_VOLUMEFADEREFFECT
     case VolumeFaderEffectClass:
         return new VolumeFaderEffect(this, parent);
-#endif //QT_NO_PHONON_VOLUMEFADEREFFECT
+#endif // QT_NO_PHONON_VOLUMEFADEREFFECT
 
     case VisualizationClass:  //Fall through
     default:
