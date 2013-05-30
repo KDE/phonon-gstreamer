@@ -70,20 +70,26 @@ Pipeline::Pipeline(QObject *parent)
 
     GstBus *bus = gst_pipeline_get_bus(m_pipeline);
     gst_bus_set_sync_handler(bus, gst_bus_sync_signal_handler, NULL
-                         #if GST_VERSION > GST_VERSION_CHECK (1,0,0,0)
+                         #if GST_VERSION >= GST_VERSION_CHECK (1,0,0,0)
                              ,NULL
                          #endif
                              );
     g_signal_connect(bus, "sync-message::eos", G_CALLBACK(cb_eos), this);
     g_signal_connect(bus, "sync-message::warning", G_CALLBACK(cb_warning), this);
 
-    //FIXME: This never gets called..?
+#if GST_VERSION >= GST_VERSION_CHECK (1,0,0,0)
+    g_signal_connect(bus, "sync-message::duration-changed", G_CALLBACK(cb_duration), this);
+#else
     g_signal_connect(bus, "sync-message::duration", G_CALLBACK(cb_duration), this);
+#endif
 
     g_signal_connect(bus, "sync-message::buffering", G_CALLBACK(cb_buffering), this);
     g_signal_connect(bus, "sync-message::state-changed", G_CALLBACK(cb_state), this);
     g_signal_connect(bus, "sync-message::element", G_CALLBACK(cb_element), this);
     g_signal_connect(bus, "sync-message::error", G_CALLBACK(cb_error), this);
+#if GST_VERSION >= GST_VERSION_CHECK (1,0,0,0)
+    g_signal_connect(bus, "sync-message::stream-start", G_CALLBACK(cb_streamStart), this);
+#endif
     g_signal_connect(bus, "sync-message::tag", G_CALLBACK(cb_tag), this);
     gst_object_unref(bus);
 
@@ -317,16 +323,22 @@ gboolean Pipeline::cb_warning(GstBus *bus, GstMessage *gstMessage, gpointer data
 
 gboolean Pipeline::cb_duration(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
+    DEBUG_BLOCK;
     Q_UNUSED(bus)
-    gint64 duration;
-    GstFormat format;
+    gint64 duration = 0;
+    GstFormat format = GST_FORMAT_TIME;
     Pipeline *that = static_cast<Pipeline*>(data);
-    debug() << "Duration message";
     if (that->m_resetting)
         return true;
+#if GST_VERSION >= GST_VERSION_CHECK (1,0,0,0)
+    emit that->durationChanged(that->totalDuration());
+#else
     gst_message_parse_duration(gstMessage, &format, &duration);
-    if (format == GST_FORMAT_TIME)
+    if (format == GST_FORMAT_TIME) {
+        debug() << "duration" << duration/GST_MSECOND;
         emit that->durationChanged(duration/GST_MSECOND);
+    }
+#endif
     return true;
 }
 
@@ -462,6 +474,7 @@ bool Pipeline::audioIsAvailable() const
 gboolean Pipeline::cb_element(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
     Q_UNUSED(bus)
+    DEBUG_BLOCK;
     Pipeline *that = static_cast<Pipeline*>(data);
     const GstStructure *str = gst_message_get_structure(gstMessage);
     if (gst_is_missing_plugin_message(gstMessage)) {
@@ -485,6 +498,8 @@ gboolean Pipeline::cb_element(GstBus *bus, GstMessage *gstMessage, gpointer data
         }
 #endif // GST_VERSION
     }
+    // GStraemer 1.0 actually has a proper signal for this, see stream-started.
+#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     // Currently undocumented, but discovered via gst-plugins-base commit 7e674d
     // gst 0.10.25.1
     if (gst_structure_has_name(str,
@@ -502,6 +517,7 @@ gboolean Pipeline::cb_element(GstBus *bus, GstMessage *gstMessage, gpointer data
         if (!that->m_resetting)
             emit that->streamChanged();
     }
+#endif
     if (gst_structure_has_name(str, "prepare-xwindow-id") || gst_structure_has_name(str, "prepare-window-handle"))
         emit that->windowIDNeeded();
     return true;
@@ -720,6 +736,19 @@ gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
             emit that->metaDataChanged(that->m_metaData);
         }
     }
+    return true;
+}
+
+gboolean Pipeline::cb_streamStart(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    Q_UNUSED(bus)
+    Pipeline *that = static_cast<Pipeline*>(data);
+    gchar *uri;
+    g_object_get(that->m_pipeline, "uri", &uri, NULL);
+    debug() << "Stream changed to" << uri;
+    g_free(uri);
+    if (!that->m_resetting)
+        emit that->streamChanged();
     return true;
 }
 

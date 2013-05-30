@@ -62,6 +62,7 @@ class Pipeline : public QObject
         static gboolean cb_element(GstBus *bus, GstMessage *msg, gpointer data);
         static gboolean cb_error(GstBus *bus, GstMessage *msg, gpointer data);
         static gboolean cb_tag(GstBus *bus, GstMessage *msg, gpointer data);
+        static gboolean cb_streamStart(GstBus *bus, GstMessage *msg, gpointer data);
 
         static void cb_aboutToFinish(GstElement *appSrc, gpointer data);
         static void cb_endOfPads(GstElement *playbin, gpointer data);
