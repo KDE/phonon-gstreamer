@@ -196,6 +196,10 @@ bool MediaObject::isSeekable() const
  */
 qint64 MediaObject::currentTime() const
 {
+//     DEBUG_BLOCK;
+//     debug() << m_resumeState;
+//     debug() << state();
+//     debug() << getPipelinePos();
     if (m_resumeState)
         return m_oldPos;
 
@@ -497,6 +501,8 @@ void MediaObject::seek(qint64 time)
 
 void MediaObject::handleStreamChange()
 {
+    DEBUG_BLOCK;
+    debug() << m_waitingForPreviousSource;
     if (m_waitingForPreviousSource) {
         m_waitingForPreviousSource = false;
     } else {
@@ -510,6 +516,8 @@ void MediaObject::handleStreamChange()
 
 void MediaObject::handleDurationChange(qint64 duration)
 {
+    DEBUG_BLOCK;
+    debug() << duration;
     m_totalTime = duration;
     emit totalTimeChanged(duration);
 }
@@ -941,6 +949,9 @@ void MediaObject::handleAboutToFinish()
         // An issue apparent with notification-like sounds, that are rather short and do not need
         // gapless transitioning. As outlined in https://bugs.kde.org/show_bug.cgi?id=307530
         unsigned long timeout = 0;
+        debug() << "total time" << totalTime();
+        debug() << "current time" << currentTime();
+        debug() << "remaining time" << remainingTime();
         if (totalTime() <= 0 || (remainingTime() - 500 <= 0))
             timeout = 0;
         else
