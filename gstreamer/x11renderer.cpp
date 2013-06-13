@@ -25,7 +25,7 @@
 #include "debug.h"
 #include "mediaobject.h"
 #include <QtGui/QPalette>
-#include <QtWidgets/QApplication>
+#include <QApplication>
 #include <QtGui/QPainter>
 #include <X11/Xlib.h>
 #include <gst/gst.h>
@@ -164,8 +164,12 @@ void X11Renderer::setOverlay()
         WId windowId = m_renderWidget->winId();
         // Even if we have created a winId at this point, other X applications
         // need to be aware of it.
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #warning syncx
-//        QApplication::syncX();
+//         QApplication::syncX();
+#else
+        QApplication::syncX();
+#endif
 #if GST_VERSION >= GST_VERSION_CHECK(0,10,31,0)
         gst_x_overlay_set_window_handle(GST_X_OVERLAY(m_videoSink), windowId);
 #else
@@ -178,8 +182,12 @@ void X11Renderer::setOverlay()
 
 void X11Renderer::windowExposed()
 {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #warning syncx
-//    QApplication::syncX();
+//     QApplication::syncX();
+#else
+    QApplication::syncX();
+#endif
     if (m_videoSink && GST_IS_X_OVERLAY(m_videoSink))
         gst_x_overlay_expose(GST_X_OVERLAY(m_videoSink));
 }

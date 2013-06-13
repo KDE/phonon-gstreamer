@@ -42,7 +42,9 @@
 
 #include <cstring>
 
-//Q_EXPORT_PLUGIN(phonon_gstreamer, Phonon::Gstreamer::Backend)
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+Q_EXPORT_PLUGIN2(phonon_gstreamer, Phonon::Gstreamer::Backend)
+#endif
 
 namespace Phonon
 {

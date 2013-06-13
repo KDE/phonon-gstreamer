@@ -22,7 +22,7 @@
 #include <QtGui/QPalette>
 #include <QtGui/QImage>
 #include <QtGui/QPainter>
-#include <QtWidgets/QBoxLayout>
+#include <QBoxLayout>
 #include <QApplication>
 #include <gst/gst.h>
 #include <gst/interfaces/navigation.h>

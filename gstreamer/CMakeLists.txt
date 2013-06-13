@@ -53,7 +53,6 @@ if (BUILD_PHONON_GSTREAMER)
       plugininstaller.cpp
       qwidgetvideosink.cpp
       streamreader.cpp
-      videodataoutput.cpp
       videosink.c
       videowidget.cpp
       volumefadereffect.cpp
@@ -99,8 +98,11 @@ if (BUILD_PHONON_GSTREAMER)
 
    install(TARGETS phonon_gstreamer DESTINATION ${PLUGIN_INSTALL_DIR}/plugins/phonon_backend)
 
-   message(WARNING "Desktop file and icons are not supported for lack of KCM/KDE Platform Plugin.")
-   #install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gstreamer.desktop DESTINATION ${SERVICES_INSTALL_DIR}/phononbackends)
+   if(PHONON_BUILD_PHONON4QT5)
+       message(WARNING "Desktop file and icons are not supported for lack of KCM/KDE Platform Plugin.")
+   else()
+       install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gstreamer.desktop DESTINATION ${SERVICES_INSTALL_DIR}/phononbackends)
+       add_subdirectory(icons)
+   endif()
 
-   #add_subdirectory(icons)
 endif (BUILD_PHONON_GSTREAMER)
