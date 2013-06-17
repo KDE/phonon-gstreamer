@@ -48,8 +48,7 @@ Pipeline::Pipeline(QObject *parent)
 {
     qRegisterMetaType<GstState>("GstState");
     m_pipeline = GST_PIPELINE(gst_element_factory_make("playbin2", NULL));
-    gst_object_ref(m_pipeline);
-    gst_object_sink(m_pipeline);
+    gst_object_ref_sink (m_pipeline);
     g_signal_connect(m_pipeline, "video-changed", G_CALLBACK(cb_videoChanged), this);
     g_signal_connect(m_pipeline, "text-tags-changed", G_CALLBACK(cb_textTagsChanged), this);
     g_signal_connect(m_pipeline, "audio-tags-changed", G_CALLBACK(cb_audioTagsChanged), this);
@@ -216,8 +215,10 @@ void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
 
 Pipeline::~Pipeline()
 {
+    g_signal_handlers_disconnect_by_data(m_pipeline, this);
     gst_element_set_state(GST_ELEMENT(m_pipeline), GST_STATE_NULL);
     gst_object_unref(m_pipeline);
+    m_pipeline = 0;
 }
 
 GstElement *Pipeline::element() const
@@ -824,7 +825,8 @@ void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer d
 
     GstElement *phononSrc;
     Pipeline *that = static_cast<Pipeline*>(data);
-    gst_object_ref(that->m_pipeline);
+    Q_ASSERT(that->m_pipeline);
+    Q_ASSERT(G_IS_OBJECT(that->m_pipeline));
     g_object_get(that->m_pipeline, "source", &phononSrc, NULL);
 
     if (that->m_reader) {
@@ -864,7 +866,6 @@ void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer d
             g_object_set(phononSrc, "device", that->currentSource().deviceName().toUtf8().constData(), NULL);
         }
     }
-    gst_object_unref(that->m_pipeline);
 }
 
 void Pipeline::cb_aboutToFinish(GstElement *appSrc, gpointer data)
