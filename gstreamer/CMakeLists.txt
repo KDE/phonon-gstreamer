@@ -59,6 +59,14 @@ if (BUILD_PHONON_GSTREAMER)
       widgetrenderer.cpp
       )
 
+    if (NOT PHONON_NO_GRAPHICSVIEW)
+      set(phonon_gstreamer_SRCS
+        ${phonon_gstreamer_SRCS}
+        videographicsobject.cpp
+        videosink.c
+      )
+    endif (NOT PHONON_NO_GRAPHICSVIEW)
+
     if(PHONON_FOUND_EXPERIMENTAL)
         add_definitions(-DPHONON_EXPERIMENTAL)
         list(APPEND phonon_gstreamer_SRCS videodataoutput.cpp)

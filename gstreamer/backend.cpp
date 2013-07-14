@@ -24,7 +24,10 @@
 #include "audioeffect.h"
 #include "debug.h"
 #include "mediaobject.h"
+
+#ifndef PHONON_NO_GRAPHICSVIEW
 #include "videographicsobject.h"
+#endif //PHONON_NO_GRAPHICSVIEW
 #include "videowidget.h"
 #include "devicemanager.h"
 #include "effectmanager.h"
@@ -170,11 +173,13 @@ QObject *Backend::createObject(BackendInterface::Class c, QObject *parent, const
             return new VideoWidget(this, widget);
         }
 
+#ifndef PHONON_NO_GRAPHICSVIEW
 #warning FIXME: Enable this once we port VGO to GStreamer 1.0
 #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     case VideoGraphicsObjectClass:
         return new VideoGraphicsObject(this, parent);
 #endif
+#endif //PHONON_NO_GRAPHICSVIEW
 #endif //QT_NO_PHONON_VIDEO
 #ifndef QT_NO_PHONON_VOLUMEFADEREFFECT
     case VolumeFaderEffectClass:
