@@ -17,7 +17,7 @@
 
 #include "qwidgetvideosink.h"
 
-#include <QtGui/QApplication>
+#include <QApplication>
 
 #include <gst/video/video.h>
 

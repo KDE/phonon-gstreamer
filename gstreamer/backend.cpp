@@ -24,7 +24,6 @@
 #include "audioeffect.h"
 #include "debug.h"
 #include "mediaobject.h"
-
 #ifndef PHONON_NO_GRAPHICSVIEW
 #include "videographicsobject.h"
 #endif //PHONON_NO_GRAPHICSVIEW
@@ -50,7 +49,9 @@
 
 #include <cstring>
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 Q_EXPORT_PLUGIN2(phonon_gstreamer, Phonon::Gstreamer::Backend)
+#endif
 
 namespace Phonon
 {
@@ -184,7 +185,7 @@ QObject *Backend::createObject(BackendInterface::Class c, QObject *parent, const
 #ifndef QT_NO_PHONON_VOLUMEFADEREFFECT
     case VolumeFaderEffectClass:
         return new VolumeFaderEffect(this, parent);
-#endif //QT_NO_PHONON_VOLUMEFADEREFFECT
+#endif // QT_NO_PHONON_VOLUMEFADEREFFECT
 
     case VisualizationClass:  //Fall through
     default:

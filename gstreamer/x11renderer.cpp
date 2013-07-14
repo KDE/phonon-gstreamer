@@ -19,13 +19,11 @@
 
 #include "videowidget.h"
 
-#ifndef Q_WS_QWS
-
 #include "backend.h"
 #include "debug.h"
 #include "mediaobject.h"
 #include <QtGui/QPalette>
-#include <QtGui/QApplication>
+#include <QApplication>
 #include <QtGui/QPainter>
 #include <X11/Xlib.h>
 #include <gst/gst.h>
@@ -178,10 +176,15 @@ void X11Renderer::setOverlay()
         WId windowId = m_renderWidget->winId();
         // Even if we have created a winId at this point, other X applications
         // need to be aware of it.
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#warning syncx
+//         QApplication::syncX();
+#else
         QApplication::syncX();
+#endif // QT_VERSION
 #if GST_VERSION >= GST_VERSION_CHECK (1,0,0,0)
         gst_video_overlay_set_window_handle(GST_VIDEO_OVERLAY(m_videoSink), windowId);
-#elif GST_VERSION <= GST_VERSION_CHECK (1,0,0,0)
+#elif GST_VERSION >= GST_VERSION_CHECK(0,10,31,0)
         gst_x_overlay_set_window_handle(GST_X_OVERLAY(m_videoSink), windowId);
 #elif GST_VERSION <= GST_VERSION_CHECK(0,10,31,0)
         gst_x_overlay_set_xwindow_id(GST_X_OVERLAY(m_videoSink), windowId);
@@ -193,6 +196,10 @@ void X11Renderer::setOverlay()
 
 void X11Renderer::windowExposed()
 {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#warning syncx
+//     QApplication::syncX();
+#else
     QApplication::syncX();
     if (m_videoSink &&
         #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)

@@ -42,7 +42,7 @@
 #include <QtCore/QStringList>
 #include <QtCore/QTimer>
 #include <QtCore/QVector>
-#include <QtGui/QApplication>
+#include <QApplication>
 #include <QtGui/QFont>
 #include <phonon/GlobalDescriptionContainer>
 

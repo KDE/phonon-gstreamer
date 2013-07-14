@@ -18,8 +18,8 @@
 #include "plugininstaller.h"
 #include <gst/gst.h>
 #include <QtCore/QCoreApplication>
-#include <QtGui/QApplication>
-#include <QtGui/QWidget>
+#include <QApplication>
+#include <QWidget>
 #include <QtCore/QLibrary>
 #include <QtCore/QPointer>
 #include <QtCore/QMetaType>
