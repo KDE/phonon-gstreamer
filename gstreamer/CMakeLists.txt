@@ -65,6 +65,8 @@ if (BUILD_PHONON_GSTREAMER)
         videographicsobject.cpp
         videosink.c
       )
+    else (NOT PHONON_NO_GRAPHICSVIEW)
+      add_definitions(-DPHONON_NO_GRAPHICSVIEW)
     endif (NOT PHONON_NO_GRAPHICSVIEW)
 
     if(PHONON_FOUND_EXPERIMENTAL)
