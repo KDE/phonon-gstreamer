@@ -130,9 +130,6 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
 MediaObject::~MediaObject()
 {
     if (m_pipeline) {
-        GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_pipeline->element()));
-        g_signal_handlers_disconnect_matched(bus, G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, this);
-        gst_object_unref(bus);
         delete m_pipeline;
     }
     GlobalSubtitles::instance()->unregister_(this);
