@@ -18,6 +18,7 @@
 
 #include "videowidget.h"
 #include <QtCore/QEvent>
+#include <QtCore/QSettings>
 #include <QtGui/QResizeEvent>
 #include <QtGui/QPalette>
 #include <QtGui/QImage>
@@ -32,8 +33,12 @@
 #include "abstractrenderer.h"
 #include "backend.h"
 #include "debug.h"
-#include "devicemanager.h"
 #include "mediaobject.h"
+
+#ifdef OPENGL_FOUND
+#include "glrenderer.h"
+#endif
+#include "widgetrenderer.h"
 #include "x11renderer.h"
 
 #include "widgetrenderer.h"
@@ -92,10 +97,43 @@ void VideoWidget::prepareToUnlink()
     disconnect(root()->pipeline());
 }
 
+void VideoWidget::createVideoRenderer()
+{
+  QString backend = qgetenv("PHONON_GST_VIDEOMODE");
+  if (backend.isEmpty()) {
+    QSettings settings(QLatin1String("Trolltech"));
+    settings.beginGroup(QLatin1String("Qt"));
+    backend = settings.value(QLatin1String("videomode"), "Auto").toByteArray().toLower();
+  }
+
+#if !defined(QT_NO_OPENGL) && !defined(QT_OPENGL_ES) && defined(OPENGL_FOUND)
+  if (backend == "opengl") {
+      m_renderer = new GLRenderer(this);
+      return;
+  } else
+#endif
+  if (backend == "software") {
+      m_renderer = new WidgetRenderer(this);
+      return;
+  }
+#ifndef Q_WS_QWS
+  else if (backend == "xwindow") {
+      m_renderer = new X11Renderer(this);
+      return;
+  } else {
+      GstElementFactory *srcfactory = gst_element_factory_find("ximagesink");
+      if (srcfactory) {
+          m_renderer = new X11Renderer(this);
+          return;
+      }
+  }
+#endif
+  m_renderer = new WidgetRenderer(this);
+}
+
 void VideoWidget::setupVideoBin()
 {
-
-    m_renderer = m_backend->deviceManager()->createVideoRenderer(this);
+    createVideoRenderer();
     GstElement *videoSink = m_renderer->videoSink();
     GstPad *videoPad = gst_element_get_static_pad(videoSink, "sink");
     g_signal_connect(videoPad, "notify::caps", G_CALLBACK(cb_capsChanged), this);

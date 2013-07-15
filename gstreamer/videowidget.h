@@ -95,6 +95,8 @@ protected:
     virtual void mousePressEvent(QMouseEvent *event);
     virtual void mouseReleaseEvent(QMouseEvent *event);
 
+    void createVideoRenderer();
+
     GstElement *m_videoBin;
     QSize m_movieSize;
     AbstractRenderer *m_renderer;

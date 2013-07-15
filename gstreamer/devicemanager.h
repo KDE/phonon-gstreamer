@@ -31,7 +31,6 @@ namespace Gstreamer {
 class Backend;
 class DeviceManager;
 class AbstractRenderer;
-class VideoWidget;
 
 /** \brief Container for information about devices supported by Gstreamer
  *
@@ -91,7 +90,6 @@ public:
     virtual ~DeviceManager();
     GstElement *createGNOMEAudioSink(Category category);
     GstElement *createAudioSink(Category category = NoCategory);
-    AbstractRenderer *createVideoRenderer(VideoWidget *parent);
     QList<int> deviceIds(ObjectDescriptionType type);
     QHash<QByteArray, QVariant> deviceProperties(int id);
     const DeviceInfo *device(int id) const;

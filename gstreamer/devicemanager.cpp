@@ -23,11 +23,6 @@
 #include "debug.h"
 #include "gsthelper.h"
 #include "videowidget.h"
-#ifdef OPENGL_FOUND
-#include "glrenderer.h"
-#endif
-#include "widgetrenderer.h"
-#include "x11renderer.h"
 #include <phonon/pulsesupport.h>
 
 #include <QtCore/QSettings>
@@ -183,11 +178,6 @@ DeviceManager::DeviceManager(Backend *backend)
         pulse->enable(false);
     }
 
-    m_videoSinkWidget = qgetenv("PHONON_GST_VIDEOMODE");
-    if (m_videoSinkWidget.isEmpty()) {
-        m_videoSinkWidget = settings.value(QLatin1String("videomode"), "Auto").toByteArray().toLower();
-    }
-
     updateDeviceList();
 }
 
@@ -336,31 +326,6 @@ GstElement *DeviceManager::createAudioSink(Category category)
     Q_ASSERT(sink);
     return sink;
 }
-
-#ifndef QT_NO_PHONON_VIDEO
-AbstractRenderer *DeviceManager::createVideoRenderer(VideoWidget *parent)
-{
-#if !defined(QT_NO_OPENGL) && !defined(QT_OPENGL_ES) && defined(OPENGL_FOUND)
-    if (m_videoSinkWidget == "opengl") {
-        return new GLRenderer(parent);
-    } else
-#endif
-    if (m_videoSinkWidget == "software") {
-        return new WidgetRenderer(parent);
-    }
-#ifndef Q_WS_QWS
-    else if (m_videoSinkWidget == "xwindow") {
-        return new X11Renderer(parent);
-    } else {
-        GstElementFactory *srcfactory = gst_element_factory_find("ximagesink");
-        if (srcfactory) {
-            return new X11Renderer(parent);
-        }
-    }
-#endif
-    return new WidgetRenderer(parent);
-}
-#endif //QT_NO_PHONON_VIDEO
 
 QList<int> DeviceManager::deviceIds(ObjectDescriptionType type)
 {
