@@ -50,6 +50,8 @@ public:
         return m_audioBin;
     }
 
+    static GstElement *createAudioSink();
+
 Q_SIGNALS:
     void volumeChanged(qreal newVolume);
     void audioDeviceFailed();

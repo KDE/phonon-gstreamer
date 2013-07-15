@@ -25,6 +25,7 @@
 #include <phonon/audiooutput.h>
 
 #include <QtCore/QStringBuilder>
+#include <QtCore/QSettings>
 
 #include <gst/gstbin.h>
 #include <gst/gstghostpad.h>
@@ -53,12 +54,7 @@ AudioOutput::AudioOutput(Backend *backend, QObject *parent)
 
     m_conv = gst_element_factory_make ("audioconvert", NULL);
 
-    // Get category from parent
-    Phonon::Category category = Phonon::NoCategory;
-    if (Phonon::AudioOutput *audioOutput = qobject_cast<Phonon::AudioOutput *>(parent))
-        category = audioOutput->category();
-
-    m_audioSink = m_backend->deviceManager()->createAudioSink(category);
+    m_audioSink = createAudioSink();
     m_volumeElement = gst_element_factory_make ("volume", NULL);
     GstElement *queue = gst_element_factory_make ("queue", NULL);
     GstElement *audioresample = gst_element_factory_make ("audioresample", NULL);
@@ -113,6 +109,18 @@ void AudioOutput::setVolume(qreal newVolume)
     }
 
     emit volumeChanged(newVolume);
+}
+
+GstElement *AudioOutput::createAudioSink()
+{
+    QString backend = qgetenv("PHONON_GST_AUDIOSINK");
+    if (backend.isEmpty()) {
+      QSettings settings(QLatin1String("Trolltech"));
+      settings.beginGroup(QLatin1String("Qt"));
+      backend = settings.value(QLatin1String("audiosink"), "autoaudiosink").toString();
+    }
+
+    return gst_element_factory_make (backend.toUtf8(), NULL);
 }
 
 /*
