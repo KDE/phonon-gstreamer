@@ -86,7 +86,7 @@ private:
 class DeviceManager : public QObject {
     Q_OBJECT
 public:
-    DeviceManager(Backend *parent);
+    DeviceManager(QObject *parent);
     virtual ~DeviceManager();
     QList<int> deviceIds(ObjectDescriptionType type);
     QHash<QByteArray, QVariant> deviceProperties(int id);
@@ -104,7 +104,6 @@ private:
     bool canOpenDevice(GstElement *element) const;
 
 private:
-    Backend *m_backend;
     QList<DeviceInfo> m_devices;
     QTimer m_devicePollTimer;
 };

@@ -37,8 +37,8 @@ EffectInfo::EffectInfo(const QString &name, const QString &description,
         , m_description(description)
         , m_author(author) {}
 
-EffectManager::EffectManager(Backend *backend)
-        : QObject(backend)
+EffectManager::EffectManager(QObject *parent)
+        : QObject(parent)
 {
     GList *factoryList = gst_registry_get_feature_list(gst_registry_get_default (), GST_TYPE_ELEMENT_FACTORY);
     QString name;

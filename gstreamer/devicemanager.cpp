@@ -154,9 +154,8 @@ void DeviceInfo::setCapabilities(quint16 cap)
  * Device Manager
  */
 
-DeviceManager::DeviceManager(Backend *backend)
-        : QObject(backend)
-        , m_backend(backend)
+DeviceManager::DeviceManager(QObject *parent)
+        : QObject(parent)
 {
     updateDeviceList();
 }
