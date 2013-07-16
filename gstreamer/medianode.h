@@ -41,7 +41,7 @@ public:
     };
     Q_DECLARE_FLAGS(NodeDescription, NodeDescriptionEnum)
 
-    MediaNode(Backend *backend, NodeDescription description);
+    MediaNode(NodeDescription description);
 
     virtual ~MediaNode();
 
@@ -70,10 +70,6 @@ public:
         m_root = mediaObject;
     }
 
-    Backend *backend() {
-        return m_backend;
-    }
-
     const QString &name() {
         return m_name;
     }
@@ -98,7 +94,6 @@ protected:
     MediaObject *m_root;
     GstElement *m_audioTee;
     GstElement *m_videoTee;
-    Backend *m_backend;
     QString m_name;
 
 private:

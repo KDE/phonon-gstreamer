@@ -71,12 +71,11 @@ class EffectManager : public QObject
 {
     Q_OBJECT
 public:
-    EffectManager(Backend *parent);
+    EffectManager(Backend *backend);
     virtual ~EffectManager();
     const QList<EffectInfo*> audioEffects() const;
 
 private:
-    Backend *m_backend;
     QList <EffectInfo*> m_audioEffectList;
     QList <EffectInfo*> m_visualizationList;
 };

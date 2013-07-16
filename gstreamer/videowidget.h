@@ -32,14 +32,13 @@ namespace Gstreamer
 {
 
 class AbstractRenderer;
-class Backend;
 
 class VideoWidget : public QWidget, public Phonon::VideoWidgetInterface44, public MediaNode
 {
     Q_OBJECT
     Q_INTERFACES(Phonon::VideoWidgetInterface44 Phonon::Gstreamer::MediaNode)
 public:
-    explicit VideoWidget(Backend *backend, QWidget *parent = 0);
+    explicit VideoWidget(QWidget *parent = 0);
     ~VideoWidget();
 
     void setupVideoBin();

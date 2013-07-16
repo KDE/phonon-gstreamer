@@ -44,7 +44,7 @@ class AudioDataOutput : public QObject,
     Q_INTERFACES(Phonon::AudioDataOutputInterface Phonon::Gstreamer::MediaNode)
 
 public:
-    AudioDataOutput(Backend *backend, QObject *parent);
+    AudioDataOutput(QObject *parent);
     ~AudioDataOutput();
 
 public Q_SLOTS:

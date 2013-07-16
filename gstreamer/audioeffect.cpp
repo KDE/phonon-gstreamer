@@ -27,22 +27,19 @@ namespace Phonon
 {
 namespace Gstreamer
 {
-AudioEffect::AudioEffect(Backend *backend, int effectId, QObject *parent)
-        : Effect(backend, parent, AudioSource | AudioSink)
+AudioEffect::AudioEffect(EffectInfo *effect, QObject *parent)
+        : Effect(parent, AudioSource | AudioSink)
 {
     static int count = 0;
     m_name = "AudioEffect" + QString::number(count++);
-    QList<EffectInfo*> audioEffects = backend->effectManager()->audioEffects();
-    if (effectId >= 0 && effectId < audioEffects.size()) {
-        m_effectName = audioEffects[effectId]->name();
+    if (effect) {
+        m_effectName = effect->name();
         // Reverse mapped name back to GStreamer name, see effectmanager.cpp for
         // more information on this.
         if (m_effectName == QLatin1String("KEqualizer")) {
             m_effectName = QString("equalizer-10bands");
         }
         init();
-    } else {
-        qWarning() << Q_FUNC_INFO << ": Effect ID (" << effectId << ") out of range (" << audioEffects.size() << ")!";
     }
 }
 

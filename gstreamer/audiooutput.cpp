@@ -35,9 +35,9 @@ namespace Phonon
 {
 namespace Gstreamer
 {
-AudioOutput::AudioOutput(Backend *backend, QObject *parent)
+AudioOutput::AudioOutput(QObject *parent)
         : QObject(parent)
-        , MediaNode(backend, AudioSink)
+        , MediaNode(AudioSink)
         , m_volumeLevel(1.0)
         , m_device(0) // ### get from backend
         , m_volumeElement(0)

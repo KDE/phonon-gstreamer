@@ -35,7 +35,7 @@ class VolumeFaderEffect : public Effect, public VolumeFaderInterface
     Q_INTERFACES(Phonon::VolumeFaderInterface)
 
 public:
-    explicit VolumeFaderEffect(Backend *backend, QObject *parent = 0);
+    explicit VolumeFaderEffect(QObject *parent = 0);
     ~VolumeFaderEffect();
 
     GstElement* createEffectBin();

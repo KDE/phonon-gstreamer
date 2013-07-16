@@ -32,7 +32,7 @@ class AudioOutput : public QObject, public AudioOutputInterface, public MediaNod
     Q_OBJECT
     Q_INTERFACES(Phonon::AudioOutputInterface Phonon::Gstreamer::MediaNode)
 public:
-    AudioOutput(Backend *backend, QObject *parent);
+    AudioOutput(QObject *parent);
     ~AudioOutput();
 
     qreal volume() const;

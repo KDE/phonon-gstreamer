@@ -46,9 +46,9 @@ namespace Phonon
 namespace Gstreamer
 {
 
-VideoWidget::VideoWidget(Backend *backend, QWidget *parent) :
+VideoWidget::VideoWidget(QWidget *parent) :
     QWidget(parent),
-    MediaNode(backend, VideoSink),
+    MediaNode(VideoSink),
     m_videoBin(0),
     m_renderer(0),
     m_aspectRatio(Phonon::VideoWidget::AspectRatioAuto),

@@ -38,7 +38,7 @@ class AudioEffect : public Effect
 {
     Q_OBJECT
 public:
-    AudioEffect (Backend *backend, int effectId, QObject *parent);
+    AudioEffect (EffectInfo *effect, QObject *parent);
 protected:
     GstElement* createEffectBin();
     GstElement* audioElement() { return m_effectBin; }

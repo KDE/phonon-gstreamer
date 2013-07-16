@@ -124,7 +124,6 @@ Backend::~Backend()
         delete GlobalSubtitles::self;
     if (GlobalAudioChannels::self)
         delete GlobalAudioChannels::self;
-    delete m_effectManager;
     delete m_deviceManager;
     PulseSupport::shutdown();
     gst_deinit();
@@ -143,37 +142,42 @@ QObject *Backend::createObject(BackendInterface::Class c, QObject *parent, const
 
     switch (c) {
     case MediaObjectClass:
-        return new MediaObject(this, parent);
+        return new MediaObject(parent);
 
     case AudioOutputClass:
-        return new AudioOutput(this, parent);
+        return new AudioOutput(parent);
 
 #ifndef QT_NO_PHONON_EFFECT
     case EffectClass:
-        return new AudioEffect(this, args[0].toInt(), parent);
+        if (args[0].toInt() < m_effectManager->audioEffects().size()) {
+          return new AudioEffect(m_effectManager->audioEffects()[args[0].toInt()], parent);
+        } else {
+          qWarning() << Q_FUNC_INFO << ": Effect ID (" << args[0].toInt() << ") out of range (" << m_effectManager->audioEffects().size() << ")!";
+          return new AudioEffect(NULL, parent);
+        }
 #endif //QT_NO_PHONON_EFFECT
     case AudioDataOutputClass:
-        return new AudioDataOutput(this, parent);
+        return new AudioDataOutput(parent);
 
 #ifndef QT_NO_PHONON_VIDEO
 #ifdef PHONON_EXPERIMENTAL
     case VideoDataOutputClass:
-        return new VideoDataOutput(this, parent);
+        return new VideoDataOutput(parent);
         break;
 #endif
 
     case VideoWidgetClass: {
             QWidget *widget =  qobject_cast<QWidget*>(parent);
-            return new VideoWidget(this, widget);
+            return new VideoWidget(widget);
         }
 #ifndef PHONON_NO_GRAPHICSVIEW
     case VideoGraphicsObjectClass:
-        return new VideoGraphicsObject(this, parent);
+        return new VideoGraphicsObject(parent);
 #endif // PHONON_NO_GRAPHICSVIEW
 #endif // QT_NO_PHONON_VIDEO
 #ifndef QT_NO_PHONON_VOLUMEFADEREFFECT
     case VolumeFaderEffectClass:
-        return new VolumeFaderEffect(this, parent);
+        return new VolumeFaderEffect(parent);
 #endif // QT_NO_PHONON_VOLUMEFADEREFFECT
 
     case VisualizationClass:  //Fall through
@@ -453,7 +457,7 @@ DeviceManager* Backend::deviceManager() const
     return m_deviceManager;
 }
 
-EffectManager* Backend::effectManager() const
+EffectManager *Backend::effectManager() const
 {
     return m_effectManager;
 }

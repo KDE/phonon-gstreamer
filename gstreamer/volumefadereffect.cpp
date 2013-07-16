@@ -30,8 +30,8 @@ namespace Phonon
 {
 namespace Gstreamer
 {
-VolumeFaderEffect::VolumeFaderEffect(Backend *backend, QObject *parent)
-    : Effect(backend, parent, AudioSource | AudioSink)
+VolumeFaderEffect::VolumeFaderEffect(QObject *parent)
+    : Effect(parent, AudioSource | AudioSink)
     , m_fadeCurve(Phonon::VolumeFaderEffect::Fade3Decibel)
     , m_fadeFromVolume(0)
     , m_fadeToVolume(0)

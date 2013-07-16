@@ -68,7 +68,7 @@ class MediaObject : public QObject, public MediaObjectInterface
     )
 
 public:
-    MediaObject(Backend *backend, QObject *parent);
+    MediaObject(QObject *parent);
     ~MediaObject();
     Phonon::State state() const;
 

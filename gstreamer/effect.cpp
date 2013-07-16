@@ -28,9 +28,9 @@ namespace Phonon
 {
 namespace Gstreamer
 {
-Effect::Effect(Backend *backend, QObject *parent, NodeDescription description)
-        : QObject(parent),
-        MediaNode(backend, description)
+Effect::Effect(QObject *parent, NodeDescription description)
+        : QObject(parent)
+        , MediaNode(description)
         , m_effectBin(0)
         , m_effectElement(0)
 {

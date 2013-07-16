@@ -32,9 +32,9 @@ namespace Phonon
 namespace Gstreamer
 {
 
-VideoDataOutput::VideoDataOutput(Backend *backend, QObject *parent)
+VideoDataOutput::VideoDataOutput(QObject *parent)
     : QObject(parent),
-      MediaNode(backend, VideoSink),
+      MediaNode(VideoSink),
       m_frontend(0)
 {
     static int count = 0;

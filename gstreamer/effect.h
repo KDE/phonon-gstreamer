@@ -39,7 +39,7 @@ namespace Gstreamer
         Q_OBJECT
         Q_INTERFACES(Phonon::EffectInterface Phonon::Gstreamer::MediaNode)
         public:
-            Effect (Backend *backend, QObject *parent, NodeDescription description);
+            Effect (QObject *parent, NodeDescription description);
             virtual ~Effect ();
 
             virtual QList<EffectParameter> parameters() const;

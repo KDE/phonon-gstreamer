@@ -37,9 +37,9 @@ namespace Phonon
 namespace Gstreamer
 {
 
-AudioDataOutput::AudioDataOutput(Backend *backend, QObject *parent)
+AudioDataOutput::AudioDataOutput(QObject *parent)
     : QObject(parent)
-    , MediaNode(backend, AudioSink)
+    , MediaNode(AudioSink)
 {
     static int count = 0;
     m_name = "AudioDataOutput" + QString::number(count++);

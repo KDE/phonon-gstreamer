@@ -49,9 +49,9 @@ namespace Phonon
 namespace Gstreamer
 {
 
-MediaObject::MediaObject(Backend *backend, QObject *parent)
+MediaObject::MediaObject(QObject *parent)
         : QObject(parent)
-        , MediaNode(backend, AudioSource | VideoSource)
+        , MediaNode(AudioSource | VideoSource)
         , m_resumeState(false)
         , m_oldState(Phonon::LoadingState)
         , m_oldPos(0)

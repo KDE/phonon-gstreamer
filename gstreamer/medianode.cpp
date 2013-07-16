@@ -17,7 +17,6 @@
 
 #include "medianode.h"
 #include "mediaobject.h"
-#include "backend.h"
 #include "debug.h"
 
 #include <gst/gstbin.h>
@@ -28,12 +27,11 @@ namespace Phonon
 namespace Gstreamer
 {
 
-MediaNode::MediaNode(Backend *backend, NodeDescription description) :
+MediaNode::MediaNode(NodeDescription description) :
         m_isValid(false),
         m_root(0),
         m_audioTee(0),
         m_videoTee(0),
-        m_backend(backend),
         m_description(description),
         m_finalized(false)
 {

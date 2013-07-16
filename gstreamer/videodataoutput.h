@@ -45,7 +45,7 @@ class Backend;
         Q_INTERFACES(Phonon::Experimental::VideoDataOutputInterface Phonon::Gstreamer::MediaNode)
 
     public:
-        VideoDataOutput(Backend *, QObject *);
+        VideoDataOutput(QObject *);
         ~VideoDataOutput();
 
         static void processBuffer(GstElement*, GstBuffer*, GstPad*, gpointer);
