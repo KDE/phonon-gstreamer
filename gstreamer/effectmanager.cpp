@@ -107,7 +107,7 @@ EffectManager::EffectManager(QObject *parent)
             }
         }
     }
-    g_list_free(factoryList);
+    gst_plugin_feature_list_free (factoryList);
 }
 
 EffectManager::~EffectManager()
