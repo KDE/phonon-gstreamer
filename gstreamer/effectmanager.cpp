@@ -79,14 +79,12 @@ EffectManager::EffectManager(QObject *parent)
     QString klass;
     QString description;
     QString author;
+    bool acceptAll = qgetenv("PHONON_GST_ALL_EFFECTS").toInt();
     for (GList* iter = g_list_first(factoryList); iter != NULL ; iter = g_list_next(iter)) {
         GstPluginFeature *feature = GST_PLUGIN_FEATURE(iter->data);
         klass = gst_element_factory_get_klass(GST_ELEMENT_FACTORY(feature));
         if (klass == QLatin1String("Filter/Effect/Audio")) {
             name = GST_PLUGIN_FEATURE_NAME(feature);
-
-            QString pluginString = qgetenv("PHONON_GST_ALL_EFFECTS");
-            bool acceptAll = pluginString.toInt();
 
             if (acceptAll || isAcceptedEffect(name)) {
                     description = gst_element_factory_get_description (GST_ELEMENT_FACTORY(feature));
