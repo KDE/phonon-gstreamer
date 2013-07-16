@@ -70,10 +70,6 @@ if (BUILD_PHONON_GSTREAMER)
         list(APPEND phonon_gstreamer_SRCS videodataoutput.cpp)
     endif(PHONON_FOUND_EXPERIMENTAL)
 
-   if(OPENGL_FOUND)
-        list(APPEND phonon_gstreamer_SRCS glrenderer.cpp)
-   endif(OPENGL_FOUND)
-
    if(NOT WIN32)
       set(phonon_gstreamer_SRCS
           ${phonon_gstreamer_SRCS}

@@ -35,9 +35,6 @@
 #include "debug.h"
 #include "mediaobject.h"
 
-#ifdef OPENGL_FOUND
-#include "glrenderer.h"
-#endif
 #include "widgetrenderer.h"
 #include "x11renderer.h"
 
@@ -106,12 +103,6 @@ void VideoWidget::createVideoRenderer()
     backend = settings.value(QLatin1String("videomode"), "Auto").toByteArray().toLower();
   }
 
-#if !defined(QT_NO_OPENGL) && !defined(QT_OPENGL_ES) && defined(OPENGL_FOUND)
-  if (backend == "opengl") {
-      m_renderer = new GLRenderer(this);
-      return;
-  } else
-#endif
   if (backend == "software") {
       m_renderer = new WidgetRenderer(this);
       return;
