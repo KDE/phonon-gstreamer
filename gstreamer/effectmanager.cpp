@@ -31,6 +31,40 @@ namespace Phonon
 namespace Gstreamer
 {
 
+// These plugins simply make no sense to the frontend:
+// "audiorate" Should be internal
+// "volume" not needed
+// "equalizer-nbands" not really useful at the moment
+
+// These plugins simply don't work or have major stability issues:
+// "iir" Does not seem to do much at the moment
+// "audioinvert" Only works for some streams, should be invesigated
+// "lpwsinc" Crashes for large values of filter kernel
+// "name" Crashes for large values of filter kernel
+
+// Seems to be working, but not well tested:
+// name == "rglimiter" Seems functional
+// name == "rgvolume" Seems to be working
+
+// Plugins that have been accepted so far
+static const QLatin1String acceptedEffects[] = {
+  QLatin1String("audiopanorama"),
+  QLatin1String("audioamplify"),
+  QLatin1String("audiodynamic"),
+  QLatin1String("equalizer-10bands"),
+  QLatin1String("speed"),
+  QLatin1String(NULL)
+};
+
+static bool isAcceptedEffect(const QString name)
+{
+  for(int i = 0; acceptedEffects[i] != NULL; i++) {
+    if (acceptedEffects[i] == name)
+      return true;
+  }
+  return false;
+}
+
 EffectInfo::EffectInfo(const QString &name, const QString &description,
                        const QString &author)
         : m_name(name)
@@ -51,32 +85,10 @@ EffectManager::EffectManager(QObject *parent)
         if (klass == QLatin1String("Filter/Effect/Audio")) {
             name = GST_PLUGIN_FEATURE_NAME(feature);
 
-            // These plugins simply make no sense to the frontend:
-            // "audiorate" Should be internal
-            // "volume" not needed
-            // "equalizer-nbands" not really useful at the moment
-
-            // These plugins simply don't work or have major stability issues:
-            // "iir" Does not seem to do much at the moment
-            // "audioinvert" Only works for some streams, should be invesigated
-            // "lpwsinc" Crashes for large values of filter kernel
-            // "name" Crashes for large values of filter kernel
-
-            // Seems to be working, but not well tested:
-            // name == "rglimiter" Seems functional
-            // name == "rgvolume" Seems to be working
-
             QString pluginString = qgetenv("PHONON_GST_ALL_EFFECTS");
             bool acceptAll = pluginString.toInt();
 
-            if (acceptAll
-                // Plugins that have been accepted so far
-                 || name == QLatin1String("audiopanorama")
-                 || name == QLatin1String("audioamplify")
-                 || name == QLatin1String("audiodynamic")
-                 || name == QLatin1String("equalizer-10bands")
-                 || name == QLatin1String("speed"))
-                {
+            if (acceptAll || isAcceptedEffect(name)) {
                     description = gst_element_factory_get_description (GST_ELEMENT_FACTORY(feature));
                     author = gst_element_factory_get_author (GST_ELEMENT_FACTORY(feature));
                     EffectInfo *effect = new EffectInfo(name, description, author);
