@@ -28,6 +28,10 @@
 
 #include <QtCore/QSettings>
 
+#ifdef HAVE_UDEV
+#include <libudev.h>
+#endif // HAVE_UDEV
+
 /*
  * This class manages the list of currently
  * active output devices
@@ -51,14 +55,8 @@ DeviceInfo::DeviceInfo(DeviceManager *manager, const QByteArray &deviceId,
     m_id = deviceCounter ++;
 
     if (caps & VideoCapture) {
-        // Get a preferred name from the device
-        if (deviceId == "default") {
-            m_name = "Default";
-            m_description = "Default video capture device";
-        } else {
-            GstElement *dev = gst_element_factory_make("v4l2src", NULL);
-            useGstElement(dev, deviceId);
-        }
+        m_name = deviceId;
+        m_description = deviceId;
     }
 
     if (caps & AudioOutput) {
@@ -281,19 +279,36 @@ void DeviceManager::updateDeviceList()
     /*
      * Video capture
      */
-    GstElement *captureDevice = gst_element_factory_make("v4l2src", NULL);
-    if (captureDevice) {
-        names = GstHelper::extractProperties(captureDevice, "device");
+#ifdef HAVE_UDEV
 
-        for (int i = 0; i < names.size(); ++i) {
-            DeviceInfo deviceInfo(this, names[i], DeviceInfo::VideoCapture);
-            deviceInfo.addAccess(DeviceAccess("v4l2", names[i]));
-            newDeviceList.append(deviceInfo);
-        }
+    struct udev *ctx;
+    struct udev_enumerate *iter;
+    struct udev_list_entry *devlist;
+    ctx = udev_new ();
+    iter = udev_enumerate_new (ctx);
+    udev_enumerate_add_match_subsystem (iter, "video4linux");
+    udev_enumerate_scan_devices (iter);
 
-        gst_element_set_state(captureDevice, GST_STATE_NULL);
-        gst_object_unref(captureDevice);
+    devlist = udev_enumerate_get_list_entry (iter);
+
+    while (devlist) {
+      const char *sysname = udev_list_entry_get_name (devlist);
+      struct udev_device *dev = udev_device_new_from_syspath (ctx, sysname);
+      const char *devfile = udev_device_get_devnode (dev);
+      const char *devname = udev_device_get_sysattr_value (dev, "name");
+      if (devfile) {
+        DeviceInfo deviceInfo(this, devname, DeviceInfo::VideoCapture);
+        deviceInfo.addAccess(DeviceAccess("v4l2", devfile));
+        newDeviceList.append(deviceInfo);
+      }
+      udev_device_unref (dev);
+      devlist = udev_list_entry_get_next (devlist);
     }
+
+    udev_enumerate_unref (iter);
+    udev_unref (ctx);
+
+#endif // HAVE_UDEV
 
     /*
      * Compares the list with the devices available at the moment with the last list. If

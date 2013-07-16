@@ -32,6 +32,9 @@ macro_log_feature(LIBXML2_FOUND "LibXml2" "LibXml2 is required to compile the gs
 find_package(OpenGL)
 macro_log_feature(OPENGL_FOUND "OpenGL" "OpenGL support is required to compile the gstreamer backend for Phonon" "" FALSE)
 
+find_package(UDev)
+macro_log_feature(UDEV_FOUND "UDev" "UDev support is required to enumerate video devices" "" FALSE)
+
 if(PHONON_BUILD_PHONON4QT5)
     find_package(Qt5OpenGL)
     macro_log_feature(Qt5OpenGL_FOUND "Qt5 OpenGL" "Qt5 OpenGL support is required to compile the gstreamer backend for Phonon" "" FALSE)
