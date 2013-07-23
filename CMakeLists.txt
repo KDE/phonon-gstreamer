@@ -1,5 +1,5 @@
 project(PhononGStreamer)
-cmake_minimum_required(VERSION 2.8.9 FATAL_ERROR)
+cmake_minimum_required(VERSION 2.8.6 FATAL_ERROR)
 
 option(USE_INSTALL_PLUGIN "Use GStreamer codec installation API" TRUE)
 
