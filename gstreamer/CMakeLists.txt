@@ -34,7 +34,6 @@ if (BUILD_PHONON_GSTREAMER)
    endif(USE_INSTALL_PLUGIN)
 
    configure_file(phonon-config-gstreamer.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/phonon-config-gstreamer.h )
-   configure_file(gstreamer.desktop.cmake   ${CMAKE_CURRENT_BINARY_DIR}/gstreamer.desktop)
 
    set(phonon_gstreamer_SRCS
       abstractrenderer.cpp
@@ -98,11 +97,20 @@ if (BUILD_PHONON_GSTREAMER)
 
    install(TARGETS phonon_gstreamer DESTINATION ${PLUGIN_INSTALL_DIR}/plugins/phonon_backend)
 
-   if(PHONON_BUILD_PHONON4QT5)
-       message(WARNING "Desktop file and icons are not supported for lack of KCM/KDE Platform Plugin.")
-   else()
-       install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gstreamer.desktop DESTINATION ${SERVICES_INSTALL_DIR}/phononbackends)
-       add_subdirectory(icons)
-   endif()
+    if(PHONON_BUILD_PHONON4QT5)
+        # Instead of desktop files we are embedding the information into the plugin itself.
+        # We have no KDE technology to help with finding the actual libraries anyway, so
+        # we need to have the library path anyway.
+        # Also see qtplugin/Q_PLUGIN_METADATA documentation.
+        configure_file(${CMAKE_CURRENT_SOURCE_DIR}/phonon-gstreamer.json.in
+                       ${CMAKE_CURRENT_BINARY_DIR}/phonon-gstreamer.json @ONLY)
+    else()
+        configure_file(${CMAKE_CURRENT_SOURCE_DIR}/gstreamer.desktop.cmake
+                       ${CMAKE_CURRENT_BINARY_DIR}/gstreamer.desktop)
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gstreamer.desktop
+                DESTINATION ${SERVICES_INSTALL_DIR}/phononbackends)
+    endif()
+
+    add_subdirectory(icons)
 
 endif (BUILD_PHONON_GSTREAMER)
