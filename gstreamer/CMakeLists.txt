@@ -26,7 +26,7 @@ if (BUILD_PHONON_GSTREAMER)
           ${GLIB2_INCLUDE_DIR}
           ${LIBXML2_INCLUDE_DIR}
           ${X11_X11_INCLUDE_PATH})
-   add_definitions(-DPHONON_BACKEND_VERSION_4_4)
+   add_definitions(-DPHONON_BACKEND_VERSION_4_7)
 
    # configure plugin api
    if(USE_INSTALL_PLUGIN)

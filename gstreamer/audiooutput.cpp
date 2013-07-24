@@ -23,6 +23,7 @@
 #include "mediaobject.h"
 #include "gsthelper.h"
 #include <phonon/audiooutput.h>
+#include <phonon/pulsesupport.h>
 
 #include <QtCore/QStringBuilder>
 
@@ -206,6 +207,30 @@ bool AudioOutput::setOutputDevice(const QByteArray &driver, const QString &devic
     }
 
     return false;
+}
+#endif
+
+#if (PHONON_VERSION >= PHONON_VERSION_CHECK(4, 6, 50))
+void AudioOutput::setStreamUuid(QString uuid)
+{
+    m_streamUuid = uuid;
+#warning this really needs a check for pulsesink as well
+    if (g_object_class_find_property(G_OBJECT_GET_CLASS(m_audioSink), "stream-properties")) {
+        const QHash<QString, QString> streamProperties = PulseSupport::getInstance()->streamProperties(uuid);
+        GstStructure *properties = gst_structure_empty_new("props");
+
+        QHashIterator<QString, QString> it(streamProperties);
+        while (it.hasNext()) {
+            it.next();
+            gst_structure_set(properties,
+                              it.key().toUtf8().constData(), G_TYPE_STRING, it.value().toUtf8().constData(),
+                              NULL);
+        }
+
+        Q_ASSERT(properties);
+        g_object_set (m_audioSink, "stream-properties", properties, NULL);
+        gst_structure_free(properties);
+    }
 }
 #endif
 
