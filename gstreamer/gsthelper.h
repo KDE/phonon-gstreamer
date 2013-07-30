@@ -35,7 +35,6 @@ class MediaObject;
 class GstHelper
 {
 public:
-    static QList<QByteArray> extractProperties(GstElement *elem, const QByteArray &value);
     static bool setProperty(GstElement *elem, const char *propertyName, const QByteArray &propertyValue);
     static QByteArray property(GstElement *elem, const char *propertyName);
     static QByteArray name(GstObject *elem);

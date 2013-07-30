@@ -30,36 +30,6 @@ namespace Gstreamer
 {
 
 /**
- * Probes a gstElement for a list of settable string-property values
- *
- * @return a QStringList containing a list of allwed string values for the given
- *           element
- */
-QList<QByteArray> GstHelper::extractProperties(GstElement *elem, const QByteArray &value)
-{
-    Q_ASSERT(elem);
-    QList<QByteArray> list;
-
-    if (GST_IS_PROPERTY_PROBE(elem)) {
-        GstPropertyProbe *probe = GST_PROPERTY_PROBE(elem);
-        const GParamSpec *devspec = 0;
-        GValueArray *array = NULL;
-
-        if ((devspec = gst_property_probe_get_property (probe, value))) {
-            if ((array = gst_property_probe_probe_and_get_values (probe, devspec))) {
-                for (unsigned int device = 0; device < array->n_values; device++) {
-                    GValue *deviceId = g_value_array_get_nth (array, device);
-                    list.append(g_value_get_string(deviceId));
-                }
-            }
-            if (array)
-                g_value_array_free (array);
-        }
-    }
-    return list;
-}
-
-/**
  * Sets the string value of a GstElement's property
  *
  * @return false if the value could not be set.
