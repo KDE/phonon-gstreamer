@@ -32,6 +32,10 @@
 #include <libudev.h>
 #endif // HAVE_UDEV
 
+#ifdef HAVE_ALSA
+#include <alsa/asoundlib.h>
+#endif // HAVE_ALSA
+
 /*
  * This class manages the list of currently
  * active output devices
@@ -244,36 +248,53 @@ void DeviceManager::updateDeviceList()
     /*
      * Audio output
      */
-    GstElement *audioSink = AudioOutput::createAudioSink();
-    if (audioSink) {
-        if (!PulseSupport::getInstance()->isActive()) {
-            // If we're using pulse, the PulseSupport class takes care of things for us.
-            names = GstHelper::extractProperties(audioSink, "device");
-            names.prepend("default");
-        }
+    if (!PulseSupport::getInstance()->isActive()) {
+#ifdef HAVE_ALSA
+      int card = -1;
+      while (snd_card_next(&card) == 0 && card > -1) {
+          int err;
+          QString devName;
+          QString friendlyName;
+          bool output = false;
+          bool input = false;
+          char *deviceHints;
+          devName = QString("hw:%1").arg(card);
 
-        /* Determine what factory was used to create the sink, to know what to put in the
-         * device access list */
-        GstElement *child = GST_ELEMENT (gst_child_proxy_get_child_by_name (GST_CHILD_PROXY (audioSink), "tempsink"));
-        GstElementFactory *factory = gst_element_get_factory(child);
-        g_object_unref (child);
-        const gchar *factoryName = gst_plugin_feature_get_name(GST_PLUGIN_FEATURE(factory));
-        QByteArray driver; // means sound system
-        debug() << "Using" << factoryName << "audio sink";
-        if (!g_strcmp0(factoryName, "alsasink"))       driver = "alsa";
-        if (!g_strcmp0(factoryName, "pulsesink"))      driver = "pulse";
-        if (!g_strcmp0(factoryName, "osssink"))        driver = "oss";
-        if (driver.isEmpty() && !names.isEmpty())
-            warning() << "Unknown sound system for device" << names.first();
-
-        for (int i = 0; i < names.size(); ++i) {
-            DeviceInfo deviceInfo(this, names[i], DeviceInfo::AudioOutput);
-            deviceInfo.addAccess(DeviceAccess(driver, names[i]));
-            newDeviceList.append(deviceInfo);
-        }
-
-        gst_element_set_state(audioSink, GST_STATE_NULL);
-        gst_object_unref(audioSink);
+          snd_ctl_t *ctl_handle;
+          snd_ctl_open(&ctl_handle, devName.toAscii().constData(), 0);
+          snd_ctl_card_info_t *hw_info;
+          snd_ctl_card_info_alloca(&hw_info);
+          if ((err = snd_ctl_card_info(ctl_handle, hw_info) == 0)) {
+              friendlyName = snd_ctl_card_info_get_name(hw_info);
+          } else {
+              friendlyName = devName;
+          }
+          qDebug() << "Inspecting card" << devName << friendlyName;
+          snd_ctl_close(ctl_handle);
+          deviceHints = snd_device_name_get_hint(devName.toAscii().constData(), "IOID");
+          if (deviceHints == NULL) {
+              input = true;
+              output = true;
+          } else if (strcmp(deviceHints, "Input")) {
+              input = true;
+          } else if (strcmp(deviceHints, "Output")) {
+              output = true;
+          }
+          free(deviceHints);
+          if (output || input) {
+              if (output) {
+                  DeviceInfo deviceInfo(this, friendlyName.toUtf8(), DeviceInfo::AudioOutput);
+                  deviceInfo.addAccess(DeviceAccess("alsa", devName));
+                  newDeviceList.append(deviceInfo);
+              }
+              if (input) {
+                  DeviceInfo deviceInfo(this, friendlyName.toUtf8(), DeviceInfo::AudioCapture);
+                  deviceInfo.addAccess(DeviceAccess("alsa", devName));
+                  newDeviceList.append(deviceInfo);
+              }
+          }
+      }
+#endif // HAVE_ALSA
     }
 
     /*

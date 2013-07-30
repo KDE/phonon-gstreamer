@@ -35,6 +35,9 @@ macro_log_feature(OPENGL_FOUND "OpenGL" "OpenGL support is required to compile t
 find_package(UDev)
 macro_log_feature(UDEV_FOUND "UDev" "UDev support is required to enumerate video devices" "" FALSE)
 
+find_package(ALSA)
+macro_log_feature(ALSA_FOUND "ALSA" "ALSA support is required to enumerate audio devices without pulseaudio" "" FALSE)
+
 if(PHONON_BUILD_PHONON4QT5)
     find_package(Qt5OpenGL)
     macro_log_feature(Qt5OpenGL_FOUND "Qt5 OpenGL" "Qt5 OpenGL support is required to compile the gstreamer backend for Phonon" "" FALSE)
