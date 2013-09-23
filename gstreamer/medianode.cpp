@@ -43,12 +43,14 @@ MediaNode::MediaNode(Backend *backend, NodeDescription description) :
 
     if (description & AudioSource) {
         m_audioTee = gst_element_factory_make("tee", NULL);
+        Q_ASSERT(m_audioTee); // Must not ever be null.
         gst_object_ref (GST_OBJECT (m_audioTee));
         gst_object_sink (GST_OBJECT (m_audioTee));
     }
 
     if (description & VideoSource) {
         m_videoTee = gst_element_factory_make("tee", NULL);
+        Q_ASSERT(m_videoTee); // Must not ever be null.
         gst_object_ref (GST_OBJECT (m_videoTee));
         gst_object_sink (GST_OBJECT (m_videoTee));
     }
@@ -300,11 +302,13 @@ bool MediaNode::link()
 {
     // Rewire everything
     if ((description() & AudioSource)) {
+        Q_ASSERT(m_audioTee);
         if (!linkMediaNodeList(m_audioSinkList, root()->audioGraph(), m_audioTee, audioElement()))
             return false;
     }
 
     if ((description() & VideoSource)) {
+        Q_ASSERT(m_videoTee);
         if (!linkMediaNodeList(m_videoSinkList, root()->videoGraph(), m_videoTee, videoElement()))
             return false;
     }
