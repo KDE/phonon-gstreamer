@@ -74,7 +74,7 @@ AudioDataOutput::AudioDataOutput(Backend *backend, QObject *parent)
                                         NULL);
                 #else
                     gst_caps_new_simple("audio/x-raw",
-                                        "format = (string)", G_TYPE_STRING, GST_AUDIO_NE (S16),
+                                        "format", G_TYPE_STRING, GST_AUDIO_NE (S16),
                                         NULL);
                 #endif
 
