@@ -89,9 +89,7 @@ public:
     virtual void prepareToUnlink();
     virtual void finalizeLink();
 protected:
-    bool connectToFakeSink(GstElement *tee, GstElement *sink, GstElement *bin);
-    bool releaseFakeSinkIfConnected(GstElement *tee, GstElement *sink, GstElement *bin);
-    bool linkMediaNodeList(QList<QObject *> &list, GstElement *bin, GstElement *tee, GstElement *sink, GstElement *src);
+    bool linkMediaNodeList(QList<QObject *> &list, GstElement *bin, GstElement *tee, GstElement *src);
 
     QList<QObject *> m_audioSinkList;
     QList<QObject *> m_videoSinkList;
@@ -100,8 +98,6 @@ protected:
     MediaObject *m_root;
     GstElement *m_audioTee;
     GstElement *m_videoTee;
-    GstElement *m_fakeAudioSink;
-    GstElement *m_fakeVideoSink;
     Backend *m_backend;
     QString m_name;
 

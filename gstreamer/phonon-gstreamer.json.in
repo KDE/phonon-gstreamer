@@ -1,0 +1,9 @@
+{
+    "Name": "Phonon GStreamer",
+    "Icon": "phonon-gstreamer",
+    "Version": "@PHONON_GST_VERSION@",
+    "Website": "http://gstreamer.freedesktop.org",
+
+    "InterfaceVersion": 0,
+    "InitialPreference": 15
+}

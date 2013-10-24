@@ -1,5 +1,5 @@
 /*  This file is part of the KDE project
-    Copyright (C) 2010 Trever Fischer <tdfischer@fedoraproject.org>
+    Copyright (C) 2010 Torrie Fischer <tdfischer@kde.org>
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public

@@ -39,8 +39,13 @@ public:
     int outputDevice() const;
     void setVolume(qreal newVolume);
     bool setOutputDevice(int newDevice);
+
 #if (PHONON_VERSION >= PHONON_VERSION_CHECK(4, 2, 0))
     bool setOutputDevice(const AudioOutputDevice &newDevice);
+#endif
+
+#if (PHONON_VERSION >= PHONON_VERSION_CHECK(4, 6, 50))
+    void setStreamUuid(QString uuid);
 #endif
 
 public:
@@ -58,7 +63,6 @@ private:
     bool setOutputDevice(const QByteArray &, const QString &, const GstState);
 
 private:
-
     qreal m_volumeLevel;
     int m_device;
 
@@ -66,6 +70,8 @@ private:
     GstElement *m_audioBin;
     GstElement *m_audioSink;
     GstElement *m_conv;
+
+    QString m_streamUuid;
 };
 }
 } //namespace Phonon::Gstreamer

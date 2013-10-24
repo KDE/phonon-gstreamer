@@ -1,7 +1,7 @@
 /*  This file is part of the KDE project.
 
     Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
-    Copyright (C) 2011 Trever Fischer <tdfischer@fedoraproject.org>
+    Copyright (C) 2011 Torrie Fischer <tdfischer@kde.org>
     Copyright (C) 2011 Harald Sitter <sitter@kde.org>
 
     This library is free software: you can redistribute it and/or modify
@@ -136,9 +136,6 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
 MediaObject::~MediaObject()
 {
     if (m_pipeline) {
-        GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(m_pipeline->element()));
-        g_signal_handlers_disconnect_matched(bus, G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, this);
-        gst_object_unref(bus);
         delete m_pipeline;
     }
     GlobalSubtitles::instance()->unregister_(this);

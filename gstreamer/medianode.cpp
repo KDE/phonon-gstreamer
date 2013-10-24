@@ -35,8 +35,6 @@ MediaNode::MediaNode(Backend *backend, NodeDescription description) :
         m_root(0),
         m_audioTee(0),
         m_videoTee(0),
-        m_fakeAudioSink(0),
-        m_fakeVideoSink(0),
         m_backend(backend),
         m_description(description),
         m_finalized(false)
@@ -47,41 +45,23 @@ MediaNode::MediaNode(Backend *backend, NodeDescription description) :
 
     if (description & AudioSource) {
         m_audioTee = gst_element_factory_make("tee", NULL);
+        Q_ASSERT(m_audioTee); // Must not ever be null.
         gst_object_ref (GST_OBJECT (m_audioTee));
 #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
         gst_object_sink (GST_OBJECT (m_audioTee));
 #else
         gst_object_ref_sink (GST_OBJECT (m_audioTee));
 #endif
-
-        // Fake audio sink to swallow unconnected audio pads
-        m_fakeAudioSink = gst_element_factory_make("fakesink", NULL);
-        g_object_set (G_OBJECT (m_fakeAudioSink), "sync", TRUE, NULL);
-        gst_object_ref (GST_OBJECT (m_fakeAudioSink));
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-        gst_object_sink (GST_OBJECT (m_fakeAudioSink));
-#else
-        gst_object_ref_sink (GST_OBJECT (m_fakeAudioSink));
-#endif
     }
 
     if (description & VideoSource) {
         m_videoTee = gst_element_factory_make("tee", NULL);
+        Q_ASSERT(m_videoTee); // Must not ever be null.
         gst_object_ref (GST_OBJECT (m_videoTee));
 #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
         gst_object_sink (GST_OBJECT (m_videoTee));
 #else
         gst_object_ref_sink (GST_OBJECT (m_videoTee));
-#endif
-
-        // Fake video sink to swallow unconnected video pads
-        m_fakeVideoSink = gst_element_factory_make("fakesink", NULL);
-        g_object_set (G_OBJECT (m_fakeVideoSink), "sync", TRUE, NULL);
-        gst_object_ref (GST_OBJECT (m_fakeVideoSink));
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-        gst_object_sink (GST_OBJECT (m_fakeVideoSink));
-#else
-        gst_object_ref_sink (GST_OBJECT (m_fakeVideoSink));
 #endif
     }
 }
@@ -96,16 +76,6 @@ MediaNode::~MediaNode()
     if (m_audioTee) {
         gst_element_set_state(m_audioTee, GST_STATE_NULL);
         gst_object_unref(m_audioTee);
-    }
-
-    if (m_fakeAudioSink) {
-        gst_element_set_state(m_fakeAudioSink, GST_STATE_NULL);
-        gst_object_unref(m_fakeAudioSink);
-    }
-
-    if (m_fakeVideoSink) {
-        gst_element_set_state(m_fakeVideoSink, GST_STATE_NULL);
-        gst_object_unref(m_fakeVideoSink);
     }
 }
 
@@ -326,58 +296,7 @@ bool MediaNode::addOutput(MediaNode *output, GstElement *tee)
     return success;
 }
 
-// Used to seal up unconnected source nodes by connecting unconnected src pads to fake sinks
-bool MediaNode::connectToFakeSink(GstElement *tee, GstElement *sink, GstElement *bin)
-{
-    bool success = true;
-    GstPad *sinkPad = gst_element_get_static_pad (sink, "sink");
-
-    if (GST_PAD_IS_LINKED (sinkPad)) {
-        //This fakesink is already connected
-        gst_object_unref (sinkPad);
-        return true;
-    }
-
-    GstPad *srcPad;
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-    srcPad = gst_element_get_request_pad (tee,"src%d");
-#else
-    GstPadTemplate* tee_src_pad_template = gst_element_class_get_pad_template (GST_ELEMENT_GET_CLASS (tee), "src_%u");
-    srcPad = gst_element_request_pad (tee, tee_src_pad_template, NULL, NULL);
-#endif
-
-    gst_bin_add(GST_BIN(bin), sink);
-    if (success)
-        success = (gst_pad_link (srcPad, sinkPad) == GST_PAD_LINK_OK);
-    if (success)
-        success = (gst_element_set_state(sink, GST_STATE(bin)) != GST_STATE_CHANGE_FAILURE);
-    gst_object_unref (srcPad);
-    gst_object_unref (sinkPad);
-    return success;
-}
-
-// Used to seal up unconnected source nodes by connecting unconnected src pads to fake sinks
-bool MediaNode::releaseFakeSinkIfConnected(GstElement *tee, GstElement *fakesink, GstElement *bin)
-{
-    if (GST_ELEMENT_PARENT(fakesink) == GST_ELEMENT(bin)) {
-        GstPad *sinkPad = gst_element_get_static_pad(fakesink, "sink");
-
-        // Release requested src pad from tee
-        GstPad *requestedPad = gst_pad_get_peer(sinkPad);
-        if (requestedPad) {
-            gst_element_release_request_pad(tee, requestedPad);
-            gst_object_unref(requestedPad);
-        }
-        gst_object_unref(sinkPad);
-
-        gst_element_set_state(fakesink, GST_STATE_NULL);
-        gst_bin_remove(GST_BIN(bin), fakesink);
-        Q_ASSERT(!GST_ELEMENT_PARENT(fakesink));
-    }
-    return true;
-}
-
-bool MediaNode::linkMediaNodeList(QList<QObject *> &list, GstElement *bin, GstElement *tee, GstElement *fakesink, GstElement *src)
+bool MediaNode::linkMediaNodeList(QList<QObject *> &list, GstElement *bin, GstElement *tee, GstElement *src)
 {
     if (!GST_ELEMENT_PARENT(tee)) {
         gst_bin_add(GST_BIN(bin), tee);
@@ -385,21 +304,11 @@ bool MediaNode::linkMediaNodeList(QList<QObject *> &list, GstElement *bin, GstEl
             return false;
         gst_element_set_state(tee, GST_STATE(bin));
     }
-    if (list.isEmpty()) {
-        //connect node to a fake sink to avoid clogging the pipeline
-        if (!connectToFakeSink(tee, fakesink, bin))
-            return false;
-    } else {
-        // Remove fake sink if previously connected
-        if (!releaseFakeSinkIfConnected(tee, fakesink, bin))
-            return false;
-
-        for (int i = 0 ; i < list.size() ; ++i) {
-            QObject *sink = list[i];
-            if (MediaNode *output = qobject_cast<MediaNode*>(sink)) {
-                if (!addOutput(output, tee))
-                    return false;
-            }
+    for (int i = 0 ; i < list.size() ; ++i) {
+        QObject *sink = list[i];
+        if (MediaNode *output = qobject_cast<MediaNode*>(sink)) {
+            if (!addOutput(output, tee))
+                return false;
         }
     }
     return true;
@@ -409,12 +318,14 @@ bool MediaNode::link()
 {
     // Rewire everything
     if ((description() & AudioSource)) {
-        if (!linkMediaNodeList(m_audioSinkList, root()->audioGraph(), m_audioTee, m_fakeAudioSink, audioElement()))
+        Q_ASSERT(m_audioTee);
+        if (!linkMediaNodeList(m_audioSinkList, root()->audioGraph(), m_audioTee, audioElement()))
             return false;
     }
 
     if ((description() & VideoSource)) {
-        if (!linkMediaNodeList(m_videoSinkList, root()->videoGraph(), m_videoTee, m_fakeVideoSink, videoElement()))
+        Q_ASSERT(m_videoTee);
+        if (!linkMediaNodeList(m_videoSinkList, root()->videoGraph(), m_videoTee, videoElement()))
             return false;
     }
     return true;
