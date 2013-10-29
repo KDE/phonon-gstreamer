@@ -95,7 +95,7 @@ if (BUILD_PHONON_GSTREAMER)
       target_link_libraries(phonon_gstreamer ${OPENGL_gl_LIBRARY})
    endif(OPENGL_FOUND)
 
-   install(TARGETS phonon_gstreamer DESTINATION ${PLUGIN_INSTALL_DIR}/plugins/phonon_backend)
+   install(TARGETS phonon_gstreamer DESTINATION ${BACKEND_INSTALL_DIR})
 
     if(PHONON_BUILD_PHONON4QT5)
         # Instead of desktop files we are embedding the information into the plugin itself.
