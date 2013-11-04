@@ -33,3 +33,5 @@ add_custom_target(
     dist
     DEPENDS ${CMAKE_BINARY_DIR}/phonon-backend-gstreamer-${PHONON_GST_VERSION}.tar.xz
 )
+
+macro_display_feature_log()
