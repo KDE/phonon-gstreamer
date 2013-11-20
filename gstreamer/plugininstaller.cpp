@@ -155,7 +155,7 @@ void PluginInstaller::addPlugin(const QString &name, PluginType type)
 void PluginInstaller::addPlugin(GstMessage *gstMessage)
 {
     gchar *details = gst_missing_plugin_message_get_installer_detail(gstMessage);
-    m_descList << details;
+    m_descList << QString::fromUtf8(details);
     g_free(details);
 }
 
@@ -170,11 +170,11 @@ void PluginInstaller::run()
     gchar *details[m_pluginList.size()+m_descList.size()+1];
     int i = 0;
     foreach (const QString &plugin, m_pluginList.keys()) {
-        details[i] = strdup(buildInstallationString(plugin.toLocal8Bit().data(), m_pluginList[plugin]).toLocal8Bit().data());
+        details[i] = strdup(buildInstallationString(plugin.toUtf8().constData(), m_pluginList[plugin]).toUtf8().constData());
         i++;
     }
     foreach (const QString &desc, m_descList) {
-        details[i] = strdup(desc.toLocal8Bit().data());
+        details[i] = strdup(desc.toUtf8().constData());
         i++;
     }
     details[i] = 0;
@@ -251,7 +251,7 @@ PluginInstaller::InstallStatus PluginInstaller::checkInstalledPlugins()
         return m_state;
     bool allFound = true;
     foreach (const QString &plugin, m_pluginList.keys()) {
-        if (!gst_default_registry_check_feature_version(plugin.toLocal8Bit().data(), 0, 10, 0)) {
+        if (!gst_default_registry_check_feature_version(plugin.toUtf8().constData(), 0, 10, 0)) {
             allFound = false;
             break;
         }
