@@ -50,7 +50,9 @@ Pipeline::Pipeline(QObject *parent)
     , m_isHttpUrl(false)
     , m_installer(new PluginInstaller(this))
     , m_reader(0) // Lazy init
+    , m_seeking(false)
     , m_resetting(false)
+    , m_posAtReset(0)
 {
     qRegisterMetaType<GstState>("GstState");
 #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
