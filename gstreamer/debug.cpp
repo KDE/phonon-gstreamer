@@ -36,9 +36,11 @@
 
 #define DEBUG_INDENT_OBJECTNAME QLatin1String("Debug_Indent_object")
 
-QMutex Debug::mutex( QMutex::Recursive );
 
-using namespace Debug;
+QMutex Phonon::Gstreamer::Debug::mutex( QMutex::Recursive );
+
+using namespace Phonon::Gstreamer;
+using namespace Phonon::Gstreamer::Debug;
 
 static bool s_debugColorsEnabled = true;
 static DebugLevel s_debugLevel = DEBUG_NONE;

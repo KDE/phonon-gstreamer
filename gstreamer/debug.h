@@ -42,6 +42,10 @@
 #define __PRETTY_FUNCTION__ __FILE__
 #endif
 
+namespace Phonon {
+
+namespace Gstreamer {
+
 /**
  * @namespace Debug
  * @short kdebug with indentation functionality and convenience macros
@@ -196,5 +200,9 @@ namespace Debug
 
     typedef QList<QVariant> List;
 }
+
+} // namespace Gstreamer
+
+} // namespace Phonon
 
 #endif
