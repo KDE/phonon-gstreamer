@@ -603,7 +603,6 @@ void MediaObject::handleEndOfStream()
         { // When working on EOS we do not want signals emitted to avoid bogus UI updates.
             emit stateChanged(Phonon::StoppedState, m_state);
             m_aboutToFinishWait.wakeAll();
-            m_aboutToFinishLock.unlock();
             m_pipeline->setState(GST_STATE_READY);
             emit finished();
         }

@@ -19,6 +19,8 @@
 
 #include "videowidget.h"
 
+#ifndef Q_WS_QWS
+
 #include "backend.h"
 #include "debug.h"
 #include "mediaobject.h"
@@ -213,6 +215,7 @@ void X11Renderer::windowExposed()
 #else
         gst_video_overlay_expose(GST_VIDEO_OVERLAY(m_videoSink));
 #endif
+#endif //QT_VERSION
 }
 
 }

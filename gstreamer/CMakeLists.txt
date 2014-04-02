@@ -26,7 +26,23 @@ if (BUILD_PHONON_GSTREAMER)
           ${GLIB2_INCLUDE_DIR}
           ${LIBXML2_INCLUDE_DIR}
           ${X11_X11_INCLUDE_PATH})
-   add_definitions(-DPHONON_BACKEND_VERSION_4_7)
+
+    if(${PHONON_VERSION} VERSION_GREATER "4.6.49") # Pre-release 4.7 starts at 4.6.50
+        message(STATUS "Building against Phonon 4.7 API")
+        set(BACKEND_VERSION_DEFINE -DPHONON_BACKEND_VERSION_4_7)
+    elseif(${PHONON_VERSION} VERSION_GREATER "4.3.99")
+        message(STATUS "Building against Phonon 4.4 API")
+        set(BACKEND_VERSION_DEFINE -DPHONON_BACKEND_VERSION_4_4)
+    elseif(${PHONON_VERSION} VERSION_GREATER "4.1.99")
+        message(STATUS "Building against Phonon 4.2 API")
+        set(BACKEND_VERSION_DEFINE -DPHONON_BACKEND_VERSION_4_2)
+    else()
+        message(STATUS "Building against Phonon 4.0 API")
+        set(BACKEND_VERSION_DEFINE)
+    endif()
+
+    add_definitions(${BACKEND_VERSION_DEFINE})
+    set(AUTOMOC_MOC_OPTIONS ${BACKEND_VERSION_DEFINE})
 
    # configure plugin api
    if(USE_INSTALL_PLUGIN)
@@ -84,13 +100,17 @@ if (BUILD_PHONON_GSTREAMER)
    endif(NOT WIN32)
 
    automoc4_add_library(phonon_gstreamer MODULE ${phonon_gstreamer_SRCS})
-   set_target_properties(phonon_gstreamer PROPERTIES PREFIX "")
+   set_target_properties(phonon_gstreamer PROPERTIES
+     PREFIX ""
+     AUTOMOC_MOC_OPTIONS ${AUTOMOC_MOC_OPTIONS}
+   )
    qt5_use_modules(phonon_gstreamer Core Widgets)
    target_link_libraries(phonon_gstreamer
- ${PHONON_LIBRARY}
+      ${PHONON_LIBRARY}
       ${GSTREAMER_LIBRARIES} ${GSTREAMER_BASE_LIBRARY} ${GSTREAMER_INTERFACE_LIBRARY}
       ${GSTREAMER_PLUGIN_VIDEO_LIBRARY} ${GSTREAMER_PLUGIN_AUDIO_LIBRARY} ${GSTREAMER_PLUGIN_PBUTILS_LIBRARY}
-      ${GLIB2_LIBRARIES} ${GOBJECT_LIBRARIES} ${GSTREAMER_APP_LIBRARY})
+      ${GLIB2_LIBRARIES} ${GOBJECT_LIBRARIES} ${GSTREAMER_APP_LIBRARY}
+   )
    if(USE_INSTALL_PLUGIN)
        target_link_libraries(phonon_gstreamer ${GSTREAMER_PLUGIN_PBUTILS_LIBRARIES})
    endif(USE_INSTALL_PLUGIN)
@@ -99,7 +119,7 @@ if (BUILD_PHONON_GSTREAMER)
       target_link_libraries(phonon_gstreamer ${OPENGL_gl_LIBRARY})
    endif(OPENGL_FOUND)
 
-   install(TARGETS phonon_gstreamer DESTINATION ${PLUGIN_INSTALL_DIR}/plugins/phonon_backend)
+   install(TARGETS phonon_gstreamer DESTINATION ${BACKEND_INSTALL_DIR})
 
     if(PHONON_BUILD_PHONON4QT5)
         # Instead of desktop files we are embedding the information into the plugin itself.
