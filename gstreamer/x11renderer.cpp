@@ -203,6 +203,7 @@ void X11Renderer::windowExposed()
 //     QApplication::syncX();
 #else
     QApplication::syncX();
+#endif //QT_VERSION
     if (m_videoSink &&
         #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
             GST_IS_X_OVERLAY(m_videoSink)
@@ -215,7 +216,6 @@ void X11Renderer::windowExposed()
 #else
         gst_video_overlay_expose(GST_VIDEO_OVERLAY(m_videoSink));
 #endif
-#endif //QT_VERSION
 }
 
 }
