@@ -68,7 +68,6 @@ if (BUILD_PHONON_GSTREAMER)
       plugininstaller.cpp
       qwidgetvideosink.cpp
       streamreader.cpp
-      videodataoutput.cpp
       videowidget.cpp
       volumefadereffect.cpp
       widgetrenderer.cpp
