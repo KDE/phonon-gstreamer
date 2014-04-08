@@ -87,6 +87,7 @@ public:
 public slots:
     void setMovieSize(const QSize &size);
     void mouseOverActive(bool active);
+    void syncX();
 
 protected:
     virtual void keyPressEvent(QKeyEvent *event);
