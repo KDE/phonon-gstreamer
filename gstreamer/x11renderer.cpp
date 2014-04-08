@@ -176,14 +176,7 @@ void X11Renderer::setOverlay()
         #endif
             ) {
         WId windowId = m_renderWidget->winId();
-        // Even if we have created a winId at this point, other X applications
-        // need to be aware of it.
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-#warning syncx
-//         QApplication::syncX();
-#else
-        QApplication::syncX();
-#endif // QT_VERSION
+
 #if GST_VERSION >= GST_VERSION_CHECK (1,0,0,0)
         gst_video_overlay_set_window_handle(GST_VIDEO_OVERLAY(m_videoSink), windowId);
 #elif GST_VERSION >= GST_VERSION_CHECK(0,10,31,0)
@@ -198,12 +191,11 @@ void X11Renderer::setOverlay()
 
 void X11Renderer::windowExposed()
 {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-#warning syncx
-//     QApplication::syncX();
-#else
-    QApplication::syncX();
-#endif //QT_VERSION
+    // This can be invoked within a callchain in an arbitrary thread, so make
+    // sure we call syncX() from the main thread
+    QMetaObject::invokeMethod(m_videoWidget, "syncX",
+                              Qt::QueuedConnection);
+
     if (m_videoSink &&
         #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
             GST_IS_X_OVERLAY(m_videoSink)

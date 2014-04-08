@@ -18,6 +18,7 @@
 
 #include "videowidget.h"
 #include <QtCore/QEvent>
+#include <QtCore/QThread>
 #include <QtGui/QResizeEvent>
 #include <QtGui/QPalette>
 #include <QtGui/QImage>
@@ -87,6 +88,18 @@ void VideoWidget::updateWindowID()
     X11Renderer *render = dynamic_cast<X11Renderer*>(m_renderer);
     if (render)
         render->setOverlay();
+}
+
+void Gstreamer::VideoWidget::syncX()
+{
+    Q_ASSERT(QThread::currentThread() == QApplication::instance()->thread());
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#warning syncx
+//    QApplication::syncX();
+#else
+    QApplication::syncX();
+#endif
 }
 
 void VideoWidget::finalizeLink()
