@@ -62,6 +62,8 @@ QList<QByteArray> GstHelper::extractProperties(GstElement *elem, const QByteArra
                 g_value_array_free (array);
         }
     }
+#else
+    Q_UNUSED(value);
 #endif
     return list;
 }

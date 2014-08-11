@@ -182,7 +182,7 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad,
 #warning should be QBA, so we can work with append(buffer, size)
             that->m_pendingData.append(gstBufferData[i]);
         }
-        Q_ASSERT(prevPendingSize + gstBufferSize == that->m_pendingData.size());
+        Q_ASSERT(int(prevPendingSize + gstBufferSize) == that->m_pendingData.size());
         return;
     }
 

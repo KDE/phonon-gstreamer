@@ -304,6 +304,7 @@ GstState Pipeline::state() const
 gboolean Pipeline::cb_eos(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
     Q_UNUSED(bus)
+    Q_UNUSED(gstMessage)
     Pipeline *that = static_cast<Pipeline*>(data);
     emit that->eos();
     return true;
@@ -328,14 +329,15 @@ gboolean Pipeline::cb_duration(GstBus *bus, GstMessage *gstMessage, gpointer dat
 {
     DEBUG_BLOCK;
     Q_UNUSED(bus)
-    gint64 duration = 0;
-    GstFormat format = GST_FORMAT_TIME;
     Pipeline *that = static_cast<Pipeline*>(data);
     if (that->m_resetting)
         return true;
 #if GST_VERSION >= GST_VERSION_CHECK (1,0,0,0)
+    Q_UNUSED(gstMessage)
     emit that->durationChanged(that->totalDuration());
 #else
+    GstFormat format = GST_FORMAT_TIME;
+    gint64 duration = 0;
     gst_message_parse_duration(gstMessage, &format, &duration);
     if (format == GST_FORMAT_TIME) {
         debug() << "duration" << duration/GST_MSECOND;
@@ -450,12 +452,14 @@ void Pipeline::cb_videoChanged(GstElement *playbin, gpointer data)
 
 void Pipeline::cb_textTagsChanged(GstElement *playbin, gint stream, gpointer data)
 {
+    Q_UNUSED(playbin)
     Pipeline *that = static_cast<Pipeline *>(data);
     emit that->textTagChanged(stream);
 }
 
 void Pipeline::cb_audioTagsChanged(GstElement *playbin, gint stream, gpointer data)
 {
+    Q_UNUSED(playbin)
     Pipeline *that = static_cast<Pipeline *>(data);
     emit that->audioTagChanged(stream);
 }
@@ -745,6 +749,7 @@ gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
 gboolean Pipeline::cb_streamStart(GstBus *bus, GstMessage *msg, gpointer data)
 {
     Q_UNUSED(bus)
+    Q_UNUSED(msg)
     Pipeline *that = static_cast<Pipeline*>(data);
     gchar *uri;
     g_object_get(that->m_pipeline, "uri", &uri, NULL);

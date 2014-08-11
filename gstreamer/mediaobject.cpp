@@ -407,6 +407,8 @@ void MediaObject::loadingComplete()
 
 void MediaObject::getAudioChannelInfo(int stream)
 {
+    Q_UNUSED(stream);
+
     gint channelCount = 0;
     g_object_get(G_OBJECT(m_pipeline->element()), "n-audio", &channelCount, NULL);
     if (channelCount)
@@ -437,6 +439,8 @@ void MediaObject::getAudioChannelInfo(int stream)
 
 void MediaObject::getSubtitleInfo(int stream)
 {
+    Q_UNUSED(stream);
+
     gint spuCount = 0; // Sub picture units.
     g_object_get(G_OBJECT(m_pipeline->element()), "n-text", &spuCount, NULL);
     if (spuCount)
