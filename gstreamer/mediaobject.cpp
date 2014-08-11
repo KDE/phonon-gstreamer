@@ -311,17 +311,17 @@ void MediaObject::autoDetectSubtitle()
     if (m_source.type() == MediaSource::LocalFile ||
        (m_source.type() == MediaSource::Url && m_source.mrl().scheme() == "file") ) {
 
-        QList<QLatin1String> exts = QList<QLatin1String>()
-            << QLatin1String("sub") << QLatin1String("srt")
-            << QLatin1String("smi") << QLatin1String("ssa")
-            << QLatin1String("ass") << QLatin1String("asc");
+        const QStringList exts = QStringList()
+                << QLatin1String("sub") << QLatin1String("srt")
+                << QLatin1String("smi") << QLatin1String("ssa")
+                << QLatin1String("ass") << QLatin1String("asc");
 
         // Remove the file extension
         QString absCompleteBaseName = m_source.fileName();
-        absCompleteBaseName.replace(QFileInfo(absCompleteBaseName).suffix(), QChar());
+        absCompleteBaseName.chop(QFileInfo(absCompleteBaseName).suffix().length());
 
         // Looking for a subtitle in the same directory and matching the same name
-        foreach(const QLatin1String &ext, exts) {
+        foreach(const QString &ext, exts) {
             if (QFile::exists(absCompleteBaseName + ext)) {
                 changeSubUri(Mrl("file://" + absCompleteBaseName + ext));
                 break;
