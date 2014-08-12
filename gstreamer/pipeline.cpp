@@ -254,13 +254,6 @@ void Pipeline::writeToDot(MediaObject *media, const QString &type)
     GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS(bin, GST_DEBUG_GRAPH_SHOW_ALL, QString("phonon-%0").arg(type).toUtf8().constData());
 }
 
-bool Pipeline::queryDuration(GstFormat *format, gint64 *duration) const
-{
-#warning Remove this method, use gst directly
-
-    return gst_element_query_duration(GST_ELEMENT(m_pipeline), *format, duration);
-}
-
 GstState Pipeline::state() const
 {
     GstState state;
@@ -307,9 +300,8 @@ gboolean Pipeline::cb_duration(GstBus *bus, GstMessage *gstMessage, gpointer dat
 
 qint64 Pipeline::totalDuration() const
 {
-    GstFormat format = GST_FORMAT_TIME;
     gint64 duration = 0;
-    if (queryDuration(&format, &duration)) {
+    if (gst_element_query_duration(GST_ELEMENT(m_pipeline), GST_FORMAT_TIME, &duration)) {
         return duration/GST_MSECOND;
     }
     return -1;
