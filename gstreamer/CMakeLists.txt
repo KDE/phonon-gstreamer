@@ -84,7 +84,7 @@ if(PHONON_FOUND_EXPERIMENTAL)
     list(APPEND phonon_gstreamer_SRCS videodataoutput.cpp)
 endif(PHONON_FOUND_EXPERIMENTAL)
 
-if (OPENGL_FOUND AND QT_QTOPENGL_FOUND)
+if (OPENGL_FOUND)
     list(APPEND phonon_gstreamer_SRCS glrenderer.cpp)
 endif ()
 
