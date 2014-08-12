@@ -42,7 +42,7 @@ public:
     void scaleModeChanged(Phonon::VideoWidget::ScaleMode scaleMode);
     void movieSizeChanged(const QSize &movieSize);
     bool eventFilter(QEvent *);
-    bool paintsOnWidget() {
+    bool paintsOnWidget() const {
         return false;
     }
     bool overlaySet() const {

@@ -39,9 +39,13 @@ public:
     bool eventFilter(QEvent * event);
     void handlePaint(QPaintEvent *paintEvent);
     const QImage& currentFrame() const;
-    QRect drawFrameRect() const { return m_drawFrameRect; }
+    QRect drawFrameRect() const {
+        return m_drawFrameRect;
+    }
     void setNextFrame(const QByteArray &array, int width, int height);
-    bool frameIsSet() { return !m_array.isNull(); }
+    bool frameIsSet() const {
+        return !m_array.isNull();
+    }
     void clearFrame();
 private:
     mutable QImage m_frame;

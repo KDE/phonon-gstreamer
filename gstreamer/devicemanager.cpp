@@ -370,7 +370,7 @@ AbstractRenderer *DeviceManager::createVideoRenderer(VideoWidget *parent)
 }
 #endif //QT_NO_PHONON_VIDEO
 
-QList<int> DeviceManager::deviceIds(ObjectDescriptionType type)
+QList<int> DeviceManager::deviceIds(Phonon::ObjectDescriptionType type) const
 {
     DeviceInfo::Capability capability = DeviceInfo::None;
     switch (type) {
@@ -396,7 +396,7 @@ QList<int> DeviceManager::deviceIds(ObjectDescriptionType type)
     return ids;
 }
 
-QHash<QByteArray, QVariant> DeviceManager::deviceProperties(int id)
+QHash<QByteArray, QVariant> DeviceManager::deviceProperties(int id) const
 {
     QHash<QByteArray, QVariant> properties;
 

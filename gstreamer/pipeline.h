@@ -47,6 +47,9 @@ class Pipeline : public QObject
         GstElement *audioGraph() const;
         GstElement *videoElement() const;
         GstElement *audioElement() const;
+        GstElement *audioPipe() const;
+        GstElement *videoPipe() const;
+
         GstStateChangeReturn setState(GstState state);
         GstState state() const;
         Phonon::MediaSource currentSource() const;
@@ -71,11 +74,6 @@ class Pipeline : public QObject
         static void cb_videoChanged(GstElement *playbin, gpointer data);
         static void cb_textTagsChanged(GstElement *playbin, gint stream, gpointer data);
         static void cb_audioTagsChanged(GstElement *playbin, gint stream, gpointer data);
-
-        GstElement *audioPipe();
-        GstElement *videoPipe();
-        GstElement *audioGraph();
-        GstElement *videoGraph();
 
         bool videoIsAvailable() const;
         bool audioIsAvailable() const;

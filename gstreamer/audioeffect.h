@@ -47,7 +47,9 @@ protected:
         return effectBin();
     }
 
+private:
     QString m_effectName;
+
 };
 
 } // namespace Gstreamer

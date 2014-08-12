@@ -41,9 +41,11 @@ public:
     virtual void scaleModeChanged(Phonon::VideoWidget::ScaleMode scaleMode);
     virtual void movieSizeChanged(const QSize &movieSize);
     virtual bool eventFilter(QEvent *) = 0;
-    virtual void handlePaint(QPaintEvent *) { }
+    virtual void handlePaint(QPaintEvent *)
+    {
+    }
 
-    virtual bool paintsOnWidget() {  // Controls overlays
+    virtual bool paintsOnWidget() const {  // Controls overlays
         return true;
     }
 

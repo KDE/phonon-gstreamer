@@ -122,22 +122,22 @@ Pipeline::Pipeline(QObject *parent)
     connect(m_installer, SIGNAL(success()), this, SLOT(pluginInstallComplete()));
 }
 
-GstElement *Pipeline::audioPipe()
+GstElement *Pipeline::audioPipe() const
 {
     return m_audioPipe;
 }
 
-GstElement *Pipeline::videoPipe()
+GstElement *Pipeline::videoPipe() const
 {
     return m_videoPipe;
 }
 
-GstElement *Pipeline::audioGraph()
+GstElement *Pipeline::audioGraph() const
 {
     return m_audioGraph;
 }
 
-GstElement *Pipeline::videoGraph()
+GstElement *Pipeline::videoGraph() const
 {
     return m_videoGraph;
 }

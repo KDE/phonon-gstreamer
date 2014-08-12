@@ -54,7 +54,7 @@ public:
 
     const VideoFrame *frame() const;
 
-    GstElement *videoElement()
+    GstElement *videoElement() const
     {
         debug() << "fishy";
         return m_bin;

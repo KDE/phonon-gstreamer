@@ -56,8 +56,13 @@ public:
     /// callback function for handling new audio data
     static void processBuffer(GstElement*, GstBuffer*, GstPad*, gpointer);
 
-    Phonon::AudioDataOutput* frontendObject() const { return m_frontend; }
-    void setFrontendObject(Phonon::AudioDataOutput *frontend) { m_frontend = frontend; }
+    Phonon::AudioDataOutput* frontendObject() const {
+        return m_frontend;
+    }
+
+    void setFrontendObject(Phonon::AudioDataOutput *frontend) {
+        m_frontend = frontend;
+    }
 
     GstElement *audioElement() const {
         return m_queue;

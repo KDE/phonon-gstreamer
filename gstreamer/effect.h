@@ -34,7 +34,9 @@ namespace Gstreamer
 {
     class EffectInfo;
 
-    class Effect : public QObject, public Phonon::EffectInterface, public MediaNode
+    class Effect : public QObject,
+                   public Phonon::EffectInterface,
+                   public MediaNode
     {
         Q_OBJECT
         Q_INTERFACES(Phonon::EffectInterface Phonon::Gstreamer::MediaNode)

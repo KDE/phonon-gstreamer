@@ -58,11 +58,11 @@ public:
         return m_description;
     }
 
-    bool isValid() {
+    bool isValid() const {
         return m_isValid;
     }
 
-    MediaObject *root() {
+    MediaObject *root() const {
         return m_root;
     }
 

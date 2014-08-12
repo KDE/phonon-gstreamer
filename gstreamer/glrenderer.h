@@ -41,7 +41,9 @@ public:
     GLRenderer(VideoWidget *control);
     ~GLRenderer();
     bool eventFilter(QEvent * event);
-    bool paintsOnWidget() { return false; }
+    bool paintsOnWidget() const {
+        return false;
+    }
 
 private:
     GLRenderWidgetImplementation *m_glWindow;

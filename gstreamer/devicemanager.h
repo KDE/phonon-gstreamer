@@ -96,8 +96,8 @@ public:
     GstElement *createAudioSink(Category category = NoCategory);
 
     AbstractRenderer *createVideoRenderer(VideoWidget *parent);
-    QList<int> deviceIds(ObjectDescriptionType type);
-    QHash<QByteArray, QVariant> deviceProperties(int id);
+    QList<int> deviceIds(ObjectDescriptionType type) const;
+    QHash<QByteArray, QVariant> deviceProperties(int id) const;
     const DeviceInfo *device(int id) const;
 
 signals:
