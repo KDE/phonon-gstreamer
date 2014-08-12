@@ -46,15 +46,15 @@ MediaNode::MediaNode(Backend *backend, NodeDescription description) :
     if (description & AudioSource) {
         m_audioTee = gst_element_factory_make("tee", NULL);
         Q_ASSERT(m_audioTee); // Must not ever be null.
-        gst_object_ref (GST_OBJECT (m_audioTee));
-        gst_object_ref_sink (GST_OBJECT (m_audioTee));
+        gst_object_ref(GST_OBJECT(m_audioTee));
+        gst_object_ref_sink(GST_OBJECT(m_audioTee));
     }
 
     if (description & VideoSource) {
         m_videoTee = gst_element_factory_make("tee", NULL);
         Q_ASSERT(m_videoTee); // Must not ever be null.
-        gst_object_ref (GST_OBJECT (m_videoTee));
-        gst_object_ref_sink (GST_OBJECT (m_videoTee));
+        gst_object_ref(GST_OBJECT(m_videoTee));
+        gst_object_ref_sink(GST_OBJECT(m_videoTee));
     }
 }
 
@@ -63,11 +63,13 @@ MediaNode::~MediaNode()
     if (m_videoTee) {
         gst_element_set_state(m_videoTee, GST_STATE_NULL);
         gst_object_unref(m_videoTee);
+        m_videoTee = 0;
     }
 
     if (m_audioTee) {
         gst_element_set_state(m_audioTee, GST_STATE_NULL);
         gst_object_unref(m_audioTee);
+        m_audioTee = 0;
     }
 }
 
@@ -83,19 +85,21 @@ bool MediaNode::buildGraph()
 
     if (success) {
         // connect children recursively
-        for (int i=0; i< m_audioSinkList.size(); ++i) {
+        for (int i = 0; i < m_audioSinkList.size(); ++i) {
             if (MediaNode *node = qobject_cast<MediaNode*>(m_audioSinkList[i])) {
                 node->setRoot(root());
-                if (!node->buildGraph())
+                if (!node->buildGraph()) {
                     success = false;
+                }
             }
         }
 
-        for (int i=0; i < m_videoSinkList.size(); ++i) {
+        for (int i = 0; i < m_videoSinkList.size(); ++i) {
             if (MediaNode *node = qobject_cast<MediaNode*>(m_videoSinkList[i])) {
                 node->setRoot(root());
-                if (!node->buildGraph())
+                if (!node->buildGraph()) {
                     success = false;
+                }
             }
         }
     }
@@ -119,17 +123,19 @@ bool MediaNode::breakGraph()
         prepareToUnlink();
         m_finalized = false;
     }
-    for (int i=0; i<m_audioSinkList.size(); ++i) {
+    for (int i = 0; i < m_audioSinkList.size(); ++i) {
         MediaNode *node = qobject_cast<MediaNode*>(m_audioSinkList[i]);
-        if (!node || !node->breakGraph())
+        if (!node || !node->breakGraph()) {
             return false;
+        }
         node->setRoot(0);
     }
 
-    for (int i=0; i <m_videoSinkList.size(); ++i) {
+    for (int i = 0; i < m_videoSinkList.size(); ++i) {
         MediaNode *node = qobject_cast<MediaNode*>(m_videoSinkList[i]);
-        if (!node || !node->breakGraph())
+        if (!node || !node->breakGraph()) {
             return false;
+        }
         node->setRoot(0);
     }
     unlink();
@@ -192,8 +198,9 @@ bool MediaNode::disconnectNode(QObject *obj)
                 gst_element_release_request_pad(m_audioTee, requestedPad);
                 gst_object_unref(requestedPad);
             }
-            if (GST_ELEMENT_PARENT(sink->audioElement()))
+            if (GST_ELEMENT_PARENT(sink->audioElement())) {
                 gst_bin_remove(GST_BIN(root()->audioGraph()), sink->audioElement());
+            }
             gst_object_unref(sinkPad);
         }
 
@@ -205,8 +212,9 @@ bool MediaNode::disconnectNode(QObject *obj)
                 gst_element_release_request_pad(m_videoTee, requestedPad);
                 gst_object_unref(requestedPad);
             }
-            if (GST_ELEMENT_PARENT(sink->videoElement()))
+            if (GST_ELEMENT_PARENT(sink->videoElement())) {
                 gst_bin_remove(GST_BIN(root()->videoGraph()), sink->videoElement());
+            }
             gst_object_unref(sinkPad);
         }
 
@@ -240,35 +248,37 @@ bool MediaNode::addOutput(MediaNode *output, GstElement *tee)
     bool success = true;
 
     GstElement *sinkElement = 0;
-    if (output->description() & AudioSink)
+    if (output->description() & AudioSink) {
         sinkElement = output->audioElement();
-    else if (output->description() & VideoSink)
+    } else if (output->description() & VideoSink) {
         sinkElement = output->videoElement();
+    }
 
     Q_ASSERT(sinkElement);
 
-    if (!sinkElement)
+    if (!sinkElement) {
         return false;
+    }
 
     GstState state = root()->pipeline()->state();
-    GstPad *srcPad;
-    GstPadTemplate* tee_src_pad_template = gst_element_class_get_pad_template (GST_ELEMENT_GET_CLASS (tee), "src_%u");
-    srcPad = gst_element_request_pad (tee, tee_src_pad_template, NULL, NULL);
-    GstPad *sinkPad = gst_element_get_static_pad (sinkElement, "sink");
+    GstPadTemplate* tee_src_pad_template = gst_element_class_get_pad_template(GST_ELEMENT_GET_CLASS (tee), "src_%u");
+    GstPad *srcPad = gst_element_request_pad(tee, tee_src_pad_template, NULL, NULL);
+    GstPad *sinkPad = gst_element_get_static_pad(sinkElement, "sink");
 
     if (!sinkPad) {
         success = false;
     } else if (gst_pad_is_linked(sinkPad)) {
-        gst_object_unref (GST_OBJECT (sinkPad));
-        gst_object_unref (GST_OBJECT (srcPad));
+        gst_object_unref(GST_OBJECT(sinkPad));
+        gst_object_unref(GST_OBJECT(srcPad));
         return true;
     }
 
     if (success) {
-        if (output->description() & AudioSink)
+        if (output->description() & AudioSink) {
             gst_bin_add(GST_BIN(root()->audioGraph()), sinkElement);
-        else if (output->description() & VideoSink)
+        } else if (output->description() & VideoSink) {
             gst_bin_add(GST_BIN(root()->videoGraph()), sinkElement);
+        }
     }
 
     if (success) {
@@ -278,8 +288,8 @@ bool MediaNode::addOutput(MediaNode *output, GstElement *tee)
         gst_element_release_request_pad(tee, srcPad);
     }
 
-    gst_object_unref (GST_OBJECT (srcPad));
-    gst_object_unref (GST_OBJECT (sinkPad));
+    gst_object_unref(GST_OBJECT(srcPad));
+    gst_object_unref(GST_OBJECT(sinkPad));
 
     return success;
 }
@@ -288,15 +298,17 @@ bool MediaNode::linkMediaNodeList(QList<QObject *> &list, GstElement *bin, GstEl
 {
     if (!GST_ELEMENT_PARENT(tee)) {
         gst_bin_add(GST_BIN(bin), tee);
-        if (!gst_element_link_pads(src, "src", tee, "sink"))
+        if (!gst_element_link_pads(src, "src", tee, "sink")) {
             return false;
+        }
         gst_element_set_state(tee, GST_STATE(bin));
     }
     for (int i = 0 ; i < list.size() ; ++i) {
         QObject *sink = list[i];
         if (MediaNode *output = qobject_cast<MediaNode*>(sink)) {
-            if (!addOutput(output, tee))
+            if (!addOutput(output, tee)) {
                 return false;
+            }
         }
     }
     return true;
@@ -307,14 +319,16 @@ bool MediaNode::link()
     // Rewire everything
     if ((description() & AudioSource)) {
         Q_ASSERT(m_audioTee);
-        if (!linkMediaNodeList(m_audioSinkList, root()->audioGraph(), m_audioTee, audioElement()))
+        if (!linkMediaNodeList(m_audioSinkList, root()->audioGraph(), m_audioTee, audioElement())) {
             return false;
+        }
     }
 
     if ((description() & VideoSource)) {
         Q_ASSERT(m_videoTee);
-        if (!linkMediaNodeList(m_videoSinkList, root()->videoGraph(), m_videoTee, videoElement()))
+        if (!linkMediaNodeList(m_videoSinkList, root()->videoGraph(), m_videoTee, videoElement())) {
             return false;
+        }
     }
     return true;
 }
@@ -326,8 +340,8 @@ bool MediaNode::unlink()
         if (GST_ELEMENT_PARENT(m_audioTee) == GST_ELEMENT(root()->audioGraph())) {
            gst_element_set_state(m_audioTee, GST_STATE_NULL);
            gst_bin_remove(GST_BIN(root()->audioGraph()), m_audioTee);
-       }
-        for (int i=0; i<m_audioSinkList.size(); ++i) {
+        }
+        for (int i = 0; i < m_audioSinkList.size(); ++i) {
             QObject *audioSink = m_audioSinkList[i];
             if (MediaNode *output = qobject_cast<MediaNode*>(audioSink)) {
                 GstElement *element = output->audioElement();
@@ -342,7 +356,7 @@ bool MediaNode::unlink()
            gst_element_set_state(m_videoTee, GST_STATE_NULL);
            gst_bin_remove(GST_BIN(root()->videoGraph()), m_videoTee);
         }
-        for (int i=0; i <m_videoSinkList.size(); ++i) {
+        for (int i = 0; i < m_videoSinkList.size(); ++i) {
             QObject *videoSink = m_videoSinkList[i];
             if (MediaNode *vw = qobject_cast<MediaNode*>(videoSink)) {
                 GstElement *element = vw->videoElement();

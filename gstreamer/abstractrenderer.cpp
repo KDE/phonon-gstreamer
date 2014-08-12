@@ -24,6 +24,13 @@ namespace Gstreamer
 {
 
 
+AbstractRenderer::AbstractRenderer(VideoWidget* video)
+        : m_videoWidget(video)
+        , m_videoSink(0)
+{
+}
+
+
 AbstractRenderer::~AbstractRenderer()
 {
     if (m_videoSink) {

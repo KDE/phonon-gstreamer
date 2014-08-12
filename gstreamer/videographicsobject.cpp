@@ -73,12 +73,14 @@ VideoGraphicsObject::~VideoGraphicsObject()
 void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
 {
     // No data, no pointer to this -> failure
-    if (!buffer || !userData)
+    if (!buffer || !userData) {
         return;
+    }
 
     VideoGraphicsObject *that = static_cast<VideoGraphicsObject *>(userData);
-    if (!that)
+    if (!that) {
         return;
+    }
 
     // Frontend holds lock on data
     if (!that->m_mutex.tryLock()) {
@@ -89,8 +91,9 @@ void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
     // At this point we can do stuff with the data, so we take it over.
     gst_buffer_ref(buffer);
     // Unref the old buffer first...
-    if (that->m_buffer)
+    if (that->m_buffer) {
         gst_buffer_unref(that->m_buffer);
+    }
     that->m_buffer = buffer;
 
     VideoFrame *frame = &that->m_frame;

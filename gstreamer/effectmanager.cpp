@@ -36,14 +36,15 @@ EffectInfo::EffectInfo(const QString &name, const QString &description,
                        const QString &author)
         : m_name(name)
         , m_description(description)
-        , m_author(author) {}
+        , m_author(author)
+{
+}
 
 EffectManager::EffectManager(Backend *backend)
         : QObject(backend)
         , m_backend(backend)
 {
-    GList *factoryList =
-            gst_registry_get_feature_list(gst_registry_get (), GST_TYPE_ELEMENT_FACTORY);
+    GList *factoryList = gst_registry_get_feature_list(gst_registry_get(), GST_TYPE_ELEMENT_FACTORY);
 
     QString name;
     QString klass;
@@ -81,8 +82,8 @@ EffectManager::EffectManager(Backend *backend)
                  || name == QLatin1String("equalizer-10bands")
                  || name == QLatin1String("speed"))
                 {
-                    description = gst_element_factory_get_description (GST_ELEMENT_FACTORY(feature));
-                    author = gst_element_factory_get_author (GST_ELEMENT_FACTORY(feature));
+                    description = gst_element_factory_get_description(GST_ELEMENT_FACTORY(feature));
+                    author = gst_element_factory_get_author(GST_ELEMENT_FACTORY(feature));
                     EffectInfo *effect = new EffectInfo(name, description, author);
                     m_audioEffectList.append(effect);
 

@@ -49,7 +49,8 @@ namespace Gstreamer
 
 DeviceInfo::DeviceInfo(DeviceManager *manager, const QByteArray &deviceId,
                        quint16 caps, bool isAdvanced)
-        : m_isAdvanced(isAdvanced), m_capabilities(caps)
+        : m_isAdvanced(isAdvanced)
+        , m_capabilities(caps)
 {
     // Get an unique integer id for each device
     static int deviceCounter = 0;
@@ -81,14 +82,16 @@ DeviceInfo::DeviceInfo(DeviceManager *manager, const QByteArray &deviceId,
     }
 
     // A default device should never be advanced
-    if (deviceId == "default")
+    if (deviceId == "default") {
         m_isAdvanced = false;
+    }
 }
 
 void DeviceInfo::useGstElement(GstElement *element, const QByteArray &deviceId)
 {
-    if (!element)
+    if (!element) {
         return;
+    }
 
     gchar *deviceName = NULL;
     if (g_object_class_find_property(G_OBJECT_GET_CLASS(element), "device")){
@@ -202,21 +205,21 @@ DeviceManager::~DeviceManager()
 */
 GstElement *DeviceManager::createGNOMEAudioSink(Category category)
 {
-    GstElement *sink = gst_element_factory_make ("gconfaudiosink", NULL);
+    GstElement *sink = gst_element_factory_make("gconfaudiosink", NULL);
 
     if (sink) {
 
         // set profile property on the gconfaudiosink to "music and movies"
-        if (g_object_class_find_property (G_OBJECT_GET_CLASS (sink), "profile")) {
+        if (g_object_class_find_property(G_OBJECT_GET_CLASS (sink), "profile")) {
             switch (category) {
             case NotificationCategory:
-                g_object_set (G_OBJECT (sink), "profile", 0, NULL); // 0 = 'sounds'
+                g_object_set(G_OBJECT (sink), "profile", 0, NULL); // 0 = 'sounds'
                 break;
             case CommunicationCategory:
-                g_object_set (G_OBJECT (sink), "profile", 2, NULL); // 2 = 'chat'
+                g_object_set(G_OBJECT (sink), "profile", 2, NULL); // 2 = 'chat'
                 break;
             default:
-                g_object_set (G_OBJECT (sink), "profile", 1, NULL); // 1 = 'music and movies'
+                g_object_set(G_OBJECT (sink), "profile", 1, NULL); // 1 = 'music and movies'
                 break;
             }
         }
@@ -227,11 +230,13 @@ GstElement *DeviceManager::createGNOMEAudioSink(Category category)
 
 bool DeviceManager::canOpenDevice(GstElement *element) const
 {
-    if (!element)
+    if (!element) {
         return false;
+    }
 
-    if (gst_element_set_state(element, GST_STATE_READY) == GST_STATE_CHANGE_SUCCESS)
+    if (gst_element_set_state(element, GST_STATE_READY) == GST_STATE_CHANGE_SUCCESS) {
         return true;
+    }
 
     const QList<QByteArray> &list = GstHelper::extractProperties(element, "device");
     foreach (const QByteArray &gstId, list) {
@@ -261,45 +266,44 @@ GstElement *DeviceManager::createAudioSink(Category category)
 {
     GstElement *sink = 0;
 
-    if (m_audioSink == "auto") //this is the default value
-    {
+    if (m_audioSink == "auto") { //this is the default value
         //### TODO : get equivalent KDE settings here
 
         if (!qgetenv("GNOME_DESKTOP_SESSION_ID").isEmpty()) {
             sink = createGNOMEAudioSink(category);
-            if (canOpenDevice(sink))
+            if (canOpenDevice(sink)) {
                 debug() << "AudioOutput using gconf audio sink";
-            else if (sink) {
+            } else if (sink) {
                 gst_object_unref(sink);
                 sink = 0;
             }
         }
 
         if (!sink) {
-            sink = gst_element_factory_make ("alsasink", NULL);
-            if (canOpenDevice(sink))
+            sink = gst_element_factory_make("alsasink", NULL);
+            if (canOpenDevice(sink)) {
                 debug() << "AudioOutput using alsa audio sink";
-            else if (sink) {
+            } else if (sink) {
                 gst_object_unref(sink);
                 sink = 0;
             }
         }
 
         if (!sink) {
-            sink = gst_element_factory_make ("autoaudiosink", NULL);
-            if (canOpenDevice(sink))
+            sink = gst_element_factory_make("autoaudiosink", NULL);
+            if (canOpenDevice(sink)) {
                 debug() << "AudioOutput using auto audio sink";
-            else if (sink) {
+            } else if (sink) {
                 gst_object_unref(sink);
                 sink = 0;
             }
         }
 
         if (!sink) {
-            sink = gst_element_factory_make ("osssink", NULL);
-            if (canOpenDevice(sink))
+            sink = gst_element_factory_make("osssink", NULL);
+            if (canOpenDevice(sink)) {
                 debug() << "AudioOutput using oss audio sink";
-            else if (sink) {
+            } else if (sink) {
                 gst_object_unref(sink);
                 sink = 0;
             }
@@ -307,10 +311,10 @@ GstElement *DeviceManager::createAudioSink(Category category)
     } else if (m_audioSink == "fake") {
         //do nothing as a fakesink will be created by default
     } else if (!m_audioSink.isEmpty()) { //Use a custom sink
-        sink = gst_element_factory_make (m_audioSink, NULL);
-        if (canOpenDevice(sink))
+        sink = gst_element_factory_make(m_audioSink, NULL);
+        if (canOpenDevice(sink)) {
             debug() << "AudioOutput using" << QString::fromUtf8(m_audioSink);
-        else {
+        } else {
             if (sink) {
                 gst_object_unref(sink);
                 sink = 0;
@@ -331,7 +335,7 @@ GstElement *DeviceManager::createAudioSink(Category category)
         if (sink) {
             warning() << "AudioOutput Using fake audio sink";
             //without sync the sink will pull the pipeline as fast as the CPU allows
-            g_object_set (G_OBJECT (sink), "sync", TRUE, NULL);
+            g_object_set(G_OBJECT(sink), "sync", TRUE, NULL);
         }
     }
     Q_ASSERT(sink);
@@ -381,8 +385,9 @@ QList<int> DeviceManager::deviceIds(ObjectDescriptionType type)
 
     QList<int> ids;
     foreach (const DeviceInfo &device, m_devices) {
-        if (device.capabilities() & capability)
+        if (device.capabilities() & capability) {
             ids.append(device.id());
+        }
     }
 
     return ids;
@@ -427,8 +432,9 @@ QHash<QByteArray, QVariant> DeviceManager::deviceProperties(int id)
 const DeviceInfo *DeviceManager::device(int id) const
 {
     for (int i = 0; i < m_devices.size(); i ++) {
-        if (m_devices[i].id() == id)
+        if (m_devices[i].id() == id) {
             return &m_devices[i];
+        }
     }
 
     return NULL;
@@ -458,12 +464,18 @@ void DeviceManager::updateDeviceList()
         GstElementFactory *factory = gst_element_get_factory(audioSink);
         const gchar *factoryName = gst_plugin_feature_get_name(GST_PLUGIN_FEATURE(factory));
         QByteArray driver; // means sound system
-        if (!g_strcmp0(factoryName, "alsasink"))       driver = "alsa";
-        if (!g_strcmp0(factoryName, "pulsesink"))      driver = "pulse";
-        if (!g_strcmp0(factoryName, "osssink"))        driver = "oss";
-        if (!g_strcmp0(factoryName, "fakesink"))       driver = "fake";
-        if (driver.isEmpty() && !names.isEmpty())
+        if (g_strcmp0(factoryName, "alsasink") == 0) {
+            driver = "alsa";
+        } else if (g_strcmp0(factoryName, "pulsesink") == 0) {
+            driver = "pulse";
+        } else if (g_strcmp0(factoryName, "osssink") == 0) {
+            driver = "oss";
+        } else if (g_strcmp0(factoryName, "fakesink") == 0) {
+            driver = "fake";
+        }
+        if (driver.isEmpty() && !names.isEmpty()) {
             warning() << "Unknown sound system for device" << names.first();
+        }
 
         for (int i = 0; i < names.size(); ++i) {
             DeviceInfo deviceInfo(this, names[i], DeviceInfo::AudioOutput);
@@ -500,7 +512,7 @@ void DeviceManager::updateDeviceList()
 
     // Search for added devices
     for (int i = 0; i < newDeviceList.count(); ++i) {
-        int id = newDeviceList[i].id();
+        const int id = newDeviceList[i].id();
         if (!listContainsDevice(m_devices, id)) {
             // This is a new device, add it
             m_devices.append(newDeviceList[i]);
@@ -512,7 +524,7 @@ void DeviceManager::updateDeviceList()
 
     // Search for removed devices
     for (int i = m_devices.count() - 1; i >= 0; --i) {
-        int id = m_devices[i].id();
+        const int id = m_devices[i].id();
         if (!listContainsDevice(newDeviceList, id)) {
             debug() << "Lost device" << m_devices[i].name();
 
@@ -525,8 +537,9 @@ void DeviceManager::updateDeviceList()
 bool DeviceManager::listContainsDevice(const QList<DeviceInfo> &list, int id)
 {
     foreach (const DeviceInfo &d, list) {
-        if (d.id() == id)
+        if (d.id() == id) {
             return true;
+        }
     }
     return false;
 }

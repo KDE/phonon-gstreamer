@@ -51,25 +51,25 @@ GstElement* AudioEffect::createEffectBin()
     GstElement *audioBin = gst_bin_new(NULL);
 
     // We need a queue to handle tee-connections from parent node
-    GstElement *queue= gst_element_factory_make ("queue", NULL);
+    GstElement *queue= gst_element_factory_make("queue", NULL);
     gst_bin_add(GST_BIN(audioBin), queue);
 
-    GstElement *mconv= gst_element_factory_make ("audioconvert", NULL);
+    GstElement *mconv= gst_element_factory_make("audioconvert", NULL);
     gst_bin_add(GST_BIN(audioBin), mconv);
 
-    m_effectElement = gst_element_factory_make (qPrintable(m_effectName), NULL);
+    m_effectElement = gst_element_factory_make(qPrintable(m_effectName), NULL);
     gst_bin_add(GST_BIN(audioBin), m_effectElement);
 
     //Link src pad
-    GstPad *srcPad= gst_element_get_static_pad (m_effectElement, "src");
-    gst_element_add_pad (audioBin, gst_ghost_pad_new ("src", srcPad));
-    gst_object_unref (srcPad);
+    GstPad *srcPad= gst_element_get_static_pad(m_effectElement, "src");
+    gst_element_add_pad(audioBin, gst_ghost_pad_new("src", srcPad));
+    gst_object_unref(srcPad);
 
     //Link sink pad
     gst_element_link_many(queue, mconv, m_effectElement, NULL);
-    GstPad *sinkpad = gst_element_get_static_pad (queue, "sink");
-    gst_element_add_pad (audioBin, gst_ghost_pad_new ("sink", sinkpad));
-    gst_object_unref (sinkpad);
+    GstPad *sinkpad = gst_element_get_static_pad(queue, "sink");
+    gst_element_add_pad(audioBin, gst_ghost_pad_new("sink", sinkpad));
+    gst_object_unref(sinkpad);
     return audioBin;
 }
 

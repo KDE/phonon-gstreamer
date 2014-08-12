@@ -116,13 +116,13 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad,
 
     // Copiend locally to avoid multithead problems
     qint32 dataSize = that->m_dataSize;
-    if (dataSize == 0)
+    if (dataSize == 0) {
         return;
+    }
 
     // determine the number of channels
-    GstStructure *structure;
-    const GstCaps *caps = gst_pad_get_current_caps(GST_PAD(pad));
-    structure = gst_caps_get_structure(caps, 0);
+    GstCaps *caps = gst_pad_get_current_caps(GST_PAD(pad));
+    GstStructure *structure = gst_caps_get_structure(caps, 0);
     gst_structure_get_int(structure, "channels", &that->m_channels);
 
     // Let's get the buffers
@@ -145,8 +145,9 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad,
     }
 
     // I set the number of channels
-    if (that->m_channelBuffers.size() != that->m_channels)
+    if (that->m_channelBuffers.size() != that->m_channels) {
         that->m_channelBuffers.resize(that->m_channels);
+    }
 
     // check how many emits I will perform
     int nBlockToSend = (that->m_pendingData.size() + gstBufferSize) / (dataSize * that->m_channels);
@@ -174,8 +175,9 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad,
             }
         }
 
-        if (that->m_pendingData.capacity() != dataSize)
+        if (that->m_pendingData.capacity() != dataSize) {
             that->m_pendingData.reserve(dataSize);
+        }
 
         that->m_pendingData.resize(0);
     }

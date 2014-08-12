@@ -81,7 +81,7 @@ X11Renderer::~X11Renderer()
 
 GstElement* X11Renderer::createVideoSink()
 {
-    GstElement *videoSink = gst_element_factory_make ("xvimagesink", NULL);
+    GstElement *videoSink = gst_element_factory_make("xvimagesink", NULL);
     if (videoSink) {
         // Check if the xv sink is usable
         if (gst_element_set_state(videoSink, GST_STATE_READY) != GST_STATE_CHANGE_SUCCESS) {
@@ -105,8 +105,8 @@ GstElement* X11Renderer::createVideoSink()
         videoSink = gst_element_factory_make ("ximagesink", NULL);
     }
 
-    gst_object_ref (GST_OBJECT (videoSink)); //Take ownership
-    gst_object_ref_sink (GST_OBJECT (videoSink));
+    gst_object_ref(GST_OBJECT (videoSink)); //Take ownership
+    gst_object_ref_sink(GST_OBJECT (videoSink));
 
     return videoSink;
 }

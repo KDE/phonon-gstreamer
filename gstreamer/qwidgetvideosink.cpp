@@ -60,7 +60,7 @@ const char* QWidgetVideoSinkClass<VideoFormat_RGB>::get_name()
 template <VideoFormat FMT>
 gboolean QWidgetVideoSink<FMT>::set_caps(GstBaseSink* sink, GstCaps* caps)
 {
-    GstStructure*       data;
+    GstStructure *data;
     QWidgetVideoSink<FMT> *self = G_TYPE_CHECK_INSTANCE_CAST(sink, QWidgetVideoSinkClass<FMT>::get_type(), QWidgetVideoSink<FMT>);
 
     data = gst_caps_get_structure(caps, 0);
@@ -83,8 +83,7 @@ GstFlowReturn QWidgetVideoSink<FMT>::render(GstBaseSink* sink, GstBuffer* buf)
 {
     GstFlowReturn rc = GST_FLOW_OK;
 
-    if (buf != 0)
-    {
+    if (buf != 0) {
         QWidgetVideoSink<FMT> *self = G_TYPE_CHECK_INSTANCE_CAST(sink, QWidgetVideoSinkClass<FMT>::get_type(), QWidgetVideoSink<FMT>);
         QByteArray frame;
         GstMapInfo info;
@@ -94,9 +93,9 @@ GstFlowReturn QWidgetVideoSink<FMT>::render(GstBaseSink* sink, GstBuffer* buf)
         gst_buffer_unmap(buf, &info);
         NewFrameEvent *frameEvent = new NewFrameEvent(frame, self->width, self->height);
         QApplication::postEvent(self->renderWidget, frameEvent);
-    }
-    else
+    } else {
         rc = GST_FLOW_ERROR;
+    }
     return rc;
 }
 
@@ -202,7 +201,7 @@ GType QWidgetVideoSinkClass<FMT>::get_type()
         };
 
         type = g_type_register_static(GST_TYPE_VIDEO_SINK,
-                                     QWidgetVideoSinkClass<FMT>::get_name(),
+                                      QWidgetVideoSinkClass<FMT>::get_name(),
                                       &info,
                                       GTypeFlags(0));
     }

@@ -69,19 +69,21 @@ VideoWidget::VideoWidget(Backend *backend, QWidget *parent) :
 VideoWidget::~VideoWidget()
 {
     if (m_videoBin) {
-        gst_element_set_state (m_videoBin, GST_STATE_NULL);
-        gst_object_unref (m_videoBin);
+        gst_element_set_state(m_videoBin, GST_STATE_NULL);
+        gst_object_unref(m_videoBin);
     }
 
-    if (m_renderer)
+    if (m_renderer) {
         delete m_renderer;
+    }
 }
 
 void VideoWidget::updateWindowID()
 {
     X11Renderer *render = dynamic_cast<X11Renderer*>(m_renderer);
-    if (render)
+    if (render) {
         render->setOverlay();
+    }
 }
 
 void Gstreamer::VideoWidget::syncX()
@@ -114,36 +116,37 @@ void VideoWidget::setupVideoBin()
     GstElement *videoSink = m_renderer->videoSink();
     GstPad *videoPad = gst_element_get_static_pad(videoSink, "sink");
     g_signal_connect(videoPad, "notify::caps", G_CALLBACK(cb_capsChanged), this);
+    gst_object_unref(videoPad);
 
     m_videoBin = gst_bin_new (NULL);
     Q_ASSERT(m_videoBin);
-    gst_object_ref (GST_OBJECT (m_videoBin)); //Take ownership
-    gst_object_ref_sink (GST_OBJECT (m_videoBin));
+    gst_object_ref(GST_OBJECT (m_videoBin)); //Take ownership
+    gst_object_ref_sink(GST_OBJECT (m_videoBin));
     QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
     if (tegraEnv.isEmpty()) {
         //The videoplug element is the final element before the pluggable videosink
-        m_videoplug = gst_element_factory_make ("identity", NULL);
+        m_videoplug = gst_element_factory_make("identity", NULL);
 
         //Colorspace ensures that the output of the stream matches the input format accepted by our video sink
-        m_colorspace = gst_element_factory_make ("videoconvert", NULL);
+        m_colorspace = gst_element_factory_make("videoconvert", NULL);
 
         //Video scale is used to prepare the correct aspect ratio and scale.
-        GstElement *videoScale = gst_element_factory_make ("videoscale", NULL);
+        GstElement *videoScale = gst_element_factory_make("videoscale", NULL);
 
         //We need a queue to support the tee from parent node
-        GstElement *queue = gst_element_factory_make ("queue", NULL);
+        GstElement *queue = gst_element_factory_make("queue", NULL);
 
         if (queue && m_videoBin && videoScale && m_colorspace && videoSink && m_videoplug) {
         //Ensure that the bare essentials are prepared
-            gst_bin_add_many (GST_BIN (m_videoBin), queue, m_colorspace, m_videoplug, videoScale, videoSink, NULL);
+            gst_bin_add_many(GST_BIN (m_videoBin), queue, m_colorspace, m_videoplug, videoScale, videoSink, NULL);
             bool success = false;
             //Video balance controls color/sat/hue in the YUV colorspace
-            m_videoBalance = gst_element_factory_make ("videobalance", NULL);
+            m_videoBalance = gst_element_factory_make("videobalance", NULL);
             if (m_videoBalance) {
                 // For video balance to work we have to first ensure that the video is in YUV colorspace,
                 // then hand it off to the videobalance filter before finally converting it back to RGB.
                 // Hence we nede a videoFilter to convert the colorspace before and after videobalance
-                GstElement *m_colorspace2 = gst_element_factory_make ("videoconvert", NULL);
+                GstElement *m_colorspace2 = gst_element_factory_make("videoconvert", NULL);
                 gst_bin_add_many(GST_BIN(m_videoBin), m_videoBalance, m_colorspace2, NULL);
                 success = gst_element_link_many(queue, m_colorspace, m_videoBalance, m_colorspace2, videoScale, m_videoplug, videoSink, NULL);
             } else {
@@ -151,25 +154,27 @@ void VideoWidget::setupVideoBin()
                 success = gst_element_link_many(queue, m_colorspace, videoScale, m_videoplug, videoSink, NULL);
             }
             if (success) {
-                GstPad *videopad = gst_element_get_static_pad (queue, "sink");
-                gst_element_add_pad (m_videoBin, gst_ghost_pad_new ("sink", videopad));
-                gst_object_unref (videopad);
+                GstPad *videopad = gst_element_get_static_pad(queue, "sink");
+                gst_element_add_pad(m_videoBin, gst_ghost_pad_new("sink", videopad));
+                gst_object_unref(videopad);
                 QWidget *parentWidget = qobject_cast<QWidget*>(parent());
-                if (parentWidget)
+                if (parentWidget) {
                     parentWidget->winId();  // Due to some existing issues with alien in 4.4,
-                                        //  we must currently force the creation of a parent widget.
+                                            // we must currently force the creation of a parent widget.
+                }
                 m_isValid = true; //initialization ok, accept input
             }
         }
     } else {
-        gst_bin_add_many (GST_BIN (m_videoBin), videoSink, NULL);
-        GstPad *videopad = gst_element_get_static_pad (videoSink,"sink");
-        gst_element_add_pad (m_videoBin, gst_ghost_pad_new ("sink", videopad));
-        gst_object_unref (videopad);
+        gst_bin_add_many(GST_BIN(m_videoBin), videoSink, NULL);
+        GstPad *videopad = gst_element_get_static_pad(videoSink,"sink");
+        gst_element_add_pad(m_videoBin, gst_ghost_pad_new("sink", videopad));
+        gst_object_unref(videopad);
         QWidget *parentWidget = qobject_cast<QWidget*>(parent());
-        if (parentWidget)
+        if (parentWidget) {
             parentWidget->winId();  // Due to some existing issues with alien in 4.4,
-                                    //  we must currently force the creation of a parent widget.
+                                    // we must currently force the creation of a parent widget.
+        }
         m_isValid = true; //initialization ok, accept input
     }
 }
@@ -189,7 +194,7 @@ void VideoWidget::setVisible(bool val) {
         GstElement *videoSink = m_renderer->videoSink();
         Q_ASSERT(videoSink);
 
-        gst_element_set_state (videoSink, GST_STATE_NULL);
+        gst_element_set_state(videoSink, GST_STATE_NULL);
         gst_bin_remove(GST_BIN(m_videoBin), videoSink);
         delete m_renderer;
         m_renderer = 0;
@@ -209,8 +214,9 @@ void VideoWidget::setVisible(bool val) {
 
 bool VideoWidget::event(QEvent *event)
 {
-    if (m_renderer && m_renderer->eventFilter(event))
+    if (m_renderer && m_renderer->eventFilter(event)) {
         return true;
+    }
     return QWidget::event(event);
 }
 
@@ -221,17 +227,19 @@ Phonon::VideoWidget::AspectRatio VideoWidget::aspectRatio() const
 
 QSize VideoWidget::sizeHint() const
 {
-    if (!m_movieSize.isEmpty())
+    if (!m_movieSize.isEmpty()) {
         return m_movieSize;
-    else
+    } else {
         return QSize(640, 480);
+    }
 }
 
 void VideoWidget::setAspectRatio(Phonon::VideoWidget::AspectRatio aspectRatio)
 {
     m_aspectRatio = aspectRatio;
-    if (m_renderer)
+    if (m_renderer) {
         m_renderer->aspectRatioChanged(aspectRatio);
+    }
 }
 
 Phonon::VideoWidget::ScaleMode VideoWidget::scaleMode() const
@@ -344,10 +352,11 @@ QImage VideoWidget::snapshot() const
             if (ret && width > 0 && height > 0) {
                 QImage snapimage(width, height, QImage::Format_RGB888);
 
-                for (int i = 0; i < height; ++i)
+                for (int i = 0; i < height; ++i) {
                     memcpy(snapimage.scanLine(i),
                            info.data + i * GST_ROUND_UP_4(width * 3),
                            width * 3);
+                }
                 gst_buffer_unmap(snapbuffer, &info);
                 gst_buffer_unref(snapbuffer);
                 return snapimage;
@@ -390,18 +399,21 @@ void VideoWidget::setBrightness(qreal newValue)
 
    newValue = clampedValue(newValue);
 
-    if (newValue == m_brightness)
+    if (newValue == m_brightness) {
         return;
+    }
 
     m_brightness = newValue;
 
     QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
     if (tegraEnv.isEmpty()) {
-        if (m_videoBalance)
+        if (m_videoBalance) {
             g_object_set(G_OBJECT(m_videoBalance), "brightness", newValue, NULL); //gstreamer range is [-1, 1]
+        }
     } else {
-        if (videoSink)
+        if (videoSink) {
             g_object_set(G_OBJECT(videoSink), "brightness", newValue, NULL); //gstreamer range is [-1, 1]
+        }
     }
 }
 
@@ -418,17 +430,20 @@ void VideoWidget::setContrast(qreal newValue)
 
     newValue = clampedValue(newValue);
 
-    if (newValue == m_contrast)
+    if (newValue == m_contrast) {
         return;
+    }
 
     m_contrast = newValue;
 
     if (tegraEnv.isEmpty()) {
-        if (m_videoBalance)
+        if (m_videoBalance) {
             g_object_set(G_OBJECT(m_videoBalance), "contrast", (newValue + 1.0), NULL); //gstreamer range is [0-2]
+        }
     } else {
-       if (videoSink)
+       if (videoSink) {
            g_object_set(G_OBJECT(videoSink), "contrast", (newValue + 1.0), NULL); //gstreamer range is [0-2]
+       }
     }
 }
 
@@ -439,15 +454,17 @@ qreal VideoWidget::hue() const
 
 void VideoWidget::setHue(qreal newValue)
 {
-    if (newValue == m_hue)
+    if (newValue == m_hue) {
         return;
+      }
 
     newValue = clampedValue(newValue);
 
     m_hue = newValue;
 
-    if (m_videoBalance)
+    if (m_videoBalance) {
         g_object_set(G_OBJECT(m_videoBalance), "hue", newValue, NULL); //gstreamer range is [-1, 1]
+    }
 }
 
 qreal VideoWidget::saturation() const
@@ -462,18 +479,21 @@ void VideoWidget::setSaturation(qreal newValue)
 
     newValue = clampedValue(newValue);
 
-    if (newValue == m_saturation)
+    if (newValue == m_saturation) {
         return;
+    }
 
     m_saturation = newValue;
 
     QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
     if (tegraEnv.isEmpty()) {
-        if (m_videoBalance)
+        if (m_videoBalance) {
             g_object_set(G_OBJECT(m_videoBalance), "saturation", newValue + 1.0, NULL); //gstreamer range is [0, 2]
+        }
     } else {
-        if (videoSink)
+        if (videoSink) {
             g_object_set(G_OBJECT(videoSink), "saturation", newValue + 1.0, NULL); //gstreamer range is [0, 2]
+        }
     }
 }
 
@@ -481,14 +501,16 @@ void VideoWidget::setSaturation(qreal newValue)
 void VideoWidget::setMovieSize(const QSize &size)
 {
     debug() << "New video size" << size;
-    if (size == m_movieSize)
+    if (size == m_movieSize) {
         return;
+    }
     m_movieSize = size;
     widget()->updateGeometry();
     widget()->update();
 
-    if (m_renderer)
+    if (m_renderer) {
         m_renderer->movieSizeChanged(m_movieSize);
+    }
 }
 
 void VideoWidget::keyPressEvent(QKeyEvent *event)
@@ -575,8 +597,9 @@ void VideoWidget::cb_capsChanged(GstPad *pad, GParamSpec *spec, gpointer data)
     //value (see Pipeline destructor for example)
     //g_signal_handler_disconnect(pad, media->capsHandler());
     VideoWidget *that = static_cast<VideoWidget*>(data);
-    if (!GST_PAD_IS_LINKED(pad))
+    if (!GST_PAD_IS_LINKED(pad)) {
         return;
+    }
     GstState videoState;
     gst_element_get_state(that->videoElement(), &videoState, NULL, 1000);
 
@@ -594,10 +617,11 @@ void VideoWidget::cb_capsChanged(GstPad *pad, GParamSpec *spec, gpointer data)
 
 void VideoWidget::mouseOverActive(bool active)
 {
-    if (active)
+    if (active) {
         setCursor(Qt::PointingHandCursor);
-    else
+    } else {
         setCursor(Qt::ArrowCursor);
+    }
 }
 
 }

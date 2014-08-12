@@ -36,9 +36,10 @@ VolumeFaderEffect::VolumeFaderEffect(Backend *backend, QObject *parent)
     , m_fadeFromVolume(0)
     , m_fadeToVolume(0)
 {
-    m_effectElement = gst_element_factory_make ("volume", NULL);
-    if (m_effectElement)
+    m_effectElement = gst_element_factory_make("volume", NULL);
+    if (m_effectElement) {
         init();
+    }
     m_fadeTimeline = new QTimeLine(1000, this);
     connect(m_fadeTimeline, SIGNAL(valueChanged(qreal)), this, SLOT(slotSetVolume(qreal)));
 }
@@ -52,31 +53,32 @@ GstElement* VolumeFaderEffect::createEffectBin()
     GstElement *audioBin = gst_bin_new(NULL);
 
     // We need a queue to handle tee-connections from parent node
-    GstElement *queue= gst_element_factory_make ("queue", NULL);
+    GstElement *queue= gst_element_factory_make("queue", NULL);
     gst_bin_add(GST_BIN(audioBin), queue);
 
-    GstElement *mconv= gst_element_factory_make ("audioconvert", NULL);
+    GstElement *mconv= gst_element_factory_make("audioconvert", NULL);
     gst_bin_add(GST_BIN(audioBin), mconv);
     gst_bin_add(GST_BIN(audioBin), m_effectElement);
 
     // Link src pad
-    GstPad *srcPad= gst_element_get_static_pad (m_effectElement, "src");
-    gst_element_add_pad (audioBin, gst_ghost_pad_new ("src", srcPad));
-    gst_object_unref (srcPad);
+    GstPad *srcPad= gst_element_get_static_pad(m_effectElement, "src");
+    gst_element_add_pad(audioBin, gst_ghost_pad_new("src", srcPad));
+    gst_object_unref(srcPad);
 
     // Link sink pad
     gst_element_link_many(queue, mconv, m_effectElement, NULL);
-    GstPad *sinkpad = gst_element_get_static_pad (queue, "sink");
-    gst_element_add_pad (audioBin, gst_ghost_pad_new ("sink", sinkpad));
-    gst_object_unref (sinkpad);
+    GstPad *sinkpad = gst_element_get_static_pad(queue, "sink");
+    gst_element_add_pad(audioBin, gst_ghost_pad_new("sink", sinkpad));
+    gst_object_unref(sinkpad);
     return audioBin;
 }
 
 float VolumeFaderEffect::volume() const
 {
     gdouble val = 1.0;
-    if (m_effectElement)
+    if (m_effectElement) {
         g_object_get(G_OBJECT(m_effectElement), "volume", &val, NULL);
+    }
     return (float)val;
 }
 

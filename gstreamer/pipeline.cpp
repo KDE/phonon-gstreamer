@@ -75,8 +75,8 @@ Pipeline::Pipeline(QObject *parent)
 
     // Set up audio graph
     m_audioGraph = gst_bin_new("audioGraph");
-    gst_object_ref (GST_OBJECT (m_audioGraph));
-    gst_object_ref_sink (GST_OBJECT (m_audioGraph));
+    gst_object_ref(GST_OBJECT(m_audioGraph));
+    gst_object_ref_sink(GST_OBJECT(m_audioGraph));
 
     // Note that these queues are only required for streaming content
     // And should ideally be created on demand as they will disable
@@ -93,16 +93,16 @@ Pipeline::Pipeline(QObject *parent)
     }
 
     gst_bin_add(GST_BIN(m_audioGraph), m_audioPipe);
-    GstPad *audiopad = gst_element_get_static_pad (m_audioPipe, "sink");
-    gst_element_add_pad (m_audioGraph, gst_ghost_pad_new ("sink", audiopad));
-    gst_object_unref (audiopad);
+    GstPad *audiopad = gst_element_get_static_pad(m_audioPipe, "sink");
+    gst_element_add_pad(m_audioGraph, gst_ghost_pad_new("sink", audiopad));
+    gst_object_unref(audiopad);
 
     g_object_set(m_pipeline, "audio-sink", m_audioGraph, NULL);
 
     // Set up video graph
     m_videoGraph = gst_bin_new("videoGraph");
-    gst_object_ref (GST_OBJECT (m_videoGraph));
-    gst_object_ref_sink (GST_OBJECT (m_videoGraph));
+    gst_object_ref(GST_OBJECT(m_videoGraph));
+    gst_object_ref_sink(GST_OBJECT(m_videoGraph));
 
     m_videoPipe = gst_element_factory_make("queue", "videoPipe");
     gst_bin_add(GST_BIN(m_videoGraph), m_videoPipe);
@@ -160,8 +160,9 @@ void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
         case MediaSource::Url:
         case MediaSource::LocalFile:
             gstUri = source.mrl().toEncoded();
-            if(source.mrl().scheme() == QLatin1String("http"))
+            if(source.mrl().scheme() == QLatin1String("http")) {
                 m_isHttpUrl = true;
+            }
             break;
         case MediaSource::Invalid:
             emit errorMessage("Invalid source specified", Phonon::FatalError);
@@ -172,8 +173,9 @@ void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
             break;
         case MediaSource::CaptureDevice:
             gstUri = captureDeviceURI(source);
-            if (gstUri.isEmpty())
+            if (gstUri.isEmpty()) {
                 emit errorMessage("Invalid capture device specified", Phonon::FatalError);
+            }
             break;
         case MediaSource::Disc:
             switch(source.discType()) {
@@ -246,9 +248,9 @@ GstStateChangeReturn Pipeline::setState(GstState state)
 void Pipeline::writeToDot(MediaObject *media, const QString &type)
 {
     GstBin *bin = GST_BIN(m_pipeline);
-    if (media)
+    if (media) {
         debug() << media << "Dumping" << QString("%0.dot").arg(type);
-    else {
+    } else {
         debug() << type;
     }
     GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS(bin, GST_DEBUG_GRAPH_SHOW_ALL, QString("phonon-%0").arg(type).toUtf8().constData());
@@ -291,8 +293,9 @@ gboolean Pipeline::cb_duration(GstBus *bus, GstMessage *gstMessage, gpointer dat
     Q_UNUSED(bus)
     Q_UNUSED(gstMessage)
     Pipeline *that = static_cast<Pipeline*>(data);
-    if (that->m_resetting)
+    if (that->m_resetting) {
         return true;
+    }
 
     emit that->durationChanged(that->totalDuration());
     return true;
@@ -354,14 +357,15 @@ gboolean Pipeline::cb_state(GstBus *bus, GstMessage *gstMessage, gpointer data)
     // Apparently gstreamer sometimes enters the same state twice.
     // FIXME: Sometimes we enter the same state twice. currently not disallowed by the state machine
     if (that->m_seeking) {
-        if (GST_STATE_TRANSITION(oldState, newState) == GST_STATE_CHANGE_PAUSED_TO_PLAYING)
+        if (GST_STATE_TRANSITION(oldState, newState) == GST_STATE_CHANGE_PAUSED_TO_PLAYING) {
             that->m_seeking = false;
+        }
         return true;
     }
     debug() << "State change";
 
-    transitionName = g_strdup_printf ("%s_%s", gst_element_state_get_name (oldState),
-        gst_element_state_get_name (newState));
+    transitionName = g_strdup_printf("%s_%s", gst_element_state_get_name(oldState),
+                                     gst_element_state_get_name(newState));
     GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS (GST_BIN (that->m_pipeline), GST_DEBUG_GRAPH_SHOW_ALL,
         QByteArray("phonon-gstreamer.") + QByteArray(transitionName));
     g_free(transitionName);
@@ -560,8 +564,9 @@ void foreach_tag_function(const GstTagList *list, const gchar *tag, gpointer use
 
     QString key = QString(tag).toUpper();
     QString currVal = newData->value(key);
-    if (!value.isEmpty() && !(newData->contains(key) && currVal == value))
+    if (!value.isEmpty() && !(newData->contains(key) && currVal == value)) {
         newData->insert(key, value);
+    }
 }
 
 gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
@@ -650,23 +655,26 @@ gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
                     }
                 } else {
                     str = that->m_metaData.value("GENRE");
-                    if (!str.isEmpty())
+                    if (!str.isEmpty()) {
                         that->m_metaData.insert("TITLE", str);
-                    else
+                    } else {
                         that->m_metaData.insert("TITLE", "Streaming Data");
+                    }
                 }
                 if (!that->m_metaData.contains("ARTIST")) {
                     str = that->m_metaData.value("LOCATION");
-                    if (!str.isEmpty())
+                    if (!str.isEmpty()) {
                         that->m_metaData.insert("ARTIST", str);
-                    else
+                    } else {
                         that->m_metaData.insert("ARTIST", "Streaming Data");
+                    }
                 }
                 str = that->m_metaData.value("ORGANIZATION");
-                if (!str.isEmpty())
+                if (!str.isEmpty()) {
                     that->m_metaData.insert("ALBUM", str);
-                else
+                } else {
                     that->m_metaData.insert("ALBUM", "Streaming Data");
+                }
             }
 
             emit that->metaDataChanged(that->m_metaData);
@@ -684,8 +692,9 @@ gboolean Pipeline::cb_streamStart(GstBus *bus, GstMessage *msg, gpointer data)
     g_object_get(that->m_pipeline, "uri", &uri, NULL);
     debug() << "Stream changed to" << uri;
     g_free(uri);
-    if (!that->m_resetting)
+    if (!that->m_resetting) {
         emit that->streamChanged();
+    }
     return true;
 }
 
@@ -712,8 +721,9 @@ void Pipeline::updateNavigation()
         if (res && gst_navigation_query_parse_commands_length(query, &count)) {
             for(guint i = 0; i < count; ++i) {
                 GstNavigationCommand cmd;
-                if (!gst_navigation_query_parse_commands_nth(query, i, &cmd))
+                if (!gst_navigation_query_parse_commands_nth(query, i, &cmd)) {
                     break;
+                }
                 switch (cmd) {
                 case GST_NAVIGATION_COMMAND_DVD_ROOT_MENU:
                     ret << MediaController::RootMenu;
@@ -754,10 +764,12 @@ QList<MediaController::NavigationMenu> Pipeline::availableMenus() const
 bool Pipeline::seekToMSec(qint64 time)
 {
     m_posAtReset = time;
-    if (m_resetting)
+    if (m_resetting) {
         return true;
-    if (state() == GST_STATE_PLAYING)
+    }
+    if (state() == GST_STATE_PLAYING) {
         m_seeking = true;
+    }
     return gst_element_seek(GST_ELEMENT(m_pipeline), 1.0, GST_FORMAT_TIME,
                      GST_SEEK_FLAG_FLUSH, GST_SEEK_TYPE_SET,
                      time * GST_MSECOND, GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE);
@@ -770,14 +782,14 @@ bool Pipeline::isSeekable() const
     gboolean result;
     gint64 start, stop;
     query = gst_query_new_seeking(GST_FORMAT_TIME);
-    result = gst_element_query (GST_ELEMENT(m_pipeline), query);
+    result = gst_element_query(GST_ELEMENT(m_pipeline), query);
     if (result) {
         GstFormat format;
         gst_query_parse_seeking(query, &format, &seekable, &start, &stop);
     } else {
         //TODO: Log failure
     }
-    gst_query_unref (query);
+    gst_query_unref(query);
     return seekable;
 }
 
@@ -847,13 +859,15 @@ void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer d
     if (that->m_isStream) {
         that->m_reader = new StreamReader(that->m_currentSource, that);
         that->m_reader->start();
-        if (that->m_reader->streamSize() > 0)
+        if (that->m_reader->streamSize() > 0) {
             g_object_set(phononSrc, "size", that->m_reader->streamSize(), NULL);
+        }
         int streamType = 0;
-        if (that->m_reader->streamSeekable())
+        if (that->m_reader->streamSeekable()) {
             streamType = GST_APP_STREAM_TYPE_SEEKABLE;
-        else
+        } else {
             streamType = GST_APP_STREAM_TYPE_STREAM;
+        }
         g_object_set(phononSrc, "stream-type", streamType, NULL);
         g_object_set(phononSrc, "block", TRUE, NULL);
         g_signal_connect(phononSrc, "need-data", G_CALLBACK(cb_feedAppSrc), that->m_reader);
@@ -894,7 +908,7 @@ qint64 Pipeline::position() const
     }
 
     gint64 pos = 0;
-    gst_element_query_position (GST_ELEMENT(m_pipeline), GST_FORMAT_TIME, &pos);
+    gst_element_query_position(GST_ELEMENT(m_pipeline), GST_FORMAT_TIME, &pos);
     return (pos / GST_MSECOND);
 }
 

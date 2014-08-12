@@ -40,8 +40,9 @@
 static void frameRendered()
 {
     static QString displayFps = qgetenv("PHONON_GST_FPS");
-    if (displayFps.isEmpty())
+    if (displayFps.isEmpty()) {
         return;
+    }
 
     static int frames = 0;
     static QTime lastTime = QTime::currentTime();
@@ -88,14 +89,11 @@ WidgetRenderer::WidgetRenderer(VideoWidget *videoWidget)
 
 void WidgetRenderer::setNextFrame(const QByteArray &array, int w, int h)
 {
-    if (m_videoWidget->root()->state() == Phonon::LoadingState)
+    if (m_videoWidget->root()->state() == Phonon::LoadingState) {
         return;
-
-    m_frame = QImage();
-    {
-        m_frame = QImage((uchar *)array.constData(), w, h, QImage::Format_RGB32);
     }
 
+    m_frame = QImage((uchar *)array.constData(), w, h, QImage::Format_RGB32);
     m_array = array;
     m_width = w;
     m_height = h;

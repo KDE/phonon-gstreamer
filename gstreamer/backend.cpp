@@ -90,8 +90,10 @@ Backend::Backend(QObject *parent, const QVariantList &)
     GError *err = 0;
     bool wasInit = gst_init_check(&argc, &argv, &err); //init gstreamer: must be called before any gst-related functions
 
-    if (err)
+    if (err) {
+        error() << err->message;
         g_error_free(err);
+    }
 
 #ifndef QT_NO_PROPERTIES
     setProperty("identifier",     QLatin1String("phonon_gstreamer"));
@@ -103,8 +105,9 @@ Backend::Backend(QObject *parent, const QVariantList &)
 
     // Check if we should enable debug output
     int debugLevel = qgetenv("PHONON_BACKEND_DEBUG").toInt();
-    if (debugLevel > 3) // 3 is maximum
+    if (debugLevel > 3) { // 3 is maximum
         debugLevel = 3;
+    }
     Debug::setMinimumDebugLevel((Debug::DebugLevel)((int) Debug::DEBUG_NONE - 1 - debugLevel));
 
     if (wasInit) {
@@ -124,10 +127,12 @@ Backend::Backend(QObject *parent, const QVariantList &)
 
 Backend::~Backend()
 {
-    if (GlobalSubtitles::self)
+    if (GlobalSubtitles::self) {
         delete GlobalSubtitles::self;
-    if (GlobalAudioChannels::self)
+    }
+    if (GlobalAudioChannels::self) {
         delete GlobalAudioChannels::self;
+    }
     delete m_effectManager;
     delete m_deviceManager;
     PulseSupport::shutdown();
@@ -204,12 +209,12 @@ bool Backend::checkDependencies(bool retry) const
 {
     bool success = false;
     // Verify that gst-plugins-base is installed
-    GstElementFactory *acFactory = gst_element_factory_find ("audioconvert");
+    GstElementFactory *acFactory = gst_element_factory_find("audioconvert");
     if (acFactory) {
         gst_object_unref(acFactory);
         success = true;
         // Check if gst-plugins-good is installed
-        GstElementFactory *csFactory = gst_element_factory_find ("videobalance");
+        GstElementFactory *csFactory = gst_element_factory_find("videobalance");
         if (csFactory) {
             gst_object_unref(csFactory);
         } else {
@@ -217,7 +222,7 @@ bool Backend::checkDependencies(bool retry) const
                 gst_update_registry();
                 checkDependencies(true);
             }
-            warning() << tr("Warning: You do not seem to have the package gstreamer0.10-plugins-good installed.\n"
+            warning() << tr("Warning: You do not seem to have the package gstreamer1.0-plugins-good installed.\n"
                             "          Some video features have been disabled.");
         }
     } else {
@@ -243,12 +248,12 @@ QStringList Backend::availableMimeTypes() const
 
     GstElementFactory *mpegFactory;
     // Add mp3 as a separate mime type as people are likely to look for it.
-    if ((mpegFactory = gst_element_factory_find ("ffmpeg")) ||
-        (mpegFactory = gst_element_factory_find ("mad")) ||
-        (mpegFactory = gst_element_factory_find ("flump3dec"))) {
-        availableMimeTypes << QLatin1String("audio/x-mp3");
-        availableMimeTypes << QLatin1String("audio/x-ape");// ape is available from ffmpeg
-        gst_object_unref(GST_OBJECT(mpegFactory));
+    if ((mpegFactory = gst_element_factory_find("ffmpeg")) ||
+        (mpegFactory = gst_element_factory_find("mad")) ||
+        (mpegFactory = gst_element_factory_find("flump3dec"))) {
+          availableMimeTypes << QLatin1String("audio/x-mp3");
+          availableMimeTypes << QLatin1String("audio/x-ape");// ape is available from ffmpeg
+          gst_object_unref(GST_OBJECT(mpegFactory));
     }
 
     // Iterate over all audio and video decoders and extract mime types from sink caps
@@ -275,15 +280,15 @@ QStringList Backend::availableMimeTypes() const
             for (; static_templates != NULL ; static_templates = static_templates->next) {
                 GstStaticPadTemplate *padTemplate = (GstStaticPadTemplate *) static_templates->data;
                 if (padTemplate && padTemplate->direction == GST_PAD_SINK) {
-                    GstCaps *caps = gst_static_pad_template_get_caps (padTemplate);
+                    GstCaps *caps = gst_static_pad_template_get_caps(padTemplate);
 
                     if (caps) {
-                        for (unsigned int struct_idx = 0; struct_idx < gst_caps_get_size (caps); struct_idx++) {
-
-                            const GstStructure* capsStruct = gst_caps_get_structure (caps, struct_idx);
-                            QString mime = QString::fromUtf8(gst_structure_get_name (capsStruct));
-                            if (!availableMimeTypes.contains(mime))
+                        for (unsigned int struct_idx = 0; struct_idx < gst_caps_get_size(caps); struct_idx++) {
+                            const GstStructure* capsStruct = gst_caps_get_structure(caps, struct_idx);
+                            QString mime = QString::fromUtf8(gst_structure_get_name(capsStruct));
+                            if (!availableMimeTypes.contains(mime)) {
                                 availableMimeTypes.append(mime);
+                            }
                         }
                     }
                 }
@@ -291,14 +296,16 @@ QStringList Backend::availableMimeTypes() const
         }
     }
     g_list_free(factoryList);
-    if (availableMimeTypes.contains("audio/x-vorbis")
-        && availableMimeTypes.contains("application/x-ogm-audio")) {
-        if (!availableMimeTypes.contains("audio/x-vorbis+ogg"))
+    if (availableMimeTypes.contains("audio/x-vorbis") && availableMimeTypes.contains("application/x-ogm-audio")) {
+        if (!availableMimeTypes.contains("audio/x-vorbis+ogg")) {
             availableMimeTypes.append("audio/x-vorbis+ogg");
-        if (!availableMimeTypes.contains("application/ogg"))  /* *.ogg */
+        }
+        if (!availableMimeTypes.contains("application/ogg")) { /* *.ogg */
             availableMimeTypes.append("application/ogg");
-        if (!availableMimeTypes.contains("audio/ogg")) /* *.oga */
+        }
+        if (!availableMimeTypes.contains("audio/ogg")) { /* *.oga */
             availableMimeTypes.append("audio/ogg");
+        }
     }
     availableMimeTypes.sort();
     return availableMimeTypes;
@@ -311,8 +318,9 @@ QList<int> Backend::objectDescriptionIndexes(ObjectDescriptionType type) const
 {
     QList<int> list;
 
-    if (!isValid())
+    if (!isValid()) {
         return list;
+    }
 
     switch (type) {
     case Phonon::AudioOutputDeviceType:
@@ -322,8 +330,9 @@ QList<int> Backend::objectDescriptionIndexes(ObjectDescriptionType type) const
         break;
     case Phonon::EffectType: {
             QList<EffectInfo*> effectList = effectManager()->audioEffects();
-            for (int eff = 0 ; eff < effectList.size() ; ++eff)
+            for (int eff = 0 ; eff < effectList.size() ; ++eff) {
                 list.append(eff);
+            }
             break;
         }
         break;
@@ -346,8 +355,9 @@ QHash<QByteArray, QVariant> Backend::objectDescriptionProperties(ObjectDescripti
 {
     QHash<QByteArray, QVariant> ret;
 
-    if (!isValid())
+    if (!isValid()) {
         return ret;
+    }
 
     switch (type) {
     case Phonon::AudioOutputDeviceType:

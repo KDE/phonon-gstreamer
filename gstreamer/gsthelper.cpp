@@ -58,7 +58,7 @@ bool GstHelper::setProperty(GstElement *elem, const char *propertyName, const QB
     Q_ASSERT(elem);
     Q_ASSERT(propertyName && strlen(propertyName));
 
-    if (g_object_class_find_property (G_OBJECT_GET_CLASS(elem), propertyName)) {
+    if (g_object_class_find_property(G_OBJECT_GET_CLASS(elem), propertyName)) {
         g_object_set(G_OBJECT(elem), propertyName, propertyValue.constData(), NULL);
         return true;
     }
@@ -74,9 +74,9 @@ QByteArray GstHelper::property(GstElement *elem, const char *propertyName)
     Q_ASSERT(propertyName && strlen(propertyName));
     QByteArray retVal;
 
-    if (g_object_class_find_property (G_OBJECT_GET_CLASS(elem), propertyName)) {
+    if (g_object_class_find_property(G_OBJECT_GET_CLASS(elem), propertyName)) {
         gchar *value = NULL;
-        g_object_get (G_OBJECT(elem), propertyName, &value, NULL);
+        g_object_get(G_OBJECT(elem), propertyName, &value, NULL);
         retVal = QByteArray(value);
         g_free (value);
     }
@@ -91,7 +91,7 @@ QByteArray GstHelper::name(GstObject *obj)
     Q_ASSERT(obj);
     QByteArray retVal;
     gchar *value = NULL;
-    if ((value = gst_object_get_name (obj))) {
+    if ((value = gst_object_get_name(obj))) {
         retVal = QByteArray(value);
         g_free (value);
     }
@@ -112,7 +112,7 @@ QString GstHelper::stateName(GstState state)
     case GST_STATE_PLAYING:
         return "playing";
     }
-    return "";
+    return QString();
 }
 
 } //namespace Gstreamer

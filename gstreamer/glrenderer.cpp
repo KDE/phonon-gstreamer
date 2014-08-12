@@ -48,8 +48,9 @@
 static void frameRendered()
 {
     static QString displayFps = qgetenv("PHONON_GST_FPS");
-    if (displayFps.isEmpty())
+    if (displayFps.isEmpty()) {
         return;
+    }
 
     static int frames = 0;
     static QTime lastTime = QTime::currentTime();
@@ -80,8 +81,8 @@ GLRenderer::GLRenderer(VideoWidget* videoWidget) :
     m_glWindow = new GLRenderWidgetImplementation(videoWidget, format);
 
     if ((m_videoSink = m_glWindow->createVideoSink())) {    //if ((m_videoSink = m_glWindow->createVideoSink())) {
-        gst_object_ref (GST_OBJECT (m_videoSink)); //Take ownership
-        gst_object_ref_sink (GST_OBJECT (m_videoSink));
+        gst_object_ref(GST_OBJECT(m_videoSink)); //Take ownership
+        gst_object_ref_sink(GST_OBJECT(m_videoSink));
 
         QWidgetVideoSinkBase*  sink = reinterpret_cast<QWidgetVideoSinkBase*>(m_videoSink);
         // Let the videosink know which widget to direct frame updates to
@@ -92,7 +93,7 @@ GLRenderer::GLRenderer(VideoWidget* videoWidget) :
 GLRenderer::~GLRenderer()
 {
     if (m_videoSink) {
-        gst_object_unref (GST_OBJECT (m_videoSink));
+        gst_object_unref(GST_OBJECT(m_videoSink));
         m_videoSink = 0;
     }
 }
@@ -104,8 +105,7 @@ bool GLRenderer::eventFilter(QEvent * event)
         NewFrameEvent *frameEvent= static_cast <NewFrameEvent *>(event);
         m_glWindow->setNextFrame(frameEvent->frame, frameEvent->width, frameEvent->height);
         return true;
-    }
-    else if (event->type() == QEvent::Resize) {
+    } else if (event->type() == QEvent::Resize) {
         m_glWindow->setGeometry(m_videoWidget->geometry());
         return true;
     }
@@ -114,22 +114,25 @@ bool GLRenderer::eventFilter(QEvent * event)
 
 GstElement* GLRenderWidgetImplementation::createVideoSink()
 {
-    if (hasYUVSupport())
+    if (hasYUVSupport()) {
         return GST_ELEMENT(g_object_new(get_type_YUV(), NULL));
+    }
     return 0;
 }
 
 void GLRenderWidgetImplementation::setNextFrame(const QByteArray &array, int w, int h)
 {
-    if (m_videoWidget->root()->state() == Phonon::LoadingState)
+    if (m_videoWidget->root()->state() == Phonon::LoadingState) {
         return;
+    }
 
     m_frame = QImage();
 
-    if (hasYUVSupport())
+    if (hasYUVSupport()) {
         updateTexture(array, w, h);
-    else
+    } else {
         m_frame = QImage((uchar *)array.constData(), w, h, QImage::Format_RGB32);
+    }
 
     m_array = array;
     m_width = w;
@@ -189,8 +192,9 @@ static QImage convertFromYUV(const QByteArray &array, int w, int h)
 
 const QImage &GLRenderWidgetImplementation::currentFrame() const
 {
-    if (m_frame.isNull() && !m_array.isNull())
+    if (m_frame.isNull() && !m_array.isNull()) {
         m_frame = convertFromYUV(m_array, m_width, m_height);
+    }
 
     return m_frame;
 }
