@@ -63,14 +63,12 @@ public:
     QRect calculateDrawFrameRect() const;
     QImage snapshot() const;
 
-    GstElement *videoElement()
-    {
-        Q_ASSERT(m_videoBin);
-        return m_videoBin;
-    }
-
     QSize movieSize() const {
         return m_movieSize;
+    }
+
+    GstElement* videoElement() const {
+        return m_videoBin;
     }
 
     bool event(QEvent *);

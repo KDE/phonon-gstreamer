@@ -50,10 +50,17 @@ class Backend;
 
         static void processBuffer(GstElement*, GstBuffer*, GstPad*, gpointer);
 
-        Phonon::Experimental::AbstractVideoDataOutput *frontendObject() const { return m_frontend; }
-        void setFrontendObject(Phonon::Experimental::AbstractVideoDataOutput *object) { m_frontend = object; }
+        Phonon::Experimental::AbstractVideoDataOutput *frontendObject() const {
+            return m_frontend;
+        }
 
-        GstElement *videoElement() { return m_queue; }
+        void setFrontendObject(Phonon::Experimental::AbstractVideoDataOutput *object) {
+            m_frontend = object;
+        }
+
+        GstElement *videoElement() const {
+            return m_queue;
+        }
 
     private:
         GstElement *m_queue;

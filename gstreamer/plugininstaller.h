@@ -21,9 +21,16 @@
 #include <QtCore/QObject>
 #include <QtCore/QHash>
 #include <gst/gstcaps.h>
+
+/* Make sure the ordering is correct over here,
+ * gstmessage.h should always be included after gsttoc.h
+ */
+#include "phonon-config-gstreamer.h" // krazy:exclude=includes
+#include <gst/gst.h>
+#include <gst/gsttoc.h>
+
 #include <gst/gstmessage.h>
 #include <gst/pbutils/install-plugins.h>
-#include "phonon-config-gstreamer.h" // krazy:exclude=includes
 
 namespace Phonon
 {

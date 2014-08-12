@@ -89,11 +89,15 @@ class DeviceManager : public QObject {
 public:
     DeviceManager(Backend *parent);
     virtual ~DeviceManager();
-    GstElement *createGNOMEAudioSink(Category category);
+
+    /**
+     * @returns a GstElement with a floating reference
+     */
     GstElement *createAudioSink(Category category = NoCategory);
+
     AbstractRenderer *createVideoRenderer(VideoWidget *parent);
-    QList<int> deviceIds(ObjectDescriptionType type);
-    QHash<QByteArray, QVariant> deviceProperties(int id);
+    QList<int> deviceIds(ObjectDescriptionType type) const;
+    QHash<QByteArray, QVariant> deviceProperties(int id) const;
     const DeviceInfo *device(int id) const;
 
 signals:
@@ -105,6 +109,7 @@ public slots:
 
 private:
     static bool listContainsDevice(const QList<DeviceInfo> &list, int id);
+    GstElement *createGNOMEAudioSink(Category category);
     bool canOpenDevice(GstElement *element) const;
 
 private:

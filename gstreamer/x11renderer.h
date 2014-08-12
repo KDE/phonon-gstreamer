@@ -42,12 +42,17 @@ public:
     void scaleModeChanged(Phonon::VideoWidget::ScaleMode scaleMode);
     void movieSizeChanged(const QSize &movieSize);
     bool eventFilter(QEvent *);
-    bool paintsOnWidget() { return false; }
-    bool overlaySet() const { return m_overlaySet; }
+    bool paintsOnWidget() const {
+        return false;
+    }
+    bool overlaySet() const {
+        return m_overlaySet;
+    }
     void setOverlay();
     void windowExposed();
-    GstElement *createVideoSink();
 private:
+    GstElement *createVideoSink();
+
     OverlayWidget *m_renderWidget;
     bool m_overlaySet;
 };

@@ -22,11 +22,13 @@
 #include "devicemanager.h"
 #include "mediaobject.h"
 #include "gsthelper.h"
+#include "phonon-config-gstreamer.h"
 #include <phonon/audiooutput.h>
 #include <phonon/pulsesupport.h>
 
 #include <QtCore/QStringBuilder>
 
+#include <gst/gst.h>
 #include <gst/gstbin.h>
 #include <gst/gstghostpad.h>
 #include <gst/gstutils.h>
@@ -48,11 +50,10 @@ AudioOutput::AudioOutput(Backend *backend, QObject *parent)
     static int count = 0;
     m_name = "AudioOutput" + QString::number(count++);
 
-    m_audioBin = gst_bin_new (NULL);
-    gst_object_ref (GST_OBJECT (m_audioBin));
-    gst_object_sink (GST_OBJECT (m_audioBin));
+    m_audioBin = gst_bin_new(NULL);
+    gst_object_ref_sink(GST_OBJECT (m_audioBin));
 
-    m_conv = gst_element_factory_make ("audioconvert", NULL);
+    m_conv = gst_element_factory_make("audioconvert", NULL);
 
     // Get category from parent
     Phonon::Category category = Phonon::NoCategory;
@@ -60,9 +61,10 @@ AudioOutput::AudioOutput(Backend *backend, QObject *parent)
         category = audioOutput->category();
 
     m_audioSink = m_backend->deviceManager()->createAudioSink(category);
-    m_volumeElement = gst_element_factory_make ("volume", NULL);
-    GstElement *queue = gst_element_factory_make ("queue", NULL);
-    GstElement *audioresample = gst_element_factory_make ("audioresample", NULL);
+    gst_object_ref_sink(m_audioSink);
+    m_volumeElement = gst_element_factory_make("volume", NULL);
+    GstElement *queue = gst_element_factory_make("queue", NULL);
+    GstElement *audioresample = gst_element_factory_make("audioresample", NULL);
 
     if (queue && m_audioBin && m_conv && audioresample && m_audioSink && m_volumeElement) {
         gst_bin_add_many(GST_BIN(m_audioBin), queue, m_conv,
@@ -71,9 +73,9 @@ AudioOutput::AudioOutput(Backend *backend, QObject *parent)
         if (gst_element_link_many(queue, m_conv, audioresample, m_volumeElement,
                                   m_audioSink, NULL)) {
             // Add ghost sink for audiobin
-            GstPad *audiopad = gst_element_get_static_pad (queue, "sink");
-            gst_element_add_pad (m_audioBin, gst_ghost_pad_new ("sink", audiopad));
-            gst_object_unref (audiopad);
+            GstPad *audiopad = gst_element_get_static_pad(queue, "sink");
+            gst_element_add_pad (m_audioBin, gst_ghost_pad_new("sink", audiopad));
+            gst_object_unref(audiopad);
             m_isValid = true; // Initialization ok, accept input
         }
     }
@@ -82,8 +84,14 @@ AudioOutput::AudioOutput(Backend *backend, QObject *parent)
 AudioOutput::~AudioOutput()
 {
     if (m_audioBin) {
-        gst_element_set_state (m_audioBin, GST_STATE_NULL);
-        gst_object_unref (m_audioBin);
+        gst_element_set_state(m_audioBin, GST_STATE_NULL);
+        gst_object_unref(m_audioBin);
+        m_audioBin = 0;
+    }
+    if (m_audioSink) {
+        gst_element_set_state(m_audioSink, GST_STATE_NULL);
+        gst_object_unref(m_audioSink);
+        m_audioSink = 0;
     }
 }
 
@@ -99,13 +107,15 @@ int AudioOutput::outputDevice() const
 
 void AudioOutput::setVolume(qreal newVolume)
 {
-    if (newVolume > 2.0 )
+    if (newVolume > 2.0) {
         newVolume = 2.0;
-    else if (newVolume < 0.0)
+    } else if (newVolume < 0.0) {
         newVolume = 0.0;
+    }
 
-    if (newVolume == m_volumeLevel)
+    if (newVolume == m_volumeLevel) {
         return;
+    }
 
     m_volumeLevel = newVolume;
 
@@ -138,19 +148,23 @@ bool AudioOutput::setOutputDevice(const AudioOutputDevice &newDevice)
     }
 
     const QVariant dalProperty = newDevice.property("deviceAccessList");
-    if (!dalProperty.isValid())
+    if (!dalProperty.isValid()) {
         return false;
+    }
     const DeviceAccessList deviceAccessList = dalProperty.value<DeviceAccessList>();
-    if (deviceAccessList.isEmpty())
+    if (deviceAccessList.isEmpty()) {
         return false;
+    }
 
-    if (newDevice.index() == m_device)
+    if (newDevice.index() == m_device) {
         return true;
+    }
 
     if (root()) {
         root()->saveState();
-        if (root()->pipeline()->setState(GST_STATE_READY) == GST_STATE_CHANGE_FAILURE)
+        if (root()->pipeline()->setState(GST_STATE_READY) == GST_STATE_CHANGE_FAILURE) {
             return false;
+        }
     }
 
     // Save previous state
@@ -217,8 +231,7 @@ void AudioOutput::setStreamUuid(QString uuid)
 #warning this really needs a check for pulsesink as well
     if (g_object_class_find_property(G_OBJECT_GET_CLASS(m_audioSink), "stream-properties")) {
         const QHash<QString, QString> streamProperties = PulseSupport::getInstance()->streamProperties(uuid);
-        GstStructure *properties = gst_structure_empty_new("props");
-
+        GstStructure *properties = gst_structure_new_empty("props");
         QHashIterator<QString, QString> it(streamProperties);
         while (it.hasNext()) {
             it.next();

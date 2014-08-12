@@ -34,19 +34,34 @@ class VideoWidget;
 class AbstractRenderer
 {
 public:
-    AbstractRenderer(VideoWidget *video) :
-          m_videoWidget(video)
-        , m_videoSink(0) { }
+    AbstractRenderer(VideoWidget *video);
     virtual ~AbstractRenderer();
-    virtual GstElement *videoSink() {return m_videoSink;}
+
     virtual void aspectRatioChanged(Phonon::VideoWidget::AspectRatio aspectRatio);
     virtual void scaleModeChanged(Phonon::VideoWidget::ScaleMode scaleMode);
     virtual void movieSizeChanged(const QSize &movieSize);
     virtual bool eventFilter(QEvent *) = 0;
-    virtual void handlePaint(QPaintEvent *) {}
-    virtual bool paintsOnWidget() { return true; } // Controls overlays
+    virtual void handlePaint(QPaintEvent *)
+    {
+    }
+
+    virtual bool paintsOnWidget() const {  // Controls overlays
+        return true;
+    }
+
+    GstElement *videoSink() const {
+        return m_videoSink;
+    }
 
 protected:
+    /**
+     * Takes ownership of @p sink
+     */
+    void setVideoSink(GstElement *sink);
+
+    VideoWidget *videoWidget() const;
+
+private:
     VideoWidget *m_videoWidget;
     GstElement *m_videoSink;
 };

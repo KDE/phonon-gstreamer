@@ -25,8 +25,10 @@
 #include "plugininstaller.h"
 #include "streamreader.h"
 #include "gsthelper.h"
+#include "phonon-config-gstreamer.h"
 #include <gst/pbutils/missing-plugins.h>
-#include <gst/interfaces/navigation.h>
+#include <gst/gst.h>
+#include <gst/video/navigation.h>
 #include <gst/app/gstappsrc.h>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QMutexLocker>
@@ -44,10 +46,12 @@ Pipeline::Pipeline(QObject *parent)
     , m_isHttpUrl(false)
     , m_installer(new PluginInstaller(this))
     , m_reader(0) // Lazy init
+    , m_seeking(false)
     , m_resetting(false)
+    , m_posAtReset(0)
 {
     qRegisterMetaType<GstState>("GstState");
-    m_pipeline = GST_PIPELINE(gst_element_factory_make("playbin2", NULL));
+    m_pipeline = GST_PIPELINE(gst_element_factory_make("playbin", NULL));
     gst_object_ref_sink (m_pipeline);
     g_signal_connect(m_pipeline, "video-changed", G_CALLBACK(cb_videoChanged), this);
     g_signal_connect(m_pipeline, "text-tags-changed", G_CALLBACK(cb_textTagsChanged), this);
@@ -56,24 +60,21 @@ Pipeline::Pipeline(QObject *parent)
     g_signal_connect(m_pipeline, "about-to-finish", G_CALLBACK(cb_aboutToFinish), this);
 
     GstBus *bus = gst_pipeline_get_bus(m_pipeline);
-    gst_bus_set_sync_handler(bus, gst_bus_sync_signal_handler, NULL);
+    gst_bus_set_sync_handler(bus, gst_bus_sync_signal_handler, NULL, NULL);
     g_signal_connect(bus, "sync-message::eos", G_CALLBACK(cb_eos), this);
     g_signal_connect(bus, "sync-message::warning", G_CALLBACK(cb_warning), this);
-
-    //FIXME: This never gets called..?
-    g_signal_connect(bus, "sync-message::duration", G_CALLBACK(cb_duration), this);
-
+    g_signal_connect(bus, "sync-message::duration-changed", G_CALLBACK(cb_duration), this);
     g_signal_connect(bus, "sync-message::buffering", G_CALLBACK(cb_buffering), this);
     g_signal_connect(bus, "sync-message::state-changed", G_CALLBACK(cb_state), this);
     g_signal_connect(bus, "sync-message::element", G_CALLBACK(cb_element), this);
     g_signal_connect(bus, "sync-message::error", G_CALLBACK(cb_error), this);
+    g_signal_connect(bus, "sync-message::stream-start", G_CALLBACK(cb_streamStart), this);
     g_signal_connect(bus, "sync-message::tag", G_CALLBACK(cb_tag), this);
     gst_object_unref(bus);
 
     // Set up audio graph
     m_audioGraph = gst_bin_new("audioGraph");
-    gst_object_ref (GST_OBJECT (m_audioGraph));
-    gst_object_sink (GST_OBJECT (m_audioGraph));
+    gst_object_ref_sink(GST_OBJECT(m_audioGraph));
 
     // Note that these queues are only required for streaming content
     // And should ideally be created on demand as they will disable
@@ -90,16 +91,15 @@ Pipeline::Pipeline(QObject *parent)
     }
 
     gst_bin_add(GST_BIN(m_audioGraph), m_audioPipe);
-    GstPad *audiopad = gst_element_get_static_pad (m_audioPipe, "sink");
-    gst_element_add_pad (m_audioGraph, gst_ghost_pad_new ("sink", audiopad));
-    gst_object_unref (audiopad);
+    GstPad *audiopad = gst_element_get_static_pad(m_audioPipe, "sink");
+    gst_element_add_pad(m_audioGraph, gst_ghost_pad_new("sink", audiopad));
+    gst_object_unref(audiopad);
 
     g_object_set(m_pipeline, "audio-sink", m_audioGraph, NULL);
 
     // Set up video graph
     m_videoGraph = gst_bin_new("videoGraph");
-    gst_object_ref (GST_OBJECT (m_videoGraph));
-    gst_object_sink (GST_OBJECT (m_videoGraph));
+    gst_object_ref_sink(GST_OBJECT(m_videoGraph));
 
     m_videoPipe = gst_element_factory_make("queue", "videoPipe");
     gst_bin_add(GST_BIN(m_videoGraph), m_videoPipe);
@@ -122,22 +122,22 @@ Pipeline::Pipeline(QObject *parent)
     connect(m_installer, SIGNAL(success()), this, SLOT(pluginInstallComplete()));
 }
 
-GstElement *Pipeline::audioPipe()
+GstElement *Pipeline::audioPipe() const
 {
     return m_audioPipe;
 }
 
-GstElement *Pipeline::videoPipe()
+GstElement *Pipeline::videoPipe() const
 {
     return m_videoPipe;
 }
 
-GstElement *Pipeline::audioGraph()
+GstElement *Pipeline::audioGraph() const
 {
     return m_audioGraph;
 }
 
-GstElement *Pipeline::videoGraph()
+GstElement *Pipeline::videoGraph() const
 {
     return m_videoGraph;
 }
@@ -157,8 +157,9 @@ void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
         case MediaSource::Url:
         case MediaSource::LocalFile:
             gstUri = source.mrl().toEncoded();
-            if(source.mrl().scheme() == QLatin1String("http"))
+            if(source.mrl().scheme() == QLatin1String("http")) {
                 m_isHttpUrl = true;
+            }
             break;
         case MediaSource::Invalid:
             emit errorMessage("Invalid source specified", Phonon::FatalError);
@@ -169,8 +170,9 @@ void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
             break;
         case MediaSource::CaptureDevice:
             gstUri = captureDeviceURI(source);
-            if (gstUri.isEmpty())
+            if (gstUri.isEmpty()) {
                 emit errorMessage("Invalid capture device specified", Phonon::FatalError);
+            }
             break;
         case MediaSource::Disc:
             switch(source.discType()) {
@@ -219,6 +221,16 @@ Pipeline::~Pipeline()
     gst_element_set_state(GST_ELEMENT(m_pipeline), GST_STATE_NULL);
     gst_object_unref(m_pipeline);
     m_pipeline = 0;
+
+    if (m_audioGraph) {
+        gst_object_unref(m_audioGraph);
+        m_audioGraph = 0;
+    }
+
+    if (m_videoGraph) {
+        gst_object_unref(m_videoGraph);
+        m_videoGraph = 0;
+    }
 }
 
 GstElement *Pipeline::element() const
@@ -243,17 +255,12 @@ GstStateChangeReturn Pipeline::setState(GstState state)
 void Pipeline::writeToDot(MediaObject *media, const QString &type)
 {
     GstBin *bin = GST_BIN(m_pipeline);
-    if (media)
+    if (media) {
         debug() << media << "Dumping" << QString("%0.dot").arg(type);
-    else {
+    } else {
         debug() << type;
     }
     GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS(bin, GST_DEBUG_GRAPH_SHOW_ALL, QString("phonon-%0").arg(type).toUtf8().constData());
-}
-
-bool Pipeline::queryDuration(GstFormat *format, gint64 *duration) const
-{
-    return gst_element_query_duration(GST_ELEMENT(m_pipeline), format, duration);
 }
 
 GstState Pipeline::state() const
@@ -266,6 +273,7 @@ GstState Pipeline::state() const
 gboolean Pipeline::cb_eos(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
     Q_UNUSED(bus)
+    Q_UNUSED(gstMessage)
     Pipeline *that = static_cast<Pipeline*>(data);
     emit that->eos();
     return true;
@@ -288,24 +296,22 @@ gboolean Pipeline::cb_warning(GstBus *bus, GstMessage *gstMessage, gpointer data
 
 gboolean Pipeline::cb_duration(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
+    DEBUG_BLOCK;
     Q_UNUSED(bus)
-    gint64 duration;
-    GstFormat format;
+    Q_UNUSED(gstMessage)
     Pipeline *that = static_cast<Pipeline*>(data);
-    debug() << "Duration message";
-    if (that->m_resetting)
+    if (that->m_resetting) {
         return true;
-    gst_message_parse_duration(gstMessage, &format, &duration);
-    if (format == GST_FORMAT_TIME)
-        emit that->durationChanged(duration/GST_MSECOND);
+    }
+
+    emit that->durationChanged(that->totalDuration());
     return true;
 }
 
 qint64 Pipeline::totalDuration() const
 {
-    GstFormat format = GST_FORMAT_TIME;
     gint64 duration = 0;
-    if (queryDuration(&format, &duration)) {
+    if (gst_element_query_duration(GST_ELEMENT(m_pipeline), GST_FORMAT_TIME, &duration)) {
         return duration/GST_MSECOND;
     }
     return -1;
@@ -313,10 +319,21 @@ qint64 Pipeline::totalDuration() const
 
 gboolean Pipeline::cb_buffering(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
+    DEBUG_BLOCK;
     Q_UNUSED(bus)
     Pipeline *that = static_cast<Pipeline*>(data);
     gint percent = 0;
-    gst_structure_get_int (gstMessage->structure, "buffer-percent", &percent); //gst_message_parse_buffering was introduced in 0.10.11
+    gst_message_parse_buffering(gstMessage, &percent);
+
+    debug() << Q_FUNC_INFO << "Buffering :" << percent;
+
+    // Instead of playing when the pipeline is still streaming, we pause
+    // and let gst finish streaming.
+    if ( percent < 100 && gstMessage->type == GST_MESSAGE_BUFFERING) {
+        that->setState(GST_STATE_PAUSED);
+    } else {
+        that->setState(GST_STATE_PLAYING);
+    }
 
     if (that->m_bufferPercent != percent) {
         emit that->buffering(percent);
@@ -347,14 +364,15 @@ gboolean Pipeline::cb_state(GstBus *bus, GstMessage *gstMessage, gpointer data)
     // Apparently gstreamer sometimes enters the same state twice.
     // FIXME: Sometimes we enter the same state twice. currently not disallowed by the state machine
     if (that->m_seeking) {
-        if (GST_STATE_TRANSITION(oldState, newState) == GST_STATE_CHANGE_PAUSED_TO_PLAYING)
+        if (GST_STATE_TRANSITION(oldState, newState) == GST_STATE_CHANGE_PAUSED_TO_PLAYING) {
             that->m_seeking = false;
+        }
         return true;
     }
     debug() << "State change";
 
-    transitionName = g_strdup_printf ("%s_%s", gst_element_state_get_name (oldState),
-        gst_element_state_get_name (newState));
+    transitionName = g_strdup_printf("%s_%s", gst_element_state_get_name(oldState),
+                                     gst_element_state_get_name(newState));
     GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS (GST_BIN (that->m_pipeline), GST_DEBUG_GRAPH_SHOW_ALL,
         QByteArray("phonon-gstreamer.") + QByteArray(transitionName));
     g_free(transitionName);
@@ -395,12 +413,14 @@ void Pipeline::cb_videoChanged(GstElement *playbin, gpointer data)
 
 void Pipeline::cb_textTagsChanged(GstElement *playbin, gint stream, gpointer data)
 {
+    Q_UNUSED(playbin)
     Pipeline *that = static_cast<Pipeline *>(data);
     emit that->textTagChanged(stream);
 }
 
 void Pipeline::cb_audioTagsChanged(GstElement *playbin, gint stream, gpointer data)
 {
+    Q_UNUSED(playbin)
     Pipeline *that = static_cast<Pipeline *>(data);
     emit that->audioTagChanged(stream);
 }
@@ -422,12 +442,12 @@ bool Pipeline::audioIsAvailable() const
 gboolean Pipeline::cb_element(GstBus *bus, GstMessage *gstMessage, gpointer data)
 {
     Q_UNUSED(bus)
+    DEBUG_BLOCK;
     Pipeline *that = static_cast<Pipeline*>(data);
     const GstStructure *str = gst_message_get_structure(gstMessage);
     if (gst_is_missing_plugin_message(gstMessage)) {
         that->m_installer->addPlugin(gstMessage);
     } else {
-#if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
         switch (gst_navigation_message_get_type(gstMessage)) {
         case GST_NAVIGATION_MESSAGE_MOUSE_OVER: {
             gboolean active;
@@ -443,19 +463,9 @@ gboolean Pipeline::cb_element(GstBus *bus, GstMessage *gstMessage, gpointer data
         default:
             break;
         }
-#endif // GST_VERSION
     }
-    // Currently undocumented, but discovered via gst-plugins-base commit 7e674d
-    // gst 0.10.25.1
-    if (gst_structure_has_name(str, "playbin2-stream-changed")) {
-        gchar *uri;
-        g_object_get(that->m_pipeline, "uri", &uri, NULL);
-        debug() << "Stream changed to" << uri;
-        g_free(uri);
-        if (!that->m_resetting)
-            emit that->streamChanged();
-    }
-    if (gst_structure_has_name(str, "prepare-xwindow-id"))
+
+    if (gst_structure_has_name(str, "prepare-xwindow-id") || gst_structure_has_name(str, "prepare-window-handle"))
         emit that->windowIDNeeded();
     return true;
 }
@@ -561,8 +571,9 @@ void foreach_tag_function(const GstTagList *list, const gchar *tag, gpointer use
 
     QString key = QString(tag).toUpper();
     QString currVal = newData->value(key);
-    if (!value.isEmpty() && !(newData->contains(key) && currVal == value))
+    if (!value.isEmpty() && !(newData->contains(key) && currVal == value)) {
         newData->insert(key, value);
+    }
 }
 
 gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
@@ -576,8 +587,8 @@ gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
     gst_message_parse_tag(msg, &tag_list);
     if (tag_list) {
         TagMap newTags;
-        gst_tag_list_foreach (tag_list, &foreach_tag_function, &newTags);
-        gst_tag_list_free(tag_list);
+        gst_tag_list_foreach(tag_list, &foreach_tag_function, &newTags);
+        gst_tag_list_unref(tag_list);
 
         // Determine if we should no fake the album/artist tags.
         // This is a little confusing as we want to fake it on initial
@@ -651,37 +662,45 @@ gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
                     }
                 } else {
                     str = that->m_metaData.value("GENRE");
-                    if (!str.isEmpty())
+                    if (!str.isEmpty()) {
                         that->m_metaData.insert("TITLE", str);
-                    else
+                    } else {
                         that->m_metaData.insert("TITLE", "Streaming Data");
+                    }
                 }
                 if (!that->m_metaData.contains("ARTIST")) {
                     str = that->m_metaData.value("LOCATION");
-                    if (!str.isEmpty())
+                    if (!str.isEmpty()) {
                         that->m_metaData.insert("ARTIST", str);
-                    else
+                    } else {
                         that->m_metaData.insert("ARTIST", "Streaming Data");
+                    }
                 }
                 str = that->m_metaData.value("ORGANIZATION");
-                if (!str.isEmpty())
+                if (!str.isEmpty()) {
                     that->m_metaData.insert("ALBUM", str);
-                else
+                } else {
                     that->m_metaData.insert("ALBUM", "Streaming Data");
+                }
             }
-            // As we manipulate the title, we need to recompare
-            // oldMap and m_metaData here...
-            //if (oldMap != m_metaData && !m_loading)
 
-            // Only emit signal if we're on a live stream.
-            // Its a kludgy hack that for 99% of cases of streaming should work.
-            // If not, this needs fixed in mediaobject.cpp.
-            guint kbps;
-            g_object_get(that->m_pipeline, "connection-speed", &kbps, NULL);
-	    // This hack does not work now.
-            // if (that->m_currentSource.discType() == Phonon::Cd || kbps != 0)
-                emit that->metaDataChanged(that->m_metaData);
+            emit that->metaDataChanged(that->m_metaData);
         }
+    }
+    return true;
+}
+
+gboolean Pipeline::cb_streamStart(GstBus *bus, GstMessage *msg, gpointer data)
+{
+    Q_UNUSED(bus)
+    Q_UNUSED(msg)
+    Pipeline *that = static_cast<Pipeline*>(data);
+    gchar *uri;
+    g_object_get(that->m_pipeline, "uri", &uri, NULL);
+    debug() << "Stream changed to" << uri;
+    g_free(uri);
+    if (!that->m_resetting) {
+        emit that->streamChanged();
     }
     return true;
 }
@@ -701,7 +720,6 @@ void Pipeline::setMetaData(const QMultiMap<QString, QString> &newData)
 void Pipeline::updateNavigation()
 {
     QList<MediaController::NavigationMenu> ret;
-#if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
     GstElement *target = gst_bin_get_by_interface(GST_BIN(m_pipeline), GST_TYPE_NAVIGATION);
     if (target) {
         GstQuery *query = gst_navigation_query_new_commands();
@@ -710,8 +728,9 @@ void Pipeline::updateNavigation()
         if (res && gst_navigation_query_parse_commands_length(query, &count)) {
             for(guint i = 0; i < count; ++i) {
                 GstNavigationCommand cmd;
-                if (!gst_navigation_query_parse_commands_nth(query, i, &cmd))
+                if (!gst_navigation_query_parse_commands_nth(query, i, &cmd)) {
                     break;
+                }
                 switch (cmd) {
                 case GST_NAVIGATION_COMMAND_DVD_ROOT_MENU:
                     ret << MediaController::RootMenu;
@@ -736,8 +755,10 @@ void Pipeline::updateNavigation()
                 }
             }
         }
+        gst_query_unref(query);
+        gst_object_unref(target);
     }
-#endif
+
     if (ret != m_menus) {
         m_menus = ret;
         emit availableMenusChanged(m_menus);
@@ -752,10 +773,12 @@ QList<MediaController::NavigationMenu> Pipeline::availableMenus() const
 bool Pipeline::seekToMSec(qint64 time)
 {
     m_posAtReset = time;
-    if (m_resetting)
+    if (m_resetting) {
         return true;
-    if (state() == GST_STATE_PLAYING)
+    }
+    if (state() == GST_STATE_PLAYING) {
         m_seeking = true;
+    }
     return gst_element_seek(GST_ELEMENT(m_pipeline), 1.0, GST_FORMAT_TIME,
                      GST_SEEK_FLAG_FLUSH, GST_SEEK_TYPE_SET,
                      time * GST_MSECOND, GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE);
@@ -768,14 +791,14 @@ bool Pipeline::isSeekable() const
     gboolean result;
     gint64 start, stop;
     query = gst_query_new_seeking(GST_FORMAT_TIME);
-    result = gst_element_query (GST_ELEMENT(m_pipeline), query);
+    result = gst_element_query(GST_ELEMENT(m_pipeline), query);
     if (result) {
         GstFormat format;
         gst_query_parse_seeking(query, &format, &seekable, &start, &stop);
     } else {
         //TODO: Log failure
     }
-    gst_query_unref (query);
+    gst_query_unref(query);
     return seekable;
 }
 
@@ -802,11 +825,16 @@ static void cb_feedAppSrc(GstAppSrc *appSrc, guint buffsize, gpointer data)
     DEBUG_BLOCK;
     StreamReader *reader = static_cast<StreamReader*>(data);
     GstBuffer *buf = gst_buffer_new_and_alloc(buffsize);
-#warning ret not used!!! WHOOPWHOOPWHOOP
-    reader->read(reader->currentPos(), buffsize, (char*)GST_BUFFER_DATA(buf));
+
+    GstMapInfo info;
+    gst_buffer_map(buf, &info, GST_MAP_WRITE);
+    #warning return value not used!!! WHOOPWHOOPWHOOP
+    reader->read(reader->currentPos(), info.size, (char*)info.data);
+    gst_buffer_unmap(buf, &info);
     gst_app_src_push_buffer(appSrc, buf);
-    if (GST_BUFFER_SIZE(buf) > 0 && reader->atEnd())
+    if (info.size > 0 && reader->atEnd()) {
         gst_app_src_end_of_stream(appSrc);
+    }
 }
 
 static void cb_seekAppSrc(GstAppSrc *appSrc, guint64 pos, gpointer data)
@@ -840,13 +868,15 @@ void Pipeline::cb_setupSource(GstElement *playbin, GParamSpec *param, gpointer d
     if (that->m_isStream) {
         that->m_reader = new StreamReader(that->m_currentSource, that);
         that->m_reader->start();
-        if (that->m_reader->streamSize() > 0)
+        if (that->m_reader->streamSize() > 0) {
             g_object_set(phononSrc, "size", that->m_reader->streamSize(), NULL);
+        }
         int streamType = 0;
-        if (that->m_reader->streamSeekable())
+        if (that->m_reader->streamSeekable()) {
             streamType = GST_APP_STREAM_TYPE_SEEKABLE;
-        else
+        } else {
             streamType = GST_APP_STREAM_TYPE_STREAM;
+        }
         g_object_set(phononSrc, "stream-type", streamType, NULL);
         g_object_set(phononSrc, "block", TRUE, NULL);
         g_signal_connect(phononSrc, "need-data", G_CALLBACK(cb_feedAppSrc), that->m_reader);
@@ -882,11 +912,12 @@ Phonon::MediaSource Pipeline::currentSource() const
 
 qint64 Pipeline::position() const
 {
-    gint64 pos = 0;
-    GstFormat format = GST_FORMAT_TIME;
-    if (m_resetting)
+    if (m_resetting) {
         return m_posAtReset;
-    gst_element_query_position (GST_ELEMENT(m_pipeline), &format, &pos);
+    }
+
+    gint64 pos = 0;
+    gst_element_query_position(GST_ELEMENT(m_pipeline), GST_FORMAT_TIME, &pos);
     return (pos / GST_MSECOND);
 }
 

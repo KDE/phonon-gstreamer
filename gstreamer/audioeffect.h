@@ -39,10 +39,17 @@ class AudioEffect : public Effect
     Q_OBJECT
 public:
     AudioEffect (Backend *backend, int effectId, QObject *parent);
+
 protected:
     GstElement* createEffectBin();
-    GstElement* audioElement() { return m_effectBin; }
+
+    GstElement* audioElement() const {
+        return effectBin();
+    }
+
+private:
     QString m_effectName;
+
 };
 
 } // namespace Gstreamer

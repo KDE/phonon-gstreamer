@@ -18,10 +18,12 @@
 */
 
 #include "mediaobject.h"
-
 #include <cmath>
-#include <gst/interfaces/navigation.h>
-#include <gst/interfaces/propertyprobe.h>
+
+#include "phonon-config-gstreamer.h"
+#include <gst/gst.h>
+#include <gst/video/navigation.h>
+
 #include "backend.h"
 #include "streamreader.h"
 #include "debug.h"
@@ -139,8 +141,9 @@ MediaObject::~MediaObject()
 void MediaObject::saveState()
 {
     //Only first resumeState is respected
-    if (m_resumeState)
+    if (m_resumeState) {
         return;
+    }
 
     if (m_state == Phonon::PlayingState || m_state == Phonon::PausedState) {
         m_resumeState = true;
@@ -187,8 +190,13 @@ bool MediaObject::isSeekable() const
  */
 qint64 MediaObject::currentTime() const
 {
-    if (m_resumeState)
+//     DEBUG_BLOCK;
+//     debug() << m_resumeState;
+//     debug() << state();
+//     debug() << getPipelinePos();
+    if (m_resumeState) {
         return m_oldPos;
+    }
 
     switch (state()) {
     case Phonon::PausedState:
@@ -218,10 +226,11 @@ qint32 MediaObject::tickInterval() const
 void MediaObject::setTickInterval(qint32 newTickInterval)
 {
     m_tickInterval = newTickInterval;
-    if (m_tickInterval <= 0)
+    if (m_tickInterval <= 0) {
         m_tickTimer->setInterval(50);
-    else
+    } else {
         m_tickTimer->setInterval(newTickInterval);
+    }
 }
 
 /**
@@ -301,9 +310,11 @@ void MediaObject::changeSubUri(const Mrl &mrl)
         fontDesc = videoWidgetFont.family() + ' ' + QString::number(videoWidgetFont.pointSize());
     }
     //FIXME: Try to detect common encodings, like libvlc does
-    g_object_set(G_OBJECT(m_pipeline->element()), "suburi", mrl.toEncoded().constData(),
+    g_object_set(G_OBJECT(m_pipeline->element()),
+        "suburi", mrl.toEncoded().constData(),
         "subtitle-font-desc", customFont.isNull() ? fontDesc.toStdString().c_str() : customFont.constData(),
-        "subtitle-encoding", customEncoding.isNull() ? "UTF-8" : customEncoding.constData(), NULL);
+        "subtitle-encoding", customEncoding.isNull() ? "UTF-8" : customEncoding.constData(),
+        NULL);
 }
 
 void MediaObject::autoDetectSubtitle()
@@ -311,17 +322,17 @@ void MediaObject::autoDetectSubtitle()
     if (m_source.type() == MediaSource::LocalFile ||
        (m_source.type() == MediaSource::Url && m_source.mrl().scheme() == "file") ) {
 
-        QList<QLatin1String> exts = QList<QLatin1String>()
-            << QLatin1String("sub") << QLatin1String("srt")
-            << QLatin1String("smi") << QLatin1String("ssa")
-            << QLatin1String("ass") << QLatin1String("asc");
+        const QStringList exts = QStringList()
+                << QLatin1String("sub") << QLatin1String("srt")
+                << QLatin1String("smi") << QLatin1String("ssa")
+                << QLatin1String("ass") << QLatin1String("asc");
 
         // Remove the file extension
         QString absCompleteBaseName = m_source.fileName();
-        absCompleteBaseName.replace(QFileInfo(absCompleteBaseName).suffix(), QChar());
+        absCompleteBaseName.chop(QFileInfo(absCompleteBaseName).suffix().length());
 
         // Looking for a subtitle in the same directory and matching the same name
-        foreach(const QLatin1String &ext, exts) {
+        foreach (const QString &ext, exts) {
             if (QFile::exists(absCompleteBaseName + ext)) {
                 changeSubUri(Mrl("file://" + absCompleteBaseName + ext));
                 break;
@@ -342,18 +353,20 @@ void MediaObject::setNextSource(const MediaSource &source)
         // there are no more sources) skip EOS for the current source in order to seamlessly
         // pass to the next source.
         if (source.type() == Phonon::MediaSource::Invalid ||
-            source.type() == Phonon::MediaSource::Empty)
+            source.type() == Phonon::MediaSource::Empty) {
             m_skippingEOS = false;
-        else
+        } else {
             m_skippingEOS = true;
+        }
 
         m_waitingForNextSource = true;
         m_waitingForPreviousSource = false;
         m_skipGapless = false;
         m_pipeline->setSource(source);
         m_aboutToFinishWait.wakeAll();
-    } else
+    } else {
         qDebug() << "Ignoring source as no aboutToFinish handling is in progress.";
+    }
     m_aboutToFinishLock.unlock();
 }
 
@@ -397,26 +410,30 @@ void MediaObject::loadingComplete()
 
 void MediaObject::getAudioChannelInfo(int stream)
 {
+    Q_UNUSED(stream);
+
     gint channelCount = 0;
     g_object_get(G_OBJECT(m_pipeline->element()), "n-audio", &channelCount, NULL);
-    if (channelCount)
+    if (channelCount) {
         GlobalAudioChannels::instance()->add(this, -1, tr("Default"), "");
+    }
     for (gint i = 0; i < channelCount; ++i) {
         GstTagList *tags = 0;
-        g_signal_emit_by_name (G_OBJECT(m_pipeline->element()), "get-audio-tags",
-                               i, &tags);
+        g_signal_emit_by_name(G_OBJECT(m_pipeline->element()), "get-audio-tags", i, &tags);
         if (tags) {
             gchar *tagLangCode = 0;
             gchar *tagCodecName = 0;
-            gst_tag_list_get_string (tags, GST_TAG_AUDIO_CODEC, &tagCodecName);
-            gst_tag_list_get_string (tags, GST_TAG_LANGUAGE_CODE, &tagLangCode);
+            gst_tag_list_get_string(tags, GST_TAG_AUDIO_CODEC, &tagCodecName);
+            gst_tag_list_get_string(tags, GST_TAG_LANGUAGE_CODE, &tagLangCode);
             QString name;
-            if (tagLangCode)
+            if (tagLangCode) {
                 name = QLatin1String(tagLangCode);
-            else
+            } else {
                 name = tr("Unknown");
-            if (tagCodecName)
+            }
+            if (tagCodecName) {
                 name = QString("%1 [%2]").arg(name, QLatin1String(tagCodecName));
+            }
             GlobalAudioChannels::instance()->add(this, i, name);
             g_free(tagLangCode);
             g_free(tagCodecName);
@@ -427,23 +444,26 @@ void MediaObject::getAudioChannelInfo(int stream)
 
 void MediaObject::getSubtitleInfo(int stream)
 {
+    Q_UNUSED(stream);
+
     gint spuCount = 0; // Sub picture units.
     g_object_get(G_OBJECT(m_pipeline->element()), "n-text", &spuCount, NULL);
-    if (spuCount)
+    if (spuCount) {
         GlobalSubtitles::instance()->add(this, -1, tr("Disable"), "");
+    }
     for (gint i = 0; i < spuCount; ++i) {
         GstTagList *tags = 0;
-        g_signal_emit_by_name (G_OBJECT(m_pipeline->element()), "get-text-tags",
-                               i, &tags);
+        g_signal_emit_by_name(G_OBJECT(m_pipeline->element()), "get-text-tags", i, &tags);
 
         if (tags) {
             gchar *tagLangCode = 0;
-            gst_tag_list_get_string (tags, GST_TAG_LANGUAGE_CODE, &tagLangCode);
+            gst_tag_list_get_string(tags, GST_TAG_LANGUAGE_CODE, &tagLangCode);
             QString name;
-            if (tagLangCode)
+            if (tagLangCode) {
                 name = QLatin1String(tagLangCode); // Language code is ISO -> always Latin1
-            else
+            } else {
                 name = tr("Unknown");
+            }
             GlobalSubtitles::instance()->add(this, i, name);
             // tagLangCode was implicat converted to QString, so we can drop
             // the ref.
@@ -456,8 +476,9 @@ void MediaObject::getSubtitleInfo(int stream)
 void MediaObject::setPrefinishMark(qint32 newPrefinishMark)
 {
     m_prefinishMark = newPrefinishMark;
-    if (currentTime() < totalTime() - m_prefinishMark) // not about to finish
+    if (currentTime() < totalTime() - m_prefinishMark) { // not about to finish
         m_prefinishMarkReachedNotEmitted = true;
+    }
 }
 
 void MediaObject::pause()
@@ -488,6 +509,8 @@ void MediaObject::seek(qint64 time)
 
 void MediaObject::handleStreamChange()
 {
+    DEBUG_BLOCK;
+    debug() << m_waitingForPreviousSource;
     if (m_waitingForPreviousSource) {
         m_waitingForPreviousSource = false;
     } else {
@@ -501,6 +524,8 @@ void MediaObject::handleStreamChange()
 
 void MediaObject::handleDurationChange(qint64 duration)
 {
+    DEBUG_BLOCK;
+    debug() << duration;
     m_totalTime = duration;
     emit totalTimeChanged(duration);
 }
@@ -563,21 +588,25 @@ void MediaObject::handleStateChange(GstState oldState, GstState newState)
     prevPhononState = translateState(oldState);
     m_state = translateState(newState);
     debug() << "Moving from" << GstHelper::stateName(oldState) << prevPhononState << "to" << GstHelper::stateName(newState) << m_state;
-    if (GST_STATE_TRANSITION(oldState, newState) == GST_STATE_CHANGE_NULL_TO_READY)
+    if (GST_STATE_TRANSITION(oldState, newState) == GST_STATE_CHANGE_NULL_TO_READY) {
         loadingComplete();
+    }
     if (GST_STATE_TRANSITION(oldState, newState) == GST_STATE_CHANGE_READY_TO_PAUSED && m_pendingTitle != 0) {
         _iface_setCurrentTitle(m_pendingTitle);
     }
-    if (newState == GST_STATE_PLAYING)
+    if (newState == GST_STATE_PLAYING) {
         m_tickTimer->start();
-    else
+    } else {
         m_tickTimer->stop();
+    }
 
-    if (newState == GST_STATE_READY)
+    if (newState == GST_STATE_READY) {
         emit tick(0);
+    }
 
-    if (!m_doingEOS)
+    if (!m_doingEOS) {
         emit stateChanged(m_state, prevPhononState);
+    }
 }
 
 void MediaObject::handleEndOfStream()
@@ -711,7 +740,6 @@ QList<MediaController::NavigationMenu> MediaObject::_iface_availableMenus() cons
 
 void MediaObject::_iface_jumpToMenu(MediaController::NavigationMenu menu)
 {
-#if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
     GstNavigationCommand command;
     switch(menu) {
     case MediaController::RootMenu:
@@ -737,9 +765,10 @@ void MediaObject::_iface_jumpToMenu(MediaController::NavigationMenu menu)
     }
 
     GstElement *target = gst_bin_get_by_interface(GST_BIN(m_pipeline->element()), GST_TYPE_NAVIGATION);
-    if (target)
+    if (target) {
         gst_navigation_send_command(GST_NAVIGATION(target), command);
-#endif
+    }
+    gst_object_unref(target);
 }
 
 void MediaObject::handleTrackCountChange(int tracks)
@@ -780,8 +809,9 @@ void MediaObject::_iface_setCurrentTitle(int title)
         default:
             break;
     }
-    if (m_currentTitle == m_pendingTitle)
+    if (m_currentTitle == m_pendingTitle) {
         m_pendingTitle = 0;
+    }
 }
 
 QList<SubtitleDescription> MediaObject::_iface_availableSubtitles() const
@@ -816,7 +846,7 @@ void MediaObject::_iface_setCurrentSubtitle(const SubtitleDescription &subtitle)
         const int localIndex = GlobalSubtitles::instance()->localIdFor(this, subtitle.index());
         int flags;
 
-        g_object_get (G_OBJECT(m_pipeline->element()), "flags", &flags, NULL);
+        g_object_get(G_OBJECT(m_pipeline->element()), "flags", &flags, NULL);
         if (localIndex == -1) {
             flags &= ~GST_PLAY_FLAG_TEXT;
         } else {
@@ -829,14 +859,16 @@ void MediaObject::_iface_setCurrentSubtitle(const SubtitleDescription &subtitle)
 
 void MediaObject::changeTitle(const QString &format, int title)
 {
-    if ((title < 1) || (title > m_availableTitles))
+    if ((title < 1) || (title > m_availableTitles)) {
         return;
+    }
 
     //let's seek to the beginning of the song
-    GstFormat titleFormat = gst_format_get_by_nick(format.toLocal8Bit().constData());
+    GstFormat titleFormat = gst_format_get_by_nick(qPrintable(format));
 
-    if (!titleFormat)
+    if (!titleFormat) {
         return;
+    }
 
     debug() << Q_FUNC_INFO << format << title;
     if (gst_element_seek_simple(m_pipeline->element(), titleFormat, GST_SEEK_FLAG_FLUSH, title - 1)) {
@@ -849,16 +881,6 @@ void MediaObject::changeTitle(const QString &format, int title)
 void MediaObject::logWarning(const QString &msg)
 {
     warning() << msg;
-}
-
-void MediaObject::handleBuffering(int percent)
-{
-    Q_ASSERT(0);
-    debug() << Q_FUNC_INFO << percent;
-    if (m_state != Phonon::BufferingState)
-        emit stateChanged(m_state, Phonon::BufferingState);
-    else if (percent == 100)
-        emit stateChanged(Phonon::BufferingState, m_state);
 }
 
 QMultiMap<QString, QString> MediaObject::metaData()
@@ -912,8 +934,10 @@ void MediaObject::handleAboutToFinish()
     debug() << "About to finish";
     m_aboutToFinishLock.lock();
     m_handlingAboutToFinish = true;
-    if (!m_waitingForNextSource)
+    if (!m_waitingForNextSource) {
         emit aboutToFinish();
+    }
+
     // As our signal gets emitted queued we need to wait here until either a
     // new source or a timeout is reached.
     // If we got a new source in time -> hooray + gapless
@@ -931,10 +955,14 @@ void MediaObject::handleAboutToFinish()
         // An issue apparent with notification-like sounds, that are rather short and do not need
         // gapless transitioning. As outlined in https://bugs.kde.org/show_bug.cgi?id=307530
         unsigned long timeout = 0;
-        if (totalTime() <= 0 || (remainingTime() - 500 <= 0))
+        debug() << "total time" << totalTime();
+        debug() << "current time" << currentTime();
+        debug() << "remaining time" << remainingTime();
+        if (totalTime() <= 0 || (remainingTime() - 500 <= 0)) {
             timeout = 0;
-        else
+        } else {
             timeout = remainingTime() - 500;
+        }
 
         debug() << "waiting for" << timeout;
         if (m_aboutToFinishWait.wait(&m_aboutToFinishLock, timeout)) {

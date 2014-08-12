@@ -25,6 +25,8 @@
 #include <assert.h>
 
 #include "videosink.h"
+#include "phonon-config-gstreamer.h"
+#include <gst/video/video-format.h>
 
 #define UNUSED(x) (void)x
 #define dbg(x) fprintf(stderr, "%s\n", x)
@@ -33,22 +35,22 @@ static GstStaticPadTemplate s_sinktemplate =
         GST_STATIC_PAD_TEMPLATE("sink",
                                 GST_PAD_SINK,
                                 GST_PAD_ALWAYS,
-                                GST_STATIC_CAPS (
-                                    GST_VIDEO_CAPS_xRGB_HOST_ENDIAN));
+                                GST_STATIC_CAPS (GST_VIDEO_NE(RGB))
+        );
 
 static GstStaticPadTemplate s_rgbPadTemplate =
         GST_STATIC_PAD_TEMPLATE("sink",
                                 GST_PAD_SINK,
                                 GST_PAD_ALWAYS,
-                                GST_STATIC_CAPS(
-                                    GST_VIDEO_CAPS_xRGB_HOST_ENDIAN));
+                                GST_STATIC_CAPS(GST_VIDEO_NE(RGB))
+        );
 
 static GstStaticPadTemplate s_yuvPadTemplate =
         GST_STATIC_PAD_TEMPLATE("sink",
                                 GST_PAD_SINK,
                                 GST_PAD_ALWAYS,
-                                GST_STATIC_CAPS(
-                                    GST_VIDEO_CAPS_YUV ("{ IYUV, I420, YV12 }")));
+                                GST_STATIC_CAPS(GST_VIDEO_CAPS_MAKE("{ IYUV, I420, YV12 }"))
+        );
 
 
 G_DEFINE_TYPE(PGstVideoSink, p_gst_video_sink, GST_TYPE_VIDEO_SINK)
@@ -78,7 +80,7 @@ static GstFlowReturn p_gst_video_sink_render(GstBaseSink *baseSink,
     PGstVideoSink *sink = P_GST_VIDEO_SINK(baseSink);
     if (buffer == NULL || G_UNLIKELY(!GST_IS_BUFFER (buffer))) {
 #warning sounds bogus?
-        return GST_FLOW_RESEND;
+        return GST_FLOW_EOS;
     }
 
     sink->renderCallback(buffer, sink->userData);

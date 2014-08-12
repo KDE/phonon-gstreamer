@@ -25,12 +25,15 @@
 #include "audiodataoutput.h"
 #include "gsthelper.h"
 #include "medianode.h"
+#include "phonon-config-gstreamer.h"
 #include <QtCore/QVector>
 #include <QtCore/QMap>
 #include <phonon/audiooutput.h>
 
 #include <gst/gstghostpad.h>
 #include <gst/gstutils.h>
+#include <gst/gst.h>
+#include <gst/audio/audio-format.h>
 
 namespace Phonon
 {
@@ -45,8 +48,7 @@ AudioDataOutput::AudioDataOutput(Backend *backend, QObject *parent)
     m_name = "AudioDataOutput" + QString::number(count++);
 
     m_queue = gst_bin_new(NULL);
-    gst_object_ref(GST_OBJECT(m_queue));
-    gst_object_sink(GST_OBJECT(m_queue));
+    gst_object_ref_sink(GST_OBJECT(m_queue));
     GstElement* sink = gst_element_factory_make("fakesink", NULL);
     GstElement* queue = gst_element_factory_make("queue", NULL);
     GstElement* convert = gst_element_factory_make("audioconvert", NULL);
@@ -55,10 +57,8 @@ AudioDataOutput::AudioDataOutput(Backend *backend, QObject *parent)
     g_object_set(G_OBJECT(sink), "signal-handoffs", true, NULL);
 
     //G_BYTE_ORDER is the host machine's endianess
-    GstCaps *caps = gst_caps_new_simple("audio/x-raw-int",
-                                        "endianess", G_TYPE_INT, G_BYTE_ORDER,
-                                        "width", G_TYPE_INT, 16,
-                                        "depth", G_TYPE_INT, 16,
+    GstCaps *caps = gst_caps_new_simple("audio/x-raw",
+                                        "format", G_TYPE_STRING, GST_AUDIO_NE (S16),
                                         NULL);
 
     gst_bin_add_many(GST_BIN(m_queue), sink, convert, queue, NULL);
@@ -108,23 +108,31 @@ inline void AudioDataOutput::convertAndEmit()
     emit dataReady(map);
 }
 
-void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad*, gpointer gThat)
+void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad, gpointer gThat)
 {
     // TODO emit endOfMedia
     AudioDataOutput *that = static_cast<AudioDataOutput *>(gThat);
 
     // Copiend locally to avoid multithead problems
     qint32 dataSize = that->m_dataSize;
-    if (dataSize == 0)
+    if (dataSize == 0) {
         return;
+    }
 
     // determine the number of channels
-    GstStructure *structure = gst_caps_get_structure(GST_BUFFER_CAPS(buffer), 0);
+    GstCaps *caps = gst_pad_get_current_caps(GST_PAD(pad));
+    GstStructure *structure = gst_caps_get_structure(caps, 0);
     gst_structure_get_int(structure, "channels", &that->m_channels);
+    gst_caps_unref(caps);
 
     // Let's get the buffers
-    gint16 *gstBufferData = reinterpret_cast<gint16 *>(GST_BUFFER_DATA(buffer));
-    guint gstBufferSize = GST_BUFFER_SIZE(buffer) / sizeof(gint16);
+    gint16 *gstBufferData;
+    guint gstBufferSize;
+    GstMapInfo info;
+    gst_buffer_map(buffer, &info, GST_MAP_READ);
+    gstBufferData = reinterpret_cast<gint16 *>(info.data);
+    gstBufferSize = info.size / sizeof(gint16);
+    gst_buffer_unmap(buffer,&info);
 
     if (gstBufferSize == 0) {
         qWarning() << Q_FUNC_INFO << ": received a buffer of 0 size ... doing nothing";
@@ -137,8 +145,9 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad*, gpo
     }
 
     // I set the number of channels
-    if (that->m_channelBuffers.size() != that->m_channels)
+    if (that->m_channelBuffers.size() != that->m_channels) {
         that->m_channelBuffers.resize(that->m_channels);
+    }
 
     // check how many emits I will perform
     int nBlockToSend = (that->m_pendingData.size() + gstBufferSize) / (dataSize * that->m_channels);
@@ -149,7 +158,7 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad*, gpo
 #warning should be QBA, so we can work with append(buffer, size)
             that->m_pendingData.append(gstBufferData[i]);
         }
-        Q_ASSERT(prevPendingSize + gstBufferSize == that->m_pendingData.size());
+        Q_ASSERT(int(prevPendingSize + gstBufferSize) == that->m_pendingData.size());
         return;
     }
 
@@ -166,17 +175,18 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad*, gpo
             }
         }
 
-        if (that->m_pendingData.capacity() != dataSize)
+        if (that->m_pendingData.capacity() != dataSize) {
             that->m_pendingData.reserve(dataSize);
+        }
 
         that->m_pendingData.resize(0);
     }
 
     // 2) I fill with fresh data and send
-    for (int i = 0 ; i < that->m_channels ; ++i)
-    {
-        if (that->m_channelBuffers[i].capacity() != dataSize)
-            that->m_channelBuffers.reserve(dataSize);
+    for (int i = 0 ; i < that->m_channels ; ++i) {
+        if (that->m_channelBuffers[i].capacity() != dataSize) {
+            that->m_channelBuffers[i].reserve(dataSize);
+        }
     }
 
     quint32 bufferPosition = 0;

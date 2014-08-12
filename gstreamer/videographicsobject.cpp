@@ -22,8 +22,10 @@
 #include "videographicsobject.h"
 
 #include <gst/video/video.h>
+#include <gst/gst.h>
 
 #include "gsthelper.h"
+#include "phonon-config-gstreamer.h"
 
 namespace Phonon {
 namespace Gstreamer {
@@ -37,8 +39,7 @@ VideoGraphicsObject::VideoGraphicsObject(Backend *backend, QObject *parent) :
     m_name = "VideoGraphicsObject" + QString::number(count++);
 
     m_bin = gst_bin_new(0);
-    gst_object_ref(GST_OBJECT(m_bin));
-    gst_object_sink(GST_OBJECT(m_bin));
+    gst_object_ref_sink(GST_OBJECT(m_bin));
 
     m_sink = P_GST_VIDEO_SINK(g_object_new(P_GST_TYPE_VIDEO_SINK, 0));
     m_sink->userData = this;
@@ -66,17 +67,27 @@ VideoGraphicsObject::VideoGraphicsObject(Backend *backend, QObject *parent) :
 
 VideoGraphicsObject::~VideoGraphicsObject()
 {
+    gst_element_set_state(m_bin, GST_STATE_NULL);
+    gst_object_unref(m_bin);
+    m_bin = 0;
+
+    if (m_buffer) {
+          gst_object_unref(m_buffer);
+          m_buffer = 0;
+    }
 }
 
 void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
 {
     // No data, no pointer to this -> failure
-    if (!buffer || !userData)
+    if (!buffer || !userData) {
         return;
+    }
 
     VideoGraphicsObject *that = static_cast<VideoGraphicsObject *>(userData);
-    if (!that)
+    if (!that) {
         return;
+    }
 
     // Frontend holds lock on data
     if (!that->m_mutex.tryLock()) {
@@ -87,8 +98,9 @@ void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
     // At this point we can do stuff with the data, so we take it over.
     gst_buffer_ref(buffer);
     // Unref the old buffer first...
-    if (that->m_buffer)
+    if (that->m_buffer) {
         gst_buffer_unref(that->m_buffer);
+    }
     that->m_buffer = buffer;
 
     VideoFrame *frame = &that->m_frame;
@@ -101,6 +113,7 @@ void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
     frame->format = VideoFrame::Format_RGB32;
     frame->planeCount = 1;
     // RGB888 Means the data is 8 bits o' red, 8 bits o' green, and 8 bits o' blue per pixel.
+#warn GST1
     frame->plane[0] =
             QByteArray::fromRawData(
                 reinterpret_cast<const char*>(GST_BUFFER_DATA(buffer)),

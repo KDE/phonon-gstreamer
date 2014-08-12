@@ -17,8 +17,10 @@
 
 #include "gsthelper.h"
 
-#include <gst/interfaces/propertyprobe.h>
+#include "phonon-config-gstreamer.h"
+
 #include <gst/gst.h>
+
 #include "mediaobject.h"
 #include "backend.h"
 
@@ -38,25 +40,12 @@ namespace Gstreamer
 QList<QByteArray> GstHelper::extractProperties(GstElement *elem, const QByteArray &value)
 {
     Q_ASSERT(elem);
-    QList<QByteArray> list;
+    Q_UNUSED(value);
 
-    if (GST_IS_PROPERTY_PROBE(elem)) {
-        GstPropertyProbe *probe = GST_PROPERTY_PROBE(elem);
-        const GParamSpec *devspec = 0;
-        GValueArray *array = NULL;
+    #warning Implement this for GStreamer 1.3.1
 
-        if ((devspec = gst_property_probe_get_property (probe, value))) {
-            if ((array = gst_property_probe_probe_and_get_values (probe, devspec))) {
-                for (unsigned int device = 0; device < array->n_values; device++) {
-                    GValue *deviceId = g_value_array_get_nth (array, device);
-                    list.append(g_value_get_string(deviceId));
-                }
-            }
-            if (array)
-                g_value_array_free (array);
-        }
-    }
-    return list;
+
+    return QList<QByteArray>();
 }
 
 /**
@@ -69,7 +58,7 @@ bool GstHelper::setProperty(GstElement *elem, const char *propertyName, const QB
     Q_ASSERT(elem);
     Q_ASSERT(propertyName && strlen(propertyName));
 
-    if (GST_IS_PROPERTY_PROBE(elem) && gst_property_probe_get_property( GST_PROPERTY_PROBE( elem), propertyName ) ) {
+    if (g_object_class_find_property(G_OBJECT_GET_CLASS(elem), propertyName)) {
         g_object_set(G_OBJECT(elem), propertyName, propertyValue.constData(), NULL);
         return true;
     }
@@ -85,9 +74,9 @@ QByteArray GstHelper::property(GstElement *elem, const char *propertyName)
     Q_ASSERT(propertyName && strlen(propertyName));
     QByteArray retVal;
 
-    if (GST_IS_PROPERTY_PROBE(elem) && gst_property_probe_get_property( GST_PROPERTY_PROBE(elem), propertyName)) {
+    if (g_object_class_find_property(G_OBJECT_GET_CLASS(elem), propertyName)) {
         gchar *value = NULL;
-        g_object_get (G_OBJECT(elem), propertyName, &value, NULL);
+        g_object_get(G_OBJECT(elem), propertyName, &value, NULL);
         retVal = QByteArray(value);
         g_free (value);
     }
@@ -102,7 +91,7 @@ QByteArray GstHelper::name(GstObject *obj)
     Q_ASSERT(obj);
     QByteArray retVal;
     gchar *value = NULL;
-    if ((value = gst_object_get_name (obj))) {
+    if ((value = gst_object_get_name(obj))) {
         retVal = QByteArray(value);
         g_free (value);
     }
@@ -123,7 +112,7 @@ QString GstHelper::stateName(GstState state)
     case GST_STATE_PLAYING:
         return "playing";
     }
-    return "";
+    return QString();
 }
 
 } //namespace Gstreamer

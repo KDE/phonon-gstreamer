@@ -34,7 +34,9 @@ namespace Gstreamer
 {
     class EffectInfo;
 
-    class Effect : public QObject, public Phonon::EffectInterface, public MediaNode
+    class Effect : public QObject,
+                   public Phonon::EffectInterface,
+                   public MediaNode
     {
         Q_OBJECT
         Q_INTERFACES(Phonon::EffectInterface Phonon::Gstreamer::MediaNode)
@@ -46,11 +48,23 @@ namespace Gstreamer
             virtual QVariant parameterValue(const EffectParameter &) const;
             virtual void setParameterValue(const EffectParameter &, const QVariant &);
 
-            virtual GstElement* createEffectBin() = 0;
             virtual void init();
             virtual void setupEffectParams();
 
         protected:
+            virtual GstElement* createEffectBin() = 0;
+
+            void setEffectElement(GstElement *effectElement);
+
+            GstElement *effectElement() const {
+                return m_effectElement;
+            }
+
+            GstElement *effectBin() const {
+                return m_effectBin;
+            }
+
+        private:
             GstElement *m_effectBin;
             GstElement *m_effectElement;
             QList<Phonon::EffectParameter> m_parameterList;

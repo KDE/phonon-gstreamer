@@ -24,10 +24,16 @@ namespace Gstreamer
 {
 
 
+AbstractRenderer::AbstractRenderer(VideoWidget* video)
+        : m_videoWidget(video)
+        , m_videoSink(0)
+{
+}
+
 AbstractRenderer::~AbstractRenderer()
 {
     if (m_videoSink) {
-        gst_object_unref (GST_OBJECT (m_videoSink)); //Take ownership
+        gst_object_unref(m_videoSink);
         m_videoSink = 0;
     }
 }
@@ -45,6 +51,20 @@ void AbstractRenderer::scaleModeChanged(Phonon::VideoWidget::ScaleMode scaleMode
 void AbstractRenderer::movieSizeChanged(const QSize &size)
 {
     Q_UNUSED(size);
+}
+
+void AbstractRenderer::setVideoSink(GstElement* sink)
+{
+    gst_object_ref_sink(sink);
+    if (m_videoSink) {
+        gst_object_unref(m_videoSink);
+    }
+    m_videoSink = sink;
+}
+
+VideoWidget* AbstractRenderer::videoWidget() const
+{
+    return m_videoWidget;
 }
 
 }

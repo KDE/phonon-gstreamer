@@ -251,7 +251,7 @@ PluginInstaller::InstallStatus PluginInstaller::checkInstalledPlugins()
         return m_state;
     bool allFound = true;
     foreach (const QString &plugin, m_pluginList.keys()) {
-        if (!gst_default_registry_check_feature_version(plugin.toUtf8().constData(), 0, 10, 0)) {
+        if (!gst_registry_check_feature_version(gst_registry_get(), qPrintable(plugin), 1, 0, 0)) {
             allFound = false;
             break;
         }

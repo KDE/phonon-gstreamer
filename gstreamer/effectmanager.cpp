@@ -16,8 +16,9 @@
 */
 
 #include "effectmanager.h"
+#include "phonon-config-gstreamer.h"
+#include <gst/gst.h>
 
-#include <gst/interfaces/propertyprobe.h>
 #include "backend.h"
 #include "gsthelper.h"
 
@@ -35,13 +36,16 @@ EffectInfo::EffectInfo(const QString &name, const QString &description,
                        const QString &author)
         : m_name(name)
         , m_description(description)
-        , m_author(author) {}
+        , m_author(author)
+{
+}
 
 EffectManager::EffectManager(Backend *backend)
         : QObject(backend)
         , m_backend(backend)
 {
-    GList *factoryList = gst_registry_get_feature_list(gst_registry_get_default (), GST_TYPE_ELEMENT_FACTORY);
+    GList *factoryList = gst_registry_get_feature_list(gst_registry_get(), GST_TYPE_ELEMENT_FACTORY);
+
     QString name;
     QString klass;
     QString description;
@@ -50,7 +54,7 @@ EffectManager::EffectManager(Backend *backend)
         GstPluginFeature *feature = GST_PLUGIN_FEATURE(iter->data);
         klass = gst_element_factory_get_klass(GST_ELEMENT_FACTORY(feature));
         if (klass == QLatin1String("Filter/Effect/Audio")) {
-            name = GST_PLUGIN_FEATURE_NAME(feature);
+            name = GST_OBJECT_NAME(feature);
 
             // These plugins simply make no sense to the frontend:
             // "audiorate" Should be internal
@@ -78,8 +82,8 @@ EffectManager::EffectManager(Backend *backend)
                  || name == QLatin1String("equalizer-10bands")
                  || name == QLatin1String("speed"))
                 {
-                    description = gst_element_factory_get_description (GST_ELEMENT_FACTORY(feature));
-                    author = gst_element_factory_get_author (GST_ELEMENT_FACTORY(feature));
+                    description = gst_element_factory_get_description(GST_ELEMENT_FACTORY(feature));
+                    author = gst_element_factory_get_author(GST_ELEMENT_FACTORY(feature));
                     EffectInfo *effect = new EffectInfo(name, description, author);
                     m_audioEffectList.append(effect);
 
@@ -98,7 +102,7 @@ EffectManager::EffectManager(Backend *backend)
             }
         }
     }
-    g_list_free(factoryList);
+    gst_plugin_feature_list_free(factoryList);
 }
 
 EffectManager::~EffectManager()

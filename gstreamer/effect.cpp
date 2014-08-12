@@ -20,6 +20,7 @@
 #include "backend.h"
 #include "medianode.h"
 #include "effectmanager.h"
+#include "phonon-config-gstreamer.h"
 
 #include <gst/gst.h>
 
@@ -29,8 +30,8 @@ namespace Phonon
 namespace Gstreamer
 {
 Effect::Effect(Backend *backend, QObject *parent, NodeDescription description)
-        : QObject(parent),
-        MediaNode(backend, description)
+        : QObject(parent)
+        , MediaNode(backend, description)
         , m_effectBin(0)
         , m_effectElement(0)
 {
@@ -40,9 +41,8 @@ void Effect::init()
 {
     m_effectBin = createEffectBin();
     if (m_effectBin) {
+        gst_object_ref_sink(m_effectBin); // Take ownership of the bin
         setupEffectParams();
-        gst_object_ref (GST_OBJECT (m_effectBin)); // Take ownership
-        gst_object_sink (GST_OBJECT (m_effectBin));
         m_isValid = true;
     }
 }
@@ -50,30 +50,45 @@ void Effect::init()
 Effect::~Effect()
 {
     if (m_effectBin) {
-        gst_element_set_state (m_effectBin, GST_STATE_NULL);
-        gst_object_unref (m_effectBin);
+        gst_element_set_state(m_effectBin, GST_STATE_NULL);
+        gst_object_unref(m_effectBin);
+        m_effectBin = 0;
     }
+    if (m_effectElement) {
+        gst_element_set_state(m_effectElement, GST_STATE_NULL);
+        gst_object_unref(m_effectElement);
+        m_effectElement = 0;
+    }
+}
+
+void Effect::setEffectElement(GstElement* effectElement)
+{
+    gst_object_ref_sink(effectElement);
+    if (m_effectElement) {
+          gst_object_unref(m_effectElement);
+    }
+    m_effectElement = effectElement;
 }
 
 void Effect::setupEffectParams()
 {
-
     Q_ASSERT(m_effectElement);
 
     //query and store parameters
     if (m_effectElement) {
         GParamSpec **property_specs;
         guint propertyCount, i;
-        property_specs = g_object_class_list_properties(G_OBJECT_GET_CLASS (m_effectElement), &propertyCount);
+        property_specs = g_object_class_list_properties(G_OBJECT_GET_CLASS(m_effectElement), &propertyCount);
         for (i = 0; i < propertyCount; ++i) {
             GParamSpec *param = property_specs[i];
             if (param->flags & G_PARAM_WRITABLE) {
-                QString propertyName = g_param_spec_get_name (param);
+                QString propertyName = g_param_spec_get_name(param);
 
                 // These properties should not be exposed to the front-end
-                if (propertyName == "qos" || propertyName == "name" || propertyName == "async-handling")
+                if (propertyName == "qos" || propertyName == "name" || propertyName == "async-handling") {
                     continue;
- 
+                }
+
                 switch(param->value_type) {
                     case G_TYPE_UINT:
                         m_parameterList.append(Phonon::EffectParameter(i, propertyName,

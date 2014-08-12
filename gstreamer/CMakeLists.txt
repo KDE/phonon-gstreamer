@@ -68,17 +68,20 @@ if (BUILD_PHONON_GSTREAMER)
       plugininstaller.cpp
       qwidgetvideosink.cpp
       streamreader.cpp
-      videosink.c
       videowidget.cpp
       volumefadereffect.cpp
       widgetrenderer.cpp
       )
 
-    if(NOT PHONON_NO_GRAPHICSVIEW)
-        list(APPEND phonon_gstreamer_SRCS videographicsobject.cpp)
-    else()
-        add_definitions(-DPHONON_NO_GRAPHICSVIEW)
-    endif()
+    if (NOT PHONON_NO_GRAPHICSVIEW)
+      set(phonon_gstreamer_SRCS
+        ${phonon_gstreamer_SRCS}
+        videographicsobject.cpp
+        videosink.c
+      )
+    else (NOT PHONON_NO_GRAPHICSVIEW)
+      add_definitions(-DPHONON_NO_GRAPHICSVIEW)
+    endif (NOT PHONON_NO_GRAPHICSVIEW)
 
     if(PHONON_FOUND_EXPERIMENTAL)
         add_definitions(-DPHONON_EXPERIMENTAL)

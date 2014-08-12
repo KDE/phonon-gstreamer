@@ -108,32 +108,32 @@ public:
     bool hasInterface(Interface) const;
     QVariant interfaceCall(Interface, int, const QList<QVariant> &);
 #endif
-    bool isLoading()
+    bool isLoading() const
     {
         return m_loading;
     }
 
-    bool audioAvailable()
+    bool audioAvailable() const
     {
         return m_pipeline->audioIsAvailable();
     }
 
-    bool videoAvailable()
+    bool videoAvailable() const
     {
         return m_pipeline->videoIsAvailable();
     }
 
-    GstElement *audioGraph()
+    GstElement *audioGraph() const
     {
         return m_pipeline->audioGraph();
     }
 
-    GstElement *videoGraph()
+    GstElement *videoGraph() const
     {
         return m_pipeline->videoGraph();
     }
 
-    Pipeline *pipeline()
+    Pipeline *pipeline() const
     {
         return m_pipeline;
     }
@@ -179,12 +179,12 @@ protected:
     void loadingComplete();
     Q_INVOKABLE void setError(const QString &errorString, Phonon::ErrorType error = NormalError);
 
-    GstElement *audioElement()
+    GstElement *audioElement() const
     {
         return m_pipeline->audioPipe();
     }
 
-    GstElement *videoElement()
+    GstElement *videoElement() const
     {
         return m_pipeline->videoPipe();
     }
@@ -199,7 +199,6 @@ private Q_SLOTS:
     void logWarning(const QString &);
 
     void handleEndOfStream();
-    void handleBuffering(int);
     void handleStateChange(GstState oldState, GstState newState);
     void handleDurationChange(qint64);
 

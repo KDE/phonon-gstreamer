@@ -23,6 +23,9 @@
 
 #include "videowidget.h"
 
+#include "phonon-config-gstreamer.h"
+#include <gst/gst.h>
+
 namespace Phonon
 {
 namespace Gstreamer
@@ -57,7 +60,7 @@ const char* QWidgetVideoSinkClass<VideoFormat_RGB>::get_name()
 template <VideoFormat FMT>
 gboolean QWidgetVideoSink<FMT>::set_caps(GstBaseSink* sink, GstCaps* caps)
 {
-    GstStructure*       data;
+    GstStructure *data;
     QWidgetVideoSink<FMT> *self = G_TYPE_CHECK_INSTANCE_CAST(sink, QWidgetVideoSinkClass<FMT>::get_type(), QWidgetVideoSink<FMT>);
 
     data = gst_caps_get_structure(caps, 0);
@@ -80,17 +83,19 @@ GstFlowReturn QWidgetVideoSink<FMT>::render(GstBaseSink* sink, GstBuffer* buf)
 {
     GstFlowReturn rc = GST_FLOW_OK;
 
-    if (buf != 0)
-    {
+    if (buf != 0) {
         QWidgetVideoSink<FMT> *self = G_TYPE_CHECK_INSTANCE_CAST(sink, QWidgetVideoSinkClass<FMT>::get_type(), QWidgetVideoSink<FMT>);
         QByteArray frame;
-        frame.resize(buf->size);
-        memcpy(frame.data(), buf->data, buf->size);
+        GstMapInfo info;
+        gst_buffer_map(buf, &info, GST_MAP_READ);
+        frame.resize(info.size);
+        memcpy(frame.data(), info.data, info.size);
+        gst_buffer_unmap(buf, &info);
         NewFrameEvent *frameEvent = new NewFrameEvent(frame, self->width, self->height);
         QApplication::postEvent(self->renderWidget, frameEvent);
-    }
-    else
+    } else {
         rc = GST_FLOW_ERROR;
+    }
     return rc;
 }
 
@@ -98,17 +103,17 @@ static GstStaticPadTemplate template_factory_yuv =
     GST_STATIC_PAD_TEMPLATE("sink",
                             GST_PAD_SINK,
                             GST_PAD_ALWAYS,
-                            GST_STATIC_CAPS("video/x-raw-yuv, "
-                                            "framerate = (fraction) [ 0, MAX ], "
-                                            "width = (int) [ 1, MAX ], "
-                                            "height = (int) [ 1, MAX ],"
-                                            "bpp = (int) 32"));
+                            GST_STATIC_CAPS(
+                                    "video/x-raw, "
+                                    "format = (string) {YUY2, YVYU, UYVY, Y41P, IYU2, Y42B, YV12, I420, Y41B, YUV9, YVU9, Y800}")
+    );
 
 static GstStaticPadTemplate template_factory_rgb =
     GST_STATIC_PAD_TEMPLATE("sink",
                             GST_PAD_SINK,
                             GST_PAD_ALWAYS,
-                            GST_STATIC_CAPS(GST_VIDEO_CAPS_xRGB_HOST_ENDIAN));
+                            GST_STATIC_CAPS(GST_VIDEO_CAPS_MAKE("xRGB"))
+    );
 
 template <VideoFormat FMT>
 struct template_factory;
@@ -196,7 +201,7 @@ GType QWidgetVideoSinkClass<FMT>::get_type()
         };
 
         type = g_type_register_static(GST_TYPE_VIDEO_SINK,
-                                     QWidgetVideoSinkClass<FMT>::get_name(),
+                                      QWidgetVideoSinkClass<FMT>::get_name(),
                                       &info,
                                       GTypeFlags(0));
     }

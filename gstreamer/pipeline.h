@@ -47,11 +47,13 @@ class Pipeline : public QObject
         GstElement *audioGraph() const;
         GstElement *videoElement() const;
         GstElement *audioElement() const;
+        GstElement *audioPipe() const;
+        GstElement *videoPipe() const;
+
         GstStateChangeReturn setState(GstState state);
         GstState state() const;
         Phonon::MediaSource currentSource() const;
         void writeToDot(MediaObject *media, const QString &type);
-        bool queryDuration(GstFormat *format, gint64 *duration) const;
         qint64 totalDuration() const;
 
         static gboolean cb_eos(GstBus *bus, GstMessage *msg, gpointer data);
@@ -62,6 +64,7 @@ class Pipeline : public QObject
         static gboolean cb_element(GstBus *bus, GstMessage *msg, gpointer data);
         static gboolean cb_error(GstBus *bus, GstMessage *msg, gpointer data);
         static gboolean cb_tag(GstBus *bus, GstMessage *msg, gpointer data);
+        static gboolean cb_streamStart(GstBus *bus, GstMessage *msg, gpointer data);
 
         static void cb_aboutToFinish(GstElement *appSrc, gpointer data);
         static void cb_endOfPads(GstElement *playbin, gpointer data);
@@ -71,11 +74,6 @@ class Pipeline : public QObject
         static void cb_videoChanged(GstElement *playbin, gpointer data);
         static void cb_textTagsChanged(GstElement *playbin, gint stream, gpointer data);
         static void cb_audioTagsChanged(GstElement *playbin, gint stream, gpointer data);
-
-        GstElement *audioPipe();
-        GstElement *videoPipe();
-        GstElement *audioGraph();
-        GstElement *videoGraph();
 
         bool videoIsAvailable() const;
         bool audioIsAvailable() const;
