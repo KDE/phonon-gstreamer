@@ -112,7 +112,16 @@ static GstStaticPadTemplate template_factory_rgb =
     GST_STATIC_PAD_TEMPLATE("sink",
                             GST_PAD_SINK,
                             GST_PAD_ALWAYS,
-                            GST_STATIC_CAPS(GST_VIDEO_CAPS_MAKE("xRGB"))
+                            GST_STATIC_CAPS(
+                                    "video/x-raw, "
+#if G_BYTE_ORDER == G_LITTLE_ENDIAN
+                                    "format = (string) BGRx,"
+#else
+                                    "format = (string) xRGB,"
+#endif
+                                    "width = " GST_VIDEO_SIZE_RANGE ","
+                                    "height = " GST_VIDEO_SIZE_RANGE ","
+                                    "framerate = " GST_VIDEO_FPS_RANGE)
     );
 
 template <VideoFormat FMT>
