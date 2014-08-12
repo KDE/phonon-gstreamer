@@ -864,16 +864,6 @@ void MediaObject::logWarning(const QString &msg)
     warning() << msg;
 }
 
-void MediaObject::handleBuffering(int percent)
-{
-    Q_ASSERT(0);
-    debug() << Q_FUNC_INFO << percent;
-    if (m_state != Phonon::BufferingState)
-        emit stateChanged(m_state, Phonon::BufferingState);
-    else if (percent == 100)
-        emit stateChanged(Phonon::BufferingState, m_state);
-}
-
 QMultiMap<QString, QString> MediaObject::metaData()
 {
     return m_sourceMeta;
