@@ -124,6 +124,7 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad,
     GstCaps *caps = gst_pad_get_current_caps(GST_PAD(pad));
     GstStructure *structure = gst_caps_get_structure(caps, 0);
     gst_structure_get_int(structure, "channels", &that->m_channels);
+    gst_caps_unref(caps);
 
     // Let's get the buffers
     gint16 *gstBufferData;

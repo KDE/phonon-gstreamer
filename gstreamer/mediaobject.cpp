@@ -767,6 +767,7 @@ void MediaObject::_iface_jumpToMenu(MediaController::NavigationMenu menu)
     if (target) {
         gst_navigation_send_command(GST_NAVIGATION(target), command);
     }
+    gst_object_unref(target);
 }
 
 void MediaObject::handleTrackCountChange(int tracks)

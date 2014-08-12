@@ -334,17 +334,18 @@ QImage VideoWidget::snapshot() const
                                                 "format = (string)", G_TYPE_STRING, GST_VIDEO_NE(RGB),
                                                 NULL);
 
-        GstBuffer *snapbuffer;
         GstSample *sample = gst_video_convert_sample(videobuffer, snapcaps, GST_SECOND, NULL);
-        snapbuffer = gst_sample_get_buffer(sample);
-        GstMapInfo info;
-        gst_buffer_map(snapbuffer, &info, GST_MAP_READ);
+        GstBuffer *snapbuffer = gst_sample_get_buffer(sample);
         gst_sample_unref(videobuffer);
         gst_caps_unref(snapcaps);
 
         if (snapbuffer) {
             gint width, height;
             gboolean ret;
+
+            GstMapInfo info;
+            gst_buffer_map(snapbuffer, &info, GST_MAP_READ);
+
             GstStructure *s = gst_caps_get_structure(gst_sample_get_caps(sample), 0);
             ret  = gst_structure_get_int(s, "width", &width);
             ret &= gst_structure_get_int(s, "height", &height);
@@ -362,6 +363,7 @@ QImage VideoWidget::snapshot() const
                 return snapimage;
             }
 
+            gst_buffer_unmap(snapbuffer, &info);
             gst_buffer_unref(snapbuffer);
         }
     }

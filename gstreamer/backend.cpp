@@ -290,6 +290,7 @@ QStringList Backend::availableMimeTypes() const
                                 availableMimeTypes.append(mime);
                             }
                         }
+                        gst_caps_unref(caps);
                     }
                 }
             }

@@ -580,8 +580,8 @@ gboolean Pipeline::cb_tag(GstBus *bus, GstMessage *msg, gpointer data)
     gst_message_parse_tag(msg, &tag_list);
     if (tag_list) {
         TagMap newTags;
-        gst_tag_list_foreach (tag_list, &foreach_tag_function, &newTags);
-        gst_tag_list_free(tag_list);
+        gst_tag_list_foreach(tag_list, &foreach_tag_function, &newTags);
+        gst_tag_list_unref(tag_list);
 
         // Determine if we should no fake the album/artist tags.
         // This is a little confusing as we want to fake it on initial
@@ -748,6 +748,8 @@ void Pipeline::updateNavigation()
                 }
             }
         }
+        gst_query_unref(query);
+        gst_object_unref(target);
     }
 
     if (ret != m_menus) {
