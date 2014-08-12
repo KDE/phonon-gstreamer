@@ -16,6 +16,15 @@ find_package(Phonon REQUIRED)
 macro_ensure_version("4.7.0" ${PHONON_VERSION} PHONON_FOUND)
 macro_log_feature(PHONON_FOUND "Phonon" "Core Library" "git://anongit.kde.org/phonon.git" TRUE "4.7.0")
 
+
+if(PHONON_BUILD_PHONON4QT5)
+    find_package(Qt5OpenGL)
+    macro_log_feature(Qt5OpenGL_FOUND "Qt5 OpenGL" "Qt5 OpenGL support is required to compile the gstreamer backend for Phonon" "" FALSE)
+    set(QT_QTOPENGL_FOUND Qt5OpenGL_FOUND)
+else ()
+    macro_log_feature(QT_QTOPENGL_FOUND "Qt4 OpenGL" "Qt4 OpenGL support is required to compile the gstreamer backend for Phonon" "" FALSE)
+endif()
+
 add_definitions(${QT_DEFINITIONS})
 include_directories(${PHONON_INCLUDES} ${QT_INCLUDES})
 
@@ -36,12 +45,6 @@ macro_log_feature(LIBXML2_FOUND "LibXml2" "LibXml2 is required to compile the gs
 
 find_package(OpenGL)
 macro_log_feature(OPENGL_FOUND "OpenGL" "OpenGL support is required to compile the gstreamer backend for Phonon" "" FALSE)
-
-if(PHONON_BUILD_PHONON4QT5)
-    find_package(Qt5OpenGL)
-    macro_log_feature(Qt5OpenGL_FOUND "Qt5 OpenGL" "Qt5 OpenGL support is required to compile the gstreamer backend for Phonon" "" FALSE)
-    set(QT_QTOPENGL_FOUND Qt5OpenGL_FOUND)
-endif()
 
 add_subdirectory(gstreamer)
 
