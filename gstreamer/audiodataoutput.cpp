@@ -183,10 +183,10 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad,
     }
 
     // 2) I fill with fresh data and send
-    for (int i = 0 ; i < that->m_channels ; ++i)
-    {
-        if (that->m_channelBuffers[i].capacity() != dataSize)
-            that->m_channelBuffers.reserve(dataSize);
+    for (int i = 0 ; i < that->m_channels ; ++i) {
+        if (that->m_channelBuffers[i].capacity() != dataSize) {
+            that->m_channelBuffers[i].reserve(dataSize);
+        }
     }
 
     quint32 bufferPosition = 0;
