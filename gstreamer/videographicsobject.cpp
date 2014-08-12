@@ -39,7 +39,6 @@ VideoGraphicsObject::VideoGraphicsObject(Backend *backend, QObject *parent) :
     m_name = "VideoGraphicsObject" + QString::number(count++);
 
     m_bin = gst_bin_new(0);
-    gst_object_ref(GST_OBJECT(m_bin));
     gst_object_ref_sink(GST_OBJECT(m_bin));
 
     m_sink = P_GST_VIDEO_SINK(g_object_new(P_GST_TYPE_VIDEO_SINK, 0));
@@ -68,6 +67,14 @@ VideoGraphicsObject::VideoGraphicsObject(Backend *backend, QObject *parent) :
 
 VideoGraphicsObject::~VideoGraphicsObject()
 {
+    gst_element_set_state(m_bin, GST_STATE_NULL);
+    gst_object_unref(m_bin);
+    m_bin = 0;
+
+    if (m_buffer) {
+          gst_object_unref(m_buffer);
+          m_buffer = 0;
+    }
 }
 
 void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)

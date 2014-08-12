@@ -52,7 +52,6 @@ Pipeline::Pipeline(QObject *parent)
 {
     qRegisterMetaType<GstState>("GstState");
     m_pipeline = GST_PIPELINE(gst_element_factory_make("playbin", NULL));
-    gst_object_ref(m_pipeline);
     gst_object_ref_sink (m_pipeline);
     g_signal_connect(m_pipeline, "video-changed", G_CALLBACK(cb_videoChanged), this);
     g_signal_connect(m_pipeline, "text-tags-changed", G_CALLBACK(cb_textTagsChanged), this);
@@ -75,7 +74,6 @@ Pipeline::Pipeline(QObject *parent)
 
     // Set up audio graph
     m_audioGraph = gst_bin_new("audioGraph");
-    gst_object_ref(GST_OBJECT(m_audioGraph));
     gst_object_ref_sink(GST_OBJECT(m_audioGraph));
 
     // Note that these queues are only required for streaming content
@@ -101,7 +99,6 @@ Pipeline::Pipeline(QObject *parent)
 
     // Set up video graph
     m_videoGraph = gst_bin_new("videoGraph");
-    gst_object_ref(GST_OBJECT(m_videoGraph));
     gst_object_ref_sink(GST_OBJECT(m_videoGraph));
 
     m_videoPipe = gst_element_factory_make("queue", "videoPipe");
@@ -224,6 +221,16 @@ Pipeline::~Pipeline()
     gst_element_set_state(GST_ELEMENT(m_pipeline), GST_STATE_NULL);
     gst_object_unref(m_pipeline);
     m_pipeline = 0;
+
+    if (m_audioGraph) {
+        gst_object_unref(m_audioGraph);
+        m_audioGraph = 0;
+    }
+
+    if (m_videoGraph) {
+        gst_object_unref(m_videoGraph);
+        m_videoGraph = 0;
+    }
 }
 
 GstElement *Pipeline::element() const

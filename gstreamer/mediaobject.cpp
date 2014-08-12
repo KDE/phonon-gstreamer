@@ -226,10 +226,11 @@ qint32 MediaObject::tickInterval() const
 void MediaObject::setTickInterval(qint32 newTickInterval)
 {
     m_tickInterval = newTickInterval;
-    if (m_tickInterval <= 0)
+    if (m_tickInterval <= 0) {
         m_tickTimer->setInterval(50);
-    else
+    } else {
         m_tickTimer->setInterval(newTickInterval);
+    }
 }
 
 /**

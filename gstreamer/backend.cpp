@@ -91,7 +91,7 @@ Backend::Backend(QObject *parent, const QVariantList &)
     bool wasInit = gst_init_check(&argc, &argv, &err); //init gstreamer: must be called before any gst-related functions
 
     if (err) {
-        error() << err->message;
+        qWarning("Phonon::GStreamer::Backend: Failed to initialize GStreamer: %s", err->message);
         g_error_free(err);
     }
 
@@ -243,8 +243,9 @@ QStringList Backend::availableMimeTypes() const
 {
     QStringList availableMimeTypes;
 
-    if (!isValid())
+    if (!isValid()) {
         return availableMimeTypes;
+    }
 
     GstElementFactory *mpegFactory;
     // Add mp3 as a separate mime type as people are likely to look for it.
@@ -253,7 +254,7 @@ QStringList Backend::availableMimeTypes() const
         (mpegFactory = gst_element_factory_find("flump3dec"))) {
           availableMimeTypes << QLatin1String("audio/x-mp3");
           availableMimeTypes << QLatin1String("audio/x-ape");// ape is available from ffmpeg
-          gst_object_unref(GST_OBJECT(mpegFactory));
+          gst_object_unref(mpegFactory);
     }
 
     // Iterate over all audio and video decoders and extract mime types from sink caps
@@ -296,7 +297,8 @@ QStringList Backend::availableMimeTypes() const
             }
         }
     }
-    g_list_free(factoryList);
+    gst_plugin_feature_list_free(factoryList);
+
     if (availableMimeTypes.contains("audio/x-vorbis") && availableMimeTypes.contains("application/x-ogm-audio")) {
         if (!availableMimeTypes.contains("audio/x-vorbis+ogg")) {
             availableMimeTypes.append("audio/x-vorbis+ogg");

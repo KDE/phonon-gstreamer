@@ -51,7 +51,6 @@ AudioOutput::AudioOutput(Backend *backend, QObject *parent)
     m_name = "AudioOutput" + QString::number(count++);
 
     m_audioBin = gst_bin_new(NULL);
-    gst_object_ref(GST_OBJECT (m_audioBin));
     gst_object_ref_sink(GST_OBJECT (m_audioBin));
 
     m_conv = gst_element_factory_make("audioconvert", NULL);
@@ -62,6 +61,7 @@ AudioOutput::AudioOutput(Backend *backend, QObject *parent)
         category = audioOutput->category();
 
     m_audioSink = m_backend->deviceManager()->createAudioSink(category);
+    gst_object_ref_sink(m_audioSink);
     m_volumeElement = gst_element_factory_make("volume", NULL);
     GstElement *queue = gst_element_factory_make("queue", NULL);
     GstElement *audioresample = gst_element_factory_make("audioresample", NULL);
@@ -86,6 +86,12 @@ AudioOutput::~AudioOutput()
     if (m_audioBin) {
         gst_element_set_state(m_audioBin, GST_STATE_NULL);
         gst_object_unref(m_audioBin);
+        m_audioBin = 0;
+    }
+    if (m_audioSink) {
+        gst_element_set_state(m_audioSink, GST_STATE_NULL);
+        gst_object_unref(m_audioSink);
+        m_audioSink = 0;
     }
 }
 

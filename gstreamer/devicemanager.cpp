@@ -63,7 +63,11 @@ DeviceInfo::DeviceInfo(DeviceManager *manager, const QByteArray &deviceId,
             m_description = "Default video capture device";
         } else {
             GstElement *dev = gst_element_factory_make("v4l2src", NULL);
-            useGstElement(dev, deviceId);
+            if (dev) {
+                useGstElement(dev, deviceId);
+                gst_element_set_state(dev, GST_STATE_NULL);
+                gst_object_unref(dev);
+            }
         }
     }
 
@@ -77,7 +81,11 @@ DeviceInfo::DeviceInfo(DeviceManager *manager, const QByteArray &deviceId,
             m_description = "Default audio device";
         } else {
             GstElement *aSink = manager->createAudioSink();
-            useGstElement(aSink, deviceId);
+            if (aSink) {
+                useGstElement(aSink, deviceId);
+                gst_element_set_state(aSink, GST_STATE_NULL);
+                gst_object_unref(aSink);
+            }
         }
     }
 
@@ -89,10 +97,6 @@ DeviceInfo::DeviceInfo(DeviceManager *manager, const QByteArray &deviceId,
 
 void DeviceInfo::useGstElement(GstElement *element, const QByteArray &deviceId)
 {
-    if (!element) {
-        return;
-    }
-
     gchar *deviceName = NULL;
     if (g_object_class_find_property(G_OBJECT_GET_CLASS(element), "device")){
         g_object_set(G_OBJECT(element), "device", deviceId.constData(), NULL);
@@ -107,8 +111,6 @@ void DeviceInfo::useGstElement(GstElement *element, const QByteArray &deviceId)
         }
 
         g_free(deviceName);
-        gst_element_set_state(element, GST_STATE_NULL);
-        gst_object_unref(element);
     }
 }
 
@@ -359,6 +361,7 @@ AbstractRenderer *DeviceManager::createVideoRenderer(VideoWidget *parent)
     } else {
         GstElementFactory *srcfactory = gst_element_factory_find("ximagesink");
         if (srcfactory) {
+            gst_object_unref(srcfactory);
             return new X11Renderer(parent);
         }
     }

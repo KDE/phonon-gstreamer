@@ -44,7 +44,6 @@ VideoDataOutput::VideoDataOutput(Backend *backend, QObject *parent)
     m_name = "VideoDataOutput" + QString::number(count++);
 
     m_queue = gst_bin_new(NULL);
-    gst_object_ref(GST_OBJECT(m_queue));
     gst_object_ref_sink(GST_OBJECT(m_queue));
 
     GstElement* sink = gst_element_factory_make("fakesink", NULL);
@@ -78,13 +77,17 @@ VideoDataOutput::~VideoDataOutput()
 {
     gst_element_set_state(m_queue, GST_STATE_NULL);
     gst_object_unref(m_queue);
+    m_queue = 0;
 }
 
 void VideoDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad, gpointer gThat)
 {
     VideoDataOutput *that = reinterpret_cast<VideoDataOutput*>(gThat);
 
-    GstStructure* structure = gst_caps_get_structure(gst_pad_get_current_caps(pad), 0);
+    GstCaps *caps = gst_pad_get_current_caps(pad);
+    GstStructure* structure = gst_caps_get_structure(caps, 0);
+    gst_caps_unref(caps);
+
     int width;
     int height;
     double aspect;

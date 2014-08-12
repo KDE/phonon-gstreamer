@@ -70,19 +70,19 @@ public:
         m_root = mediaObject;
     }
 
-    Backend *backend() {
+    Backend *backend() const {
         return m_backend;
     }
 
-    const QString &name() {
+    const QString &name() const {
         return m_name;
     }
 
-    virtual GstElement *audioElement() {
+    virtual GstElement *audioElement() const {
         return m_audioTee;
     }
 
-    virtual GstElement *videoElement() {
+    virtual GstElement *videoElement() const {
         return m_videoTee;
     }
 

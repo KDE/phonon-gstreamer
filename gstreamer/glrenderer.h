@@ -42,6 +42,7 @@ public:
     ~GLRenderer();
     bool eventFilter(QEvent * event);
     bool paintsOnWidget() { return false; }
+
 private:
     GLRenderWidgetImplementation *m_glWindow;
 };

@@ -41,9 +41,8 @@ void Effect::init()
 {
     m_effectBin = createEffectBin();
     if (m_effectBin) {
+        gst_object_ref_sink(m_effectBin); // Take ownership of the bin
         setupEffectParams();
-        gst_object_ref(GST_OBJECT(m_effectBin)); // Take ownership
-        gst_object_ref_sink(GST_OBJECT(m_effectBin));
         m_isValid = true;
     }
 }
@@ -51,9 +50,24 @@ void Effect::init()
 Effect::~Effect()
 {
     if (m_effectBin) {
-        gst_element_set_state (m_effectBin, GST_STATE_NULL);
-        gst_object_unref (m_effectBin);
+        gst_element_set_state(m_effectBin, GST_STATE_NULL);
+        gst_object_unref(m_effectBin);
+        m_effectBin = 0;
     }
+    if (m_effectElement) {
+        gst_element_set_state(m_effectElement, GST_STATE_NULL);
+        gst_object_unref(m_effectElement);
+        m_effectElement = 0;
+    }
+}
+
+void Effect::setEffectElement(GstElement* effectElement)
+{
+    gst_object_ref_sink(effectElement);
+    if (m_effectElement) {
+          gst_object_unref(m_effectElement);
+    }
+    m_effectElement = effectElement;
 }
 
 void Effect::setupEffectParams()

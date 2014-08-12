@@ -39,7 +39,9 @@ public:
     ~VolumeFaderEffect();
 
     GstElement* createEffectBin();
-    GstElement *audioElement() { return m_effectBin; }
+    GstElement *audioElement() const {
+        return effectBin();
+    }
 
     // VolumeFaderInterface:
     float volume() const;

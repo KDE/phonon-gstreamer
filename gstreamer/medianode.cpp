@@ -46,14 +46,12 @@ MediaNode::MediaNode(Backend *backend, NodeDescription description) :
     if (description & AudioSource) {
         m_audioTee = gst_element_factory_make("tee", NULL);
         Q_ASSERT(m_audioTee); // Must not ever be null.
-        gst_object_ref(GST_OBJECT(m_audioTee));
         gst_object_ref_sink(GST_OBJECT(m_audioTee));
     }
 
     if (description & VideoSource) {
         m_videoTee = gst_element_factory_make("tee", NULL);
         Q_ASSERT(m_videoTee); // Must not ever be null.
-        gst_object_ref(GST_OBJECT(m_videoTee));
         gst_object_ref_sink(GST_OBJECT(m_videoTee));
     }
 }

@@ -34,6 +34,8 @@ class WidgetRenderer : public AbstractRenderer
 {
 public:
     WidgetRenderer(VideoWidget *videoWidget);
+    virtual ~WidgetRenderer();
+
     bool eventFilter(QEvent * event);
     void handlePaint(QPaintEvent *paintEvent);
     const QImage& currentFrame() const;

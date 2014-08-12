@@ -71,11 +71,11 @@ VideoWidget::~VideoWidget()
     if (m_videoBin) {
         gst_element_set_state(m_videoBin, GST_STATE_NULL);
         gst_object_unref(m_videoBin);
+        m_videoBin = 0;
     }
 
-    if (m_renderer) {
-        delete m_renderer;
-    }
+    delete m_renderer;
+    m_renderer = 0;
 }
 
 void VideoWidget::updateWindowID()
@@ -120,8 +120,7 @@ void VideoWidget::setupVideoBin()
 
     m_videoBin = gst_bin_new (NULL);
     Q_ASSERT(m_videoBin);
-    gst_object_ref(GST_OBJECT (m_videoBin)); //Take ownership
-    gst_object_ref_sink(GST_OBJECT (m_videoBin));
+    gst_object_ref_sink(GST_OBJECT (m_videoBin));  //Take ownership
     QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
     if (tegraEnv.isEmpty()) {
         //The videoplug element is the final element before the pluggable videosink
@@ -603,7 +602,7 @@ void VideoWidget::cb_capsChanged(GstPad *pad, GParamSpec *spec, gpointer data)
         return;
     }
     GstState videoState;
-    gst_element_get_state(that->videoElement(), &videoState, NULL, 1000);
+    gst_element_get_state(that->m_videoBin, &videoState, NULL, 1000);
 
     gint width;
     gint height;

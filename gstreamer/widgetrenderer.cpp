@@ -63,33 +63,38 @@ namespace Phonon
 namespace Gstreamer
 {
 
-WidgetRenderer::WidgetRenderer(VideoWidget *videoWidget)
-        : AbstractRenderer(videoWidget)
+WidgetRenderer::WidgetRenderer(VideoWidget *videoWidget_)
+        : AbstractRenderer(videoWidget_)
         , m_width(0)
         , m_height(0)
 {
     debug() << "Creating QWidget renderer";
-    if ((m_videoSink = GST_ELEMENT(g_object_new(get_type_RGB(), NULL)))) {
-        gst_object_ref (GST_OBJECT (m_videoSink)); //Take ownership
-        gst_object_ref_sink (GST_OBJECT (m_videoSink));
+    GstElement *videoSink = GST_ELEMENT(g_object_new(get_type_RGB(), NULL));
+    if (videoSink) {
+        setVideoSink(videoSink);
 
-        QWidgetVideoSinkBase*  sink = reinterpret_cast<QWidgetVideoSinkBase*>(m_videoSink);
+        QWidgetVideoSinkBase*  sink = reinterpret_cast<QWidgetVideoSinkBase*>(videoSink);
         // Let the videosink know which widget to direct frame updates to
-        sink->renderWidget = videoWidget;
+        sink->renderWidget = videoWidget();
     }
 
     // Clear the background with black by default
     QPalette palette;
     palette.setColor(QPalette::Background, Qt::black);
-    m_videoWidget->setPalette(palette);
-    m_videoWidget->setAutoFillBackground(true);
-    m_videoWidget->setAttribute(Qt::WA_NoSystemBackground, false);
-    m_videoWidget->setAttribute(Qt::WA_PaintOnScreen, false);
+    videoWidget()->setPalette(palette);
+    videoWidget()->setAutoFillBackground(true);
+    videoWidget()->setAttribute(Qt::WA_NoSystemBackground, false);
+    videoWidget()->setAttribute(Qt::WA_PaintOnScreen, false);
 }
+
+WidgetRenderer::~WidgetRenderer()
+{
+}
+
 
 void WidgetRenderer::setNextFrame(const QByteArray &array, int w, int h)
 {
-    if (m_videoWidget->root()->state() == Phonon::LoadingState) {
+    if (videoWidget()->root()->state() == Phonon::LoadingState) {
         return;
     }
 
@@ -98,14 +103,14 @@ void WidgetRenderer::setNextFrame(const QByteArray &array, int w, int h)
     m_width = w;
     m_height = h;
 
-    m_videoWidget->update();
+    videoWidget()->update();
 }
 
 void WidgetRenderer::clearFrame()
 {
     m_frame = QImage();
     m_array = QByteArray();
-    m_videoWidget->update();
+    videoWidget()->update();
 }
 
 const QImage &WidgetRenderer::currentFrame() const
@@ -116,8 +121,8 @@ const QImage &WidgetRenderer::currentFrame() const
 void WidgetRenderer::handlePaint(QPaintEvent *event)
 {
     Q_UNUSED(event);
-    QPainter painter(m_videoWidget);
-    m_drawFrameRect = m_videoWidget->calculateDrawFrameRect();
+    QPainter painter(videoWidget());
+    m_drawFrameRect = videoWidget()->calculateDrawFrameRect();
     painter.drawImage(drawFrameRect(), currentFrame());
     frameRendered();
 }

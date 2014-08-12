@@ -49,7 +49,7 @@ public:
 #endif
 
 public:
-    GstElement *audioElement()
+    GstElement *audioElement() const
     {
         Q_ASSERT(m_audioBin);
         return m_audioBin;

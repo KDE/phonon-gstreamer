@@ -80,11 +80,10 @@ GLRenderer::GLRenderer(VideoWidget* videoWidget) :
     format.setSwapInterval(1);    // Enable vertical sync on draw to avoid tearing
     m_glWindow = new GLRenderWidgetImplementation(videoWidget, format);
 
-    if ((m_videoSink = m_glWindow->createVideoSink())) {    //if ((m_videoSink = m_glWindow->createVideoSink())) {
-        gst_object_ref(GST_OBJECT(m_videoSink)); //Take ownership
-        gst_object_ref_sink(GST_OBJECT(m_videoSink));
-
-        QWidgetVideoSinkBase*  sink = reinterpret_cast<QWidgetVideoSinkBase*>(m_videoSink);
+    GstElement *videoSink = m_glWindow->createVideoSink();
+    if (videoSink) {
+        setVideoSink(videoSink);
+        QWidgetVideoSinkBase*  sink = reinterpret_cast<QWidgetVideoSinkBase*>(videoSink);
         // Let the videosink know which widget to direct frame updates to
         sink->renderWidget = videoWidget;
     }
@@ -92,10 +91,6 @@ GLRenderer::GLRenderer(VideoWidget* videoWidget) :
 
 GLRenderer::~GLRenderer()
 {
-    if (m_videoSink) {
-        gst_object_unref(GST_OBJECT(m_videoSink));
-        m_videoSink = 0;
-    }
 }
 
 
@@ -106,7 +101,7 @@ bool GLRenderer::eventFilter(QEvent * event)
         m_glWindow->setNextFrame(frameEvent->frame, frameEvent->width, frameEvent->height);
         return true;
     } else if (event->type() == QEvent::Resize) {
-        m_glWindow->setGeometry(m_videoWidget->geometry());
+        m_glWindow->setGeometry(videoWidget()->geometry());
         return true;
     }
     return false;
