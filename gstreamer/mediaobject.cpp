@@ -22,12 +22,8 @@
 
 #include "phonon-config-gstreamer.h"
 #include <gst/gst.h>
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-#include <gst/interfaces/navigation.h>
-#include <gst/interfaces/propertyprobe.h>
-#else
 #include <gst/video/navigation.h>
-#endif
+
 #include "backend.h"
 #include "streamreader.h"
 #include "debug.h"
@@ -729,7 +725,6 @@ QList<MediaController::NavigationMenu> MediaObject::_iface_availableMenus() cons
 
 void MediaObject::_iface_jumpToMenu(MediaController::NavigationMenu menu)
 {
-#if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
     GstNavigationCommand command;
     switch(menu) {
     case MediaController::RootMenu:
@@ -755,9 +750,9 @@ void MediaObject::_iface_jumpToMenu(MediaController::NavigationMenu menu)
     }
 
     GstElement *target = gst_bin_get_by_interface(GST_BIN(m_pipeline->element()), GST_TYPE_NAVIGATION);
-    if (target)
+    if (target) {
         gst_navigation_send_command(GST_NAVIGATION(target), command);
-#endif
+    }
 }
 
 void MediaObject::handleTrackCountChange(int tracks)

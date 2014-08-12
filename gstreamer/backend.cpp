@@ -36,9 +36,6 @@
 
 #include <gst/gst.h>
 
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-#include <gst/interfaces/propertyprobe.h>
-#endif
 #include <phonon/pulsesupport.h>
 #include <phonon/GlobalDescriptionContainer>
 
@@ -175,11 +172,8 @@ QObject *Backend::createObject(BackendInterface::Class c, QObject *parent, const
         }
 
 #ifndef PHONON_NO_GRAPHICSVIEW
-#warning FIXME: Enable this once we port VGO to GStreamer 1.0
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
     case VideoGraphicsObjectClass:
         return new VideoGraphicsObject(this, parent);
-#endif
 #endif //PHONON_NO_GRAPHICSVIEW
 #endif //QT_NO_PHONON_VIDEO
 #ifndef QT_NO_PHONON_VOLUMEFADEREFFECT
@@ -259,11 +253,7 @@ QStringList Backend::availableMimeTypes() const
 
     // Iterate over all audio and video decoders and extract mime types from sink caps
     GList* factoryList;
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-    factoryList = gst_registry_get_feature_list(gst_registry_get_default (), GST_TYPE_ELEMENT_FACTORY);
-#else
     factoryList = gst_registry_get_feature_list(gst_registry_get(), GST_TYPE_ELEMENT_FACTORY);
-#endif
     for (GList* iter = g_list_first(factoryList) ; iter != NULL ; iter = g_list_next(iter)) {
         GstPluginFeature *feature = GST_PLUGIN_FEATURE(iter->data);
         QString klass = gst_element_factory_get_klass(GST_ELEMENT_FACTORY(feature));
@@ -374,8 +364,9 @@ QHash<QByteArray, QVariant> Backend::objectDescriptionProperties(ObjectDescripti
                 ret.insert("name", effect->name());
                 ret.insert("description", effect->description());
                 ret.insert("author", effect->author());
-            } else
-                Q_ASSERT(1); // Since we use list position as ID, this should not happen
+            } else {
+                Q_ASSERT(0); // Since we use list position as ID, this should not happen
+            }
         }
         break;
 

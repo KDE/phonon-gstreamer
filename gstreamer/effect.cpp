@@ -43,11 +43,7 @@ void Effect::init()
     if (m_effectBin) {
         setupEffectParams();
         gst_object_ref (GST_OBJECT (m_effectBin)); // Take ownership
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-        gst_object_sink (GST_OBJECT (m_effectBin));
-#else
         gst_object_ref_sink (GST_OBJECT (m_effectBin));
-#endif
         m_isValid = true;
     }
 }

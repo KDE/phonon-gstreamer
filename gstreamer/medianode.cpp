@@ -47,22 +47,14 @@ MediaNode::MediaNode(Backend *backend, NodeDescription description) :
         m_audioTee = gst_element_factory_make("tee", NULL);
         Q_ASSERT(m_audioTee); // Must not ever be null.
         gst_object_ref (GST_OBJECT (m_audioTee));
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-        gst_object_sink (GST_OBJECT (m_audioTee));
-#else
         gst_object_ref_sink (GST_OBJECT (m_audioTee));
-#endif
     }
 
     if (description & VideoSource) {
         m_videoTee = gst_element_factory_make("tee", NULL);
         Q_ASSERT(m_videoTee); // Must not ever be null.
         gst_object_ref (GST_OBJECT (m_videoTee));
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-        gst_object_sink (GST_OBJECT (m_videoTee));
-#else
         gst_object_ref_sink (GST_OBJECT (m_videoTee));
-#endif
     }
 }
 
@@ -260,12 +252,8 @@ bool MediaNode::addOutput(MediaNode *output, GstElement *tee)
 
     GstState state = root()->pipeline()->state();
     GstPad *srcPad;
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-    srcPad = gst_element_get_request_pad (tee,"src%d");
-#else
     GstPadTemplate* tee_src_pad_template = gst_element_class_get_pad_template (GST_ELEMENT_GET_CLASS (tee), "src_%u");
     srcPad = gst_element_request_pad (tee, tee_src_pad_template, NULL, NULL);
-#endif
     GstPad *sinkPad = gst_element_get_static_pad (sinkElement, "sink");
 
     if (!sinkPad) {

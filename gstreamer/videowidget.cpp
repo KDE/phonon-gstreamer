@@ -36,14 +36,8 @@
 #include "x11renderer.h"
 #include "phonon-config-gstreamer.h"
 
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-#include <gst/interfaces/navigation.h>
-#include <gst/interfaces/propertyprobe.h>
-#else
 #include <gst/video/navigation.h>
 #include <gst/video/video-format.h>
-#endif
-
 
 #include "widgetrenderer.h"
 
@@ -124,24 +118,14 @@ void VideoWidget::setupVideoBin()
     m_videoBin = gst_bin_new (NULL);
     Q_ASSERT(m_videoBin);
     gst_object_ref (GST_OBJECT (m_videoBin)); //Take ownership
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-    gst_object_sink (GST_OBJECT (m_videoBin));
-#else
     gst_object_ref_sink (GST_OBJECT (m_videoBin));
-#endif
     QByteArray tegraEnv = qgetenv("TEGRA_GST_OPENMAX");
     if (tegraEnv.isEmpty()) {
         //The videoplug element is the final element before the pluggable videosink
         m_videoplug = gst_element_factory_make ("identity", NULL);
 
         //Colorspace ensures that the output of the stream matches the input format accepted by our video sink
-        m_colorspace = gst_element_factory_make (
-            #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-                    "ffmpegcolorspace"
-            #else
-                    "videoconvert"
-            #endif
-                    , NULL);
+        m_colorspace = gst_element_factory_make ("videoconvert", NULL);
 
         //Video scale is used to prepare the correct aspect ratio and scale.
         GstElement *videoScale = gst_element_factory_make ("videoscale", NULL);
@@ -159,13 +143,7 @@ void VideoWidget::setupVideoBin()
                 // For video balance to work we have to first ensure that the video is in YUV colorspace,
                 // then hand it off to the videobalance filter before finally converting it back to RGB.
                 // Hence we nede a videoFilter to convert the colorspace before and after videobalance
-                GstElement *m_colorspace2 = gst_element_factory_make (
-            #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-                    "ffmpegcolorspace"
-            #else
-                    "videoconvert"
-            #endif
-                    , NULL);
+                GstElement *m_colorspace2 = gst_element_factory_make ("videoconvert", NULL);
                 gst_bin_add_many(GST_BIN(m_videoBin), m_videoBalance, m_colorspace2, NULL);
                 success = gst_element_link_many(queue, m_colorspace, m_videoBalance, m_colorspace2, videoScale, m_videoplug, videoSink, NULL);
             } else {
@@ -333,7 +311,6 @@ QRect VideoWidget::calculateDrawFrameRect() const
 QImage VideoWidget::snapshot() const
 {
     // for gst_video_convert_frame()
-#if GST_CHECK_PLUGINS_BASE_VERSION(0,10,31)
     GstElement *videosink = m_renderer->videoSink();
 
     // in case we get called just after a flush (e.g. seeking), wait for the
@@ -341,55 +318,26 @@ QImage VideoWidget::snapshot() const
     // last-buffer will be populated
     gst_element_get_state(videosink, NULL, NULL, GST_SECOND);
 
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-    GstBuffer *videobuffer = NULL;
-    g_object_get(G_OBJECT(videosink), "last-buffer", &videobuffer, NULL);
-#else
     GstSample *videobuffer = NULL;
     g_object_get(G_OBJECT(videosink), "last-sample", &videobuffer, NULL);
-#endif
 
     if (videobuffer) {
-        GstCaps *snapcaps =
-        #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-                gst_caps_new_simple("video/x-raw-rgb",
-                                    "bpp", G_TYPE_INT, 24,
-                                    "depth", G_TYPE_INT, 24,
-                                    "endianness", G_TYPE_INT, G_BIG_ENDIAN,
-                                    "red_mask", G_TYPE_INT, 0xff0000,
-                                    "green_mask", G_TYPE_INT, 0x00ff00,
-                                    "blue_mask", G_TYPE_INT, 0x0000ff,
-                                    NULL);
-#else
-                gst_caps_new_simple("video/x-raw",
-                                    "format = (string)", G_TYPE_STRING, GST_VIDEO_NE(RGB),
-                                    NULL);
-#endif
+        GstCaps *snapcaps = gst_caps_new_simple("video/x-raw",
+                                                "format = (string)", G_TYPE_STRING, GST_VIDEO_NE(RGB),
+                                                NULL);
 
         GstBuffer *snapbuffer;
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-        snapbuffer = gst_video_convert_frame(videobuffer, snapcaps, GST_SECOND, NULL);
-        gst_buffer_unref(videobuffer);
-#else
         GstSample *sample = gst_video_convert_sample(videobuffer, snapcaps, GST_SECOND, NULL);
         snapbuffer = gst_sample_get_buffer(sample);
         GstMapInfo info;
         gst_buffer_map(snapbuffer, &info, GST_MAP_READ);
         gst_sample_unref(videobuffer);
-#endif
-
         gst_caps_unref(snapcaps);
 
         if (snapbuffer) {
             gint width, height;
             gboolean ret;
-            GstStructure *s =
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-                    gst_caps_get_structure(GST_BUFFER_CAPS(snapbuffer), 0);
-#else
-                    gst_caps_get_structure(gst_sample_get_caps(sample), 0);
-#endif
-
+            GstStructure *s = gst_caps_get_structure(gst_sample_get_caps(sample), 0);
             ret  = gst_structure_get_int(s, "width", &width);
             ret &= gst_structure_get_int(s, "height", &height);
 
@@ -397,18 +345,10 @@ QImage VideoWidget::snapshot() const
                 QImage snapimage(width, height, QImage::Format_RGB888);
 
                 for (int i = 0; i < height; ++i)
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-                    memcpy(snapimage.scanLine(i),
-                           GST_BUFFER_DATA(snapbuffer) + i * GST_ROUND_UP_4(width * 3),
-                           width * 3);
-#else
                     memcpy(snapimage.scanLine(i),
                            info.data + i * GST_ROUND_UP_4(width * 3),
                            width * 3);
-#endif
-#if GST_VERSION > GST_VERSION_CHECK (1,0,0,0)
                 gst_buffer_unmap(snapbuffer, &info);
-#endif
                 gst_buffer_unref(snapbuffer);
                 return snapimage;
             }
@@ -416,15 +356,16 @@ QImage VideoWidget::snapshot() const
             gst_buffer_unref(snapbuffer);
         }
     }
-#endif // gst_video_convert_frame()
+
     return QImage();
 }
 
 void VideoWidget::setScaleMode(Phonon::VideoWidget::ScaleMode scaleMode)
 {
     m_scaleMode = scaleMode;
-    if (m_renderer)
+    if (m_renderer) {
         m_renderer->scaleModeChanged(scaleMode);
+    }
 }
 
 qreal VideoWidget::brightness() const
@@ -434,11 +375,13 @@ qreal VideoWidget::brightness() const
 
 qreal clampedValue(qreal val)
 {
-    if (val > 1.0 )
+    if (val > 1.0) {
         return 1.0;
-    else if (val < -1.0)
+    } else if (val < -1.0) {
         return -1.0;
-    else return val;
+    } else {
+        return val;
+    }
 }
 
 void VideoWidget::setBrightness(qreal newValue)
@@ -641,14 +584,10 @@ void VideoWidget::cb_capsChanged(GstPad *pad, GParamSpec *spec, gpointer data)
     gint height;
     //FIXME: This sometimes gives a gstreamer warning. Feels like GStreamer shouldn't, and instead
     //just quietly return false, probably a bug.
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-    if (gst_video_get_size(pad, &width, &height)) {
-#else
     GstVideoInfo info;
     if (gst_video_info_from_caps(&info, gst_pad_get_current_caps(pad))) {
         width = info.width;
         height = info.height;
-#endif
         QMetaObject::invokeMethod(that, "setMovieSize", Q_ARG(QSize, QSize(width, height)));
     }
 }

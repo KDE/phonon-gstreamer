@@ -33,10 +33,7 @@
 #include <gst/gstghostpad.h>
 #include <gst/gstutils.h>
 #include <gst/gst.h>
-
-#if GST_VERSION > GST_VERSION_CHECK (1,0,0,0)
 #include <gst/audio/audio-format.h>
-#endif
 
 namespace Phonon
 {
@@ -52,11 +49,7 @@ AudioDataOutput::AudioDataOutput(Backend *backend, QObject *parent)
 
     m_queue = gst_bin_new(NULL);
     gst_object_ref(GST_OBJECT(m_queue));
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-    gst_object_sink(GST_OBJECT(m_queue));
-#else
     gst_object_ref_sink(GST_OBJECT(m_queue));
-#endif
     GstElement* sink = gst_element_factory_make("fakesink", NULL);
     GstElement* queue = gst_element_factory_make("queue", NULL);
     GstElement* convert = gst_element_factory_make("audioconvert", NULL);
@@ -65,18 +58,9 @@ AudioDataOutput::AudioDataOutput(Backend *backend, QObject *parent)
     g_object_set(G_OBJECT(sink), "signal-handoffs", true, NULL);
 
     //G_BYTE_ORDER is the host machine's endianess
-    GstCaps *caps =
-                #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-                    gst_caps_new_simple("audio/x-raw-int",
-                                        "endianess", G_TYPE_INT, G_BYTE_ORDER,
-                                        "width", G_TYPE_INT, 16,
-                                        "depth", G_TYPE_INT, 16,
-                                        NULL);
-                #else
-                    gst_caps_new_simple("audio/x-raw",
+    GstCaps *caps = gst_caps_new_simple("audio/x-raw",
                                         "format", G_TYPE_STRING, GST_AUDIO_NE (S16),
                                         NULL);
-                #endif
 
     gst_bin_add_many(GST_BIN(m_queue), sink, convert, queue, NULL);
     gst_element_link(queue, convert);
@@ -137,27 +121,18 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad,
 
     // determine the number of channels
     GstStructure *structure;
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-    structure = gst_caps_get_structure(GST_BUFFER_CAPS(buffer), 0);
-#else
     const GstCaps *caps = gst_pad_get_current_caps(GST_PAD(pad));
     structure = gst_caps_get_structure(caps, 0);
-#endif
     gst_structure_get_int(structure, "channels", &that->m_channels);
 
     // Let's get the buffers
     gint16 *gstBufferData;
     guint gstBufferSize;
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-    gstBufferData = reinterpret_cast<gint16 *>(GST_BUFFER_DATA(buffer));
-    gstBufferSize = GST_BUFFER_SIZE(buffer) / sizeof(gint16);
-#else
     GstMapInfo info;
     gst_buffer_map(buffer, &info, GST_MAP_READ);
     gstBufferData = reinterpret_cast<gint16 *>(info.data);
     gstBufferSize = info.size / sizeof(gint16);
     gst_buffer_unmap(buffer,&info);
-#endif
 
     if (gstBufferSize == 0) {
         qWarning() << Q_FUNC_INFO << ": received a buffer of 0 size ... doing nothing";

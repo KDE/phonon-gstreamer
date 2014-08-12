@@ -28,11 +28,7 @@
 #include "phonon-config-gstreamer.h"
 #include <gst/pbutils/missing-plugins.h>
 #include <gst/gst.h>
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-#include <gst/interfaces/navigation.h>
-#else
 #include <gst/video/navigation.h>
-#endif
 #include <gst/app/gstappsrc.h>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QMutexLocker>
@@ -55,13 +51,8 @@ Pipeline::Pipeline(QObject *parent)
     , m_posAtReset(0)
 {
     qRegisterMetaType<GstState>("GstState");
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-    m_pipeline = GST_PIPELINE(gst_element_factory_make("playbin2", NULL));
-    gst_object_ref(m_pipeline);
-#else
     m_pipeline = GST_PIPELINE(gst_element_factory_make("playbin", NULL));
     gst_object_ref(m_pipeline);
-#endif
     gst_object_ref_sink (m_pipeline);
     g_signal_connect(m_pipeline, "video-changed", G_CALLBACK(cb_videoChanged), this);
     g_signal_connect(m_pipeline, "text-tags-changed", G_CALLBACK(cb_textTagsChanged), this);
@@ -70,38 +61,22 @@ Pipeline::Pipeline(QObject *parent)
     g_signal_connect(m_pipeline, "about-to-finish", G_CALLBACK(cb_aboutToFinish), this);
 
     GstBus *bus = gst_pipeline_get_bus(m_pipeline);
-    gst_bus_set_sync_handler(bus, gst_bus_sync_signal_handler, NULL
-                         #if GST_VERSION >= GST_VERSION_CHECK (1,0,0,0)
-                             ,NULL
-                         #endif
-                             );
+    gst_bus_set_sync_handler(bus, gst_bus_sync_signal_handler, NULL, NULL);
     g_signal_connect(bus, "sync-message::eos", G_CALLBACK(cb_eos), this);
     g_signal_connect(bus, "sync-message::warning", G_CALLBACK(cb_warning), this);
-
-#if GST_VERSION >= GST_VERSION_CHECK (1,0,0,0)
     g_signal_connect(bus, "sync-message::duration-changed", G_CALLBACK(cb_duration), this);
-#else
-    g_signal_connect(bus, "sync-message::duration", G_CALLBACK(cb_duration), this);
-#endif
-
     g_signal_connect(bus, "sync-message::buffering", G_CALLBACK(cb_buffering), this);
     g_signal_connect(bus, "sync-message::state-changed", G_CALLBACK(cb_state), this);
     g_signal_connect(bus, "sync-message::element", G_CALLBACK(cb_element), this);
     g_signal_connect(bus, "sync-message::error", G_CALLBACK(cb_error), this);
-#if GST_VERSION >= GST_VERSION_CHECK (1,0,0,0)
     g_signal_connect(bus, "sync-message::stream-start", G_CALLBACK(cb_streamStart), this);
-#endif
     g_signal_connect(bus, "sync-message::tag", G_CALLBACK(cb_tag), this);
     gst_object_unref(bus);
 
     // Set up audio graph
     m_audioGraph = gst_bin_new("audioGraph");
     gst_object_ref (GST_OBJECT (m_audioGraph));
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-    gst_object_sink (GST_OBJECT (m_audioGraph));
-#else
     gst_object_ref_sink (GST_OBJECT (m_audioGraph));
-#endif
 
     // Note that these queues are only required for streaming content
     // And should ideally be created on demand as they will disable
@@ -127,11 +102,7 @@ Pipeline::Pipeline(QObject *parent)
     // Set up video graph
     m_videoGraph = gst_bin_new("videoGraph");
     gst_object_ref (GST_OBJECT (m_videoGraph));
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-    gst_object_sink (GST_OBJECT (m_videoGraph));
-#else
     gst_object_ref_sink (GST_OBJECT (m_videoGraph));
-#endif
 
     m_videoPipe = gst_element_factory_make("queue", "videoPipe");
     gst_bin_add(GST_BIN(m_videoGraph), m_videoPipe);
@@ -285,13 +256,9 @@ void Pipeline::writeToDot(MediaObject *media, const QString &type)
 
 bool Pipeline::queryDuration(GstFormat *format, gint64 *duration) const
 {
-    return gst_element_query_duration(GST_ELEMENT(m_pipeline),
-                                      #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-                                      format
-                                      #else
-                                      *format
-                                      #endif
-                                      , duration);
+#warning Remove this method, use gst directly
+
+    return gst_element_query_duration(GST_ELEMENT(m_pipeline), *format, duration);
 }
 
 GstState Pipeline::state() const
@@ -329,21 +296,12 @@ gboolean Pipeline::cb_duration(GstBus *bus, GstMessage *gstMessage, gpointer dat
 {
     DEBUG_BLOCK;
     Q_UNUSED(bus)
+    Q_UNUSED(gstMessage)
     Pipeline *that = static_cast<Pipeline*>(data);
     if (that->m_resetting)
         return true;
-#if GST_VERSION >= GST_VERSION_CHECK (1,0,0,0)
-    Q_UNUSED(gstMessage)
+
     emit that->durationChanged(that->totalDuration());
-#else
-    GstFormat format = GST_FORMAT_TIME;
-    gint64 duration = 0;
-    gst_message_parse_duration(gstMessage, &format, &duration);
-    if (format == GST_FORMAT_TIME) {
-        debug() << "duration" << duration/GST_MSECOND;
-        emit that->durationChanged(duration/GST_MSECOND);
-    }
-#endif
     return true;
 }
 
@@ -487,7 +445,6 @@ gboolean Pipeline::cb_element(GstBus *bus, GstMessage *gstMessage, gpointer data
     if (gst_is_missing_plugin_message(gstMessage)) {
         that->m_installer->addPlugin(gstMessage);
     } else {
-#if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
         switch (gst_navigation_message_get_type(gstMessage)) {
         case GST_NAVIGATION_MESSAGE_MOUSE_OVER: {
             gboolean active;
@@ -503,28 +460,8 @@ gboolean Pipeline::cb_element(GstBus *bus, GstMessage *gstMessage, gpointer data
         default:
             break;
         }
-#endif // GST_VERSION
     }
-    // GStraemer 1.0 actually has a proper signal for this, see stream-started.
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-    // Currently undocumented, but discovered via gst-plugins-base commit 7e674d
-    // gst 0.10.25.1
-    if (gst_structure_has_name(str,
-                           #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-                             "playbin2-stream-changed"
-                           #else
-                             "playbin-stream-changed"
-                           #endif
-                               )) {
 
-        gchar *uri;
-        g_object_get(that->m_pipeline, "uri", &uri, NULL);
-        debug() << "Stream changed to" << uri;
-        g_free(uri);
-        if (!that->m_resetting)
-            emit that->streamChanged();
-    }
-#endif
     if (gst_structure_has_name(str, "prepare-xwindow-id") || gst_structure_has_name(str, "prepare-window-handle"))
         emit that->windowIDNeeded();
     return true;
@@ -775,7 +712,6 @@ void Pipeline::setMetaData(const QMultiMap<QString, QString> &newData)
 void Pipeline::updateNavigation()
 {
     QList<MediaController::NavigationMenu> ret;
-#if GST_VERSION >= GST_VERSION_CHECK(0,10,23,0)
     GstElement *target = gst_bin_get_by_interface(GST_BIN(m_pipeline), GST_TYPE_NAVIGATION);
     if (target) {
         GstQuery *query = gst_navigation_query_new_commands();
@@ -811,7 +747,7 @@ void Pipeline::updateNavigation()
             }
         }
     }
-#endif
+
     if (ret != m_menus) {
         m_menus = ret;
         emit availableMenusChanged(m_menus);
@@ -876,30 +812,16 @@ static void cb_feedAppSrc(GstAppSrc *appSrc, guint buffsize, gpointer data)
     DEBUG_BLOCK;
     StreamReader *reader = static_cast<StreamReader*>(data);
     GstBuffer *buf = gst_buffer_new_and_alloc(buffsize);
-#warning ret not used!!! WHOOPWHOOPWHOOP
 
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-    reader->read(reader->currentPos(), buffsize, (char*)GST_BUFFER_DATA(buf));
-#else
     GstMapInfo info;
     gst_buffer_map(buf, &info, GST_MAP_WRITE);
+    #warning return value not used!!! WHOOPWHOOPWHOOP
     reader->read(reader->currentPos(), info.size, (char*)info.data);
-#endif
-
-#if GST_VERSION > GST_VERSION_CHECK (1,0,0,0)
-        gst_buffer_unmap(buf, &info);
-#endif
-
+    gst_buffer_unmap(buf, &info);
     gst_app_src_push_buffer(appSrc, buf);
-    if (
-        #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-            GST_BUFFER_SIZE(buf) > 0
-        #else
-            info.size > 0
-        #endif
-            && reader->atEnd())
+    if (info.size > 0 && reader->atEnd()) {
         gst_app_src_end_of_stream(appSrc);
-
+    }
 }
 
 static void cb_seekAppSrc(GstAppSrc *appSrc, guint64 pos, gpointer data)
@@ -975,17 +897,12 @@ Phonon::MediaSource Pipeline::currentSource() const
 
 qint64 Pipeline::position() const
 {
-    gint64 pos = 0;
-    GstFormat format = GST_FORMAT_TIME;
-    if (m_resetting)
+    if (m_resetting) {
         return m_posAtReset;
-    gst_element_query_position (GST_ELEMENT(m_pipeline),
-                                #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-                                &format
-                                #else
-                                format
-                                #endif
-                                , &pos);
+    }
+
+    gint64 pos = 0;
+    gst_element_query_position (GST_ELEMENT(m_pipeline), GST_FORMAT_TIME, &pos);
     return (pos / GST_MSECOND);
 }
 

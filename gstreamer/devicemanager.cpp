@@ -99,12 +99,7 @@ void DeviceInfo::useGstElement(GstElement *element, const QByteArray &deviceId)
         if (m_description.isEmpty()) {
             // Construct a description by using the factory name and the device id
             GstElementFactory *factory = gst_element_get_factory(element);
-            const gchar *factoryName =
-        #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-                    gst_element_factory_get_longname(factory);
-        #else
-                    gst_element_factory_get_metadata(factory, "Long-name");
-        #endif
+            const gchar *factoryName = gst_element_factory_get_metadata(factory, "Long-name");
             m_description = QString(factoryName) + ": " + deviceId;
         }
 

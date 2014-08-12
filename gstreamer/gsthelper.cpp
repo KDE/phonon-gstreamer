@@ -21,9 +21,6 @@
 
 #include <gst/gst.h>
 
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-#include <gst/interfaces/propertyprobe.h>
-#endif
 #include "mediaobject.h"
 #include "backend.h"
 
@@ -43,29 +40,12 @@ namespace Gstreamer
 QList<QByteArray> GstHelper::extractProperties(GstElement *elem, const QByteArray &value)
 {
     Q_ASSERT(elem);
-    QList<QByteArray> list;
-
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-    if (GST_IS_PROPERTY_PROBE(elem)) {
-        GstPropertyProbe *probe = GST_PROPERTY_PROBE(elem);
-        const GParamSpec *devspec = 0;
-        GValueArray *array = NULL;
-
-        if ((devspec = gst_property_probe_get_property (probe, value))) {
-            if ((array = gst_property_probe_probe_and_get_values (probe, devspec))) {
-                for (unsigned int device = 0; device < array->n_values; device++) {
-                    GValue *deviceId = g_value_array_get_nth (array, device);
-                    list.append(g_value_get_string(deviceId));
-                }
-            }
-            if (array)
-                g_value_array_free (array);
-        }
-    }
-#else
     Q_UNUSED(value);
-#endif
-    return list;
+
+    #warning Implement this for GStreamer 1.3.1
+
+
+    return QList<QByteArray>();
 }
 
 /**

@@ -87,16 +87,11 @@ GstFlowReturn QWidgetVideoSink<FMT>::render(GstBaseSink* sink, GstBuffer* buf)
     {
         QWidgetVideoSink<FMT> *self = G_TYPE_CHECK_INSTANCE_CAST(sink, QWidgetVideoSinkClass<FMT>::get_type(), QWidgetVideoSink<FMT>);
         QByteArray frame;
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-        frame.resize(buf->size);
-        memcpy(frame.data(), buf->data, buf->size);
-#else
         GstMapInfo info;
         gst_buffer_map(buf, &info, GST_MAP_READ);
         frame.resize(info.size);
         memcpy(frame.data(), info.data, info.size);
         gst_buffer_unmap(buf, &info);
-#endif
         NewFrameEvent *frameEvent = new NewFrameEvent(frame, self->width, self->height);
         QApplication::postEvent(self->renderWidget, frameEvent);
     }
@@ -110,31 +105,16 @@ static GstStaticPadTemplate template_factory_yuv =
                             GST_PAD_SINK,
                             GST_PAD_ALWAYS,
                             GST_STATIC_CAPS(
-                                #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-                                    "video/x-raw-yuv, "
-                                    "framerate = (fraction) [ 0, MAX ], "
-                                    "width = (int) [ 1, MAX ], "
-                                    "height = (int) [ 1, MAX ],"
-                                    "bpp = (int) 32"
-                                #else
                                     "video/x-raw, "
-                                    "format = (string) {YUY2, YVYU, UYVY, Y41P, IYU2, Y42B, YV12, I420, Y41B, YUV9, YVU9, Y800}"
-                                #endif
-                                )
-);
+                                    "format = (string) {YUY2, YVYU, UYVY, Y41P, IYU2, Y42B, YV12, I420, Y41B, YUV9, YVU9, Y800}")
+    );
 
 static GstStaticPadTemplate template_factory_rgb =
     GST_STATIC_PAD_TEMPLATE("sink",
                             GST_PAD_SINK,
                             GST_PAD_ALWAYS,
-                            GST_STATIC_CAPS(
-                                #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-                                    GST_VIDEO_CAPS_xRGB_HOST_ENDIAN
-                                #else
-                                    GST_VIDEO_CAPS_MAKE("xRGB")
-                                #endif
-                                )
-                            );
+                            GST_STATIC_CAPS(GST_VIDEO_CAPS_MAKE("xRGB"))
+    );
 
 template <VideoFormat FMT>
 struct template_factory;

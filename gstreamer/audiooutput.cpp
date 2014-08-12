@@ -52,11 +52,7 @@ AudioOutput::AudioOutput(Backend *backend, QObject *parent)
 
     m_audioBin = gst_bin_new (NULL);
     gst_object_ref (GST_OBJECT (m_audioBin));
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-    gst_object_sink (GST_OBJECT (m_audioBin));
-#else
     gst_object_ref_sink (GST_OBJECT (m_audioBin));
-#endif
 
     m_conv = gst_element_factory_make ("audioconvert", NULL);
 
@@ -223,12 +219,7 @@ void AudioOutput::setStreamUuid(QString uuid)
 #warning this really needs a check for pulsesink as well
     if (g_object_class_find_property(G_OBJECT_GET_CLASS(m_audioSink), "stream-properties")) {
         const QHash<QString, QString> streamProperties = PulseSupport::getInstance()->streamProperties(uuid);
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-        GstStructure *properties = gst_structure_empty_new("props");
-#else
         GstStructure *properties = gst_structure_new_empty("props");
-#endif
-
         QHashIterator<QString, QString> it(streamProperties);
         while (it.hasNext()) {
             it.next();

@@ -40,11 +40,7 @@ VideoGraphicsObject::VideoGraphicsObject(Backend *backend, QObject *parent) :
 
     m_bin = gst_bin_new(0);
     gst_object_ref(GST_OBJECT(m_bin));
-#if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-    gst_object_sink(GST_OBJECT(m_bin));
-#else
     gst_object_ref_sink(GST_OBJECT(m_bin));
-#endif
 
     m_sink = P_GST_VIDEO_SINK(g_object_new(P_GST_TYPE_VIDEO_SINK, 0));
     m_sink->userData = this;
@@ -107,6 +103,7 @@ void VideoGraphicsObject::renderCallback(GstBuffer *buffer, void *userData)
     frame->format = VideoFrame::Format_RGB32;
     frame->planeCount = 1;
     // RGB888 Means the data is 8 bits o' red, 8 bits o' green, and 8 bits o' blue per pixel.
+#warn GST1
     frame->plane[0] =
             QByteArray::fromRawData(
                 reinterpret_cast<const char*>(GST_BUFFER_DATA(buffer)),

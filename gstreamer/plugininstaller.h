@@ -27,9 +27,7 @@
  */
 #include "phonon-config-gstreamer.h" // krazy:exclude=includes
 #include <gst/gst.h>
-#if GST_VERSION > GST_VERSION_CHECK (1,0,0,0)
 #include <gst/gsttoc.h>
-#endif
 
 #include <gst/gstmessage.h>
 #include <gst/pbutils/install-plugins.h>

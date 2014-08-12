@@ -43,11 +43,8 @@ EffectManager::EffectManager(Backend *backend)
         , m_backend(backend)
 {
     GList *factoryList =
-        #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-            gst_registry_get_feature_list(gst_registry_get_default (), GST_TYPE_ELEMENT_FACTORY);
-        #else
             gst_registry_get_feature_list(gst_registry_get (), GST_TYPE_ELEMENT_FACTORY);
-        #endif
+
     QString name;
     QString klass;
     QString description;

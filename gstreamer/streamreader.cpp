@@ -97,13 +97,9 @@ GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
     DEBUG_BLOCK;
 
     // If we got unlocked before grabbing the mutex -> return
-    if (!m_locked)
-        return
-        #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-            GST_FLOW_UNEXPECTED;
-        #else
-            GST_FLOW_EOS;
-        #endif
+    if (!m_locked) {
+        return GST_FLOW_EOS;
+    }
 
     if (currentPos() != pos) {
         if (!streamSeekable()) {
@@ -123,23 +119,14 @@ GstFlowReturn StreamReader::read(quint64 pos, int length, char *buffer)
 
         // Abort instantly if we got unlocked, whether we got sufficient data or not
         // is absolutely unimportant at this point.
-        if (!m_locked)
-            return
-            #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-              GST_FLOW_UNEXPECTED;
-            #else
-              GST_FLOW_EOS;
-            #endif
+        if (!m_locked) {
+            return GST_FLOW_EOS;
+        }
 
         if (oldSize == currentBufferSize()) {
             // We didn't get any data, check if we are at the end of stream already.
             if (m_eos) {
-                return
-            #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-              GST_FLOW_UNEXPECTED;
-            #else
-              GST_FLOW_EOS;
-            #endif
+                return GST_FLOW_EOS;
             }
         }
     }

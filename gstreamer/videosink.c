@@ -26,10 +26,7 @@
 
 #include "videosink.h"
 #include "phonon-config-gstreamer.h"
-
-#if GST_VERSION > GST_VERSION_CHECK (1,0,0,0)
 #include <gst/video/video-format.h>
-#endif
 
 #define UNUSED(x) (void)x
 #define dbg(x) fprintf(stderr, "%s\n", x)
@@ -38,37 +35,22 @@ static GstStaticPadTemplate s_sinktemplate =
         GST_STATIC_PAD_TEMPLATE("sink",
                                 GST_PAD_SINK,
                                 GST_PAD_ALWAYS,
-                                GST_STATIC_CAPS (
-                                    #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-                                        GST_VIDEO_CAPS_xRGB_HOST_ENDIAN)
-                                    #else
-                                        GST_VIDEO_NE(RGB)
-                                    #endif
-                                    ));
+                                GST_STATIC_CAPS (GST_VIDEO_NE(RGB))
+        );
 
 static GstStaticPadTemplate s_rgbPadTemplate =
         GST_STATIC_PAD_TEMPLATE("sink",
                                 GST_PAD_SINK,
                                 GST_PAD_ALWAYS,
-                                GST_STATIC_CAPS(
-                                    #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-                                        GST_VIDEO_CAPS_xRGB_HOST_ENDIAN)
-                                    #else
-                                        GST_VIDEO_NE(RGB)
-                                    #endif
-                                    ));
+                                GST_STATIC_CAPS(GST_VIDEO_NE(RGB))
+        );
 
 static GstStaticPadTemplate s_yuvPadTemplate =
         GST_STATIC_PAD_TEMPLATE("sink",
                                 GST_PAD_SINK,
                                 GST_PAD_ALWAYS,
-                                GST_STATIC_CAPS(
-                                    #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-                                        GST_VIDEO_CAPS_YUV (
-                                    #else
-                                        GST_VIDEO_CAPS_MAKE (
-                                     #endif
-                                        "{ IYUV, I420, YV12 }")));
+                                GST_STATIC_CAPS(GST_VIDEO_CAPS_MAKE("{ IYUV, I420, YV12 }"))
+        );
 
 
 G_DEFINE_TYPE(PGstVideoSink, p_gst_video_sink, GST_TYPE_VIDEO_SINK)
@@ -98,12 +80,7 @@ static GstFlowReturn p_gst_video_sink_render(GstBaseSink *baseSink,
     PGstVideoSink *sink = P_GST_VIDEO_SINK(baseSink);
     if (buffer == NULL || G_UNLIKELY(!GST_IS_BUFFER (buffer))) {
 #warning sounds bogus?
-        return
-        #if GST_VERSION < GST_VERSION_CHECK (1,0,0,0)
-                GST_FLOW_RESEND;
-        #else
-                GST_FLOW_EOS;
-        #endif
+        return GST_FLOW_EOS;
     }
 
     sink->renderCallback(buffer, sink->userData);
