@@ -96,7 +96,7 @@ int AudioDataOutput::sampleRate() const
     return 44100;
 }
 
-inline void AudioDataOutput::convertAndEmit()
+inline void AudioDataOutput::convertAndEmit(bool isEndOfMedia)
 {
     QMap<Phonon::AudioDataOutput::Channel, QVector<qint16> > map;
 
@@ -105,7 +105,34 @@ inline void AudioDataOutput::convertAndEmit()
         Q_ASSERT(i == 0 || m_channelBuffers[i - 1].size() == m_channelBuffers[i].size());
     }
 
+    if (isEndOfMedia) {
+        emit endOfMedia(m_channelBuffers[0].size());
+    }
     emit dataReady(map);
+
+
+    for (int j = 0 ; j < m_channels ; ++j) {
+        // QVector::resize doesn't reallocate the buffer
+        m_channelBuffers[j].resize(0);
+    }
+}
+
+void AudioDataOutput::flushPendingData()
+{
+    if (m_pendingData.size() == 0) {
+        return;
+    }
+
+    // Since pendingData is a concatenation of buffers it must share its
+    // attribute of being a multiple of channelCount
+    Q_ASSERT((m_pendingData.size() % m_channels) == 0);
+    for (int i = 0; i < m_pendingData.size(); i += m_channels) {
+        for (int j = 0; j < m_channels; ++j) {
+            m_channelBuffers[j].append(m_pendingData[i + j]);
+        }
+    }
+
+    m_pendingData.resize(0);
 }
 
 void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad, gpointer gThat)
@@ -119,11 +146,24 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad,
         return;
     }
 
+    int channelsCount = 0;
+
     // determine the number of channels
     GstCaps *caps = gst_pad_get_current_caps(GST_PAD(pad));
     GstStructure *structure = gst_caps_get_structure(caps, 0);
-    gst_structure_get_int(structure, "channels", &that->m_channels);
+    gst_structure_get_int(structure, "channels", &channelsCount);
     gst_caps_unref(caps);
+
+    // Channels count have changed, so emit the pending data that have the old
+    // channels count, before we fill the buffer with new pending data
+    if (that->m_pendingData.size() > 0 && channelsCount != that->m_channels) {
+        const bool isEndOfMedia = (that->m_pendingData.size() / that->m_channels) == dataSize;
+        that->flushPendingData();
+        that->convertAndEmit(isEndOfMedia);
+    }
+
+    // Now update the channels count
+    that->m_channels = channelsCount;
 
     // Let's get the buffers
     gint16 *gstBufferData;
@@ -142,6 +182,10 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad,
     if ((gstBufferSize % that->m_channels) != 0) {
         qWarning() << Q_FUNC_INFO << ": corrupted data";
         return;
+    }
+
+    if (that->m_pendingData.capacity() != dataSize) {
+        that->m_pendingData.reserve(dataSize);
     }
 
     // I set the number of channels
@@ -164,23 +208,8 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad,
 
     // SENDING DATA
 
-    // 1) I empty the stored data
-    if (that->m_pendingData.size() != 0) {
-        // Since pendingData is a concatenation of buffers it must share its
-        // attribute of being a multiple of channelCount
-        Q_ASSERT((that->m_pendingData.size() % that->m_channels) == 0);
-        for (int i = 0; i < that->m_pendingData.size(); i += that->m_channels) {
-            for (int j = 0; j < that->m_channels; ++j) {
-                that->m_channelBuffers[j].append(that->m_pendingData[i+j]);
-            }
-        }
-
-        if (that->m_pendingData.capacity() != dataSize) {
-            that->m_pendingData.reserve(dataSize);
-        }
-
-        that->m_pendingData.resize(0);
-    }
+    // 1) I write pending data to buffers
+    that->flushPendingData();
 
     // 2) I fill with fresh data and send
     for (int i = 0 ; i < that->m_channels ; ++i) {
@@ -197,12 +226,7 @@ void AudioDataOutput::processBuffer(GstElement*, GstBuffer* buffer, GstPad* pad,
             }
         }
 
-        that->convertAndEmit();
-
-        for (int j = 0 ; j < that->m_channels ; ++j) {
-            // QVector::resize doesn't reallocate the buffer
-            that->m_channelBuffers[j].resize(0);
-        }
+        that->convertAndEmit(false);
     }
 
     // 3) I store the rest of data

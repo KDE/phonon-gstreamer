@@ -73,7 +73,8 @@ signals:
     void endOfMedia(int remainingSamples);
 
 private:
-    void convertAndEmit();
+    void flushPendingData();
+    void convertAndEmit(bool isEndOfMedia);
 
     GstElement *m_queue;
     Phonon::AudioDataOutput *m_frontend;
