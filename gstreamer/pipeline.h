@@ -50,7 +50,7 @@ class Pipeline : public QObject
         GstElement *audioPipe() const;
         GstElement *videoPipe() const;
 
-        GstStateChangeReturn setState(GstState state);
+        Q_INVOKABLE GstStateChangeReturn setState(GstState state);
         GstState state() const;
         Phonon::MediaSource currentSource() const;
         void writeToDot(MediaObject *media, const QString &type);

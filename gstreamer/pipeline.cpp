@@ -330,9 +330,10 @@ gboolean Pipeline::cb_buffering(GstBus *bus, GstMessage *gstMessage, gpointer da
     // Instead of playing when the pipeline is still streaming, we pause
     // and let gst finish streaming.
     if ( percent < 100 && gstMessage->type == GST_MESSAGE_BUFFERING) {
-        that->setState(GST_STATE_PAUSED);
+        QMetaObject::invokeMethod(that, "setState", Qt::QueuedConnection, Q_ARG(GstState, GST_STATE_PAUSED));
+
     } else {
-        that->setState(GST_STATE_PLAYING);
+        QMetaObject::invokeMethod(that, "setState", Qt::QueuedConnection, Q_ARG(GstState, GST_STATE_PLAYING));
     }
 
     if (that->m_bufferPercent != percent) {
