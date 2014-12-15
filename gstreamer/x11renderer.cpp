@@ -148,7 +148,7 @@ bool X11Renderer::eventFilter(QEvent *e)
         m_renderWidget->setAttribute(Qt::WA_NoSystemBackground, true);
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
         // Leads to tons of warnings from QWidget::paintEngine on Qt 5
-        m_renderidget->setAttribute(Qt::WA_PaintOnScreen, true);
+        m_renderWidget->setAttribute(Qt::WA_PaintOnScreen, true);
 #endif
         setOverlay();
     } else if (e->type() == QEvent::Resize) {
