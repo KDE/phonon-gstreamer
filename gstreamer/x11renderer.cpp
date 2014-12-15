@@ -81,7 +81,9 @@ X11Renderer::X11Renderer(VideoWidget *videoWidget)
 
 X11Renderer::~X11Renderer()
 {
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
     m_renderWidget->setAttribute(Qt::WA_PaintOnScreen, false);
+#endif
     m_renderWidget->setAttribute(Qt::WA_NoSystemBackground, false);
     delete m_renderWidget;
 }
@@ -144,7 +146,10 @@ bool X11Renderer::eventFilter(QEvent *e)
         // Setting these values ensures smooth resizing since it
         // will prevent the system from clearing the background
         m_renderWidget->setAttribute(Qt::WA_NoSystemBackground, true);
-        m_renderWidget->setAttribute(Qt::WA_PaintOnScreen, true);
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+        // Leads to tons of warnings from QWidget::paintEngine on Qt 5
+        m_renderidget->setAttribute(Qt::WA_PaintOnScreen, true);
+#endif
         setOverlay();
     } else if (e->type() == QEvent::Resize) {
         // This is a workaround for missing background repaints
