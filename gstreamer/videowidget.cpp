@@ -329,8 +329,10 @@ QImage VideoWidget::snapshot() const
     g_object_get(G_OBJECT(videosink), "last-sample", &videobuffer, NULL);
 
     if (videobuffer) {
+        // TODO Might need to use BGR on little-endian
+        // Needs someone with proper hardware to test
         GstCaps *snapcaps = gst_caps_new_simple("video/x-raw",
-                                                "format = (string)", G_TYPE_STRING, GST_VIDEO_NE(RGB),
+                                                "format", G_TYPE_STRING, "RGB",
                                                 NULL);
 
         GstSample *sample = gst_video_convert_sample(videobuffer, snapcaps, GST_SECOND, NULL);
