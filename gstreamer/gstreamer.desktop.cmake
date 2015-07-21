@@ -10,6 +10,7 @@ Icon=phonon-gstreamer
 InitialPreference=15
 
 Name=GStreamer
+Name[ast]=GStreamer
 Name[bg]=GStreamer
 Name[bs]=Gstreamer
 Name[ca]=GStreamer
