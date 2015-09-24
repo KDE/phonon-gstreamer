@@ -32,6 +32,9 @@
 #include <gst/gst.h>
 
 #include <QtCore/QSettings>
+#ifdef HAVE_X11
+#include <QtX11Extras/QX11Info>
+#endif
 
 /*
  * This class manages the list of currently
@@ -355,14 +358,16 @@ AbstractRenderer *DeviceManager::createVideoRenderer(VideoWidget *parent)
     if (m_videoSinkWidget == "software") {
         return new WidgetRenderer(parent);
     }
-#if !defined(Q_WS_QWS) && !defined(Q_OS_MAC)
-    else if (m_videoSinkWidget == "xwindow") {
-        return new X11Renderer(parent);
-    } else {
-        GstElementFactory *srcfactory = gst_element_factory_find("ximagesink");
-        if (srcfactory) {
-            gst_object_unref(srcfactory);
+#if defined(HAVE_X11)
+    else if (QX11Info::isPlatformX11()) {
+        if (m_videoSinkWidget == "xwindow") {
             return new X11Renderer(parent);
+        } else {
+            GstElementFactory *srcfactory = gst_element_factory_find("ximagesink");
+            if (srcfactory) {
+                gst_object_unref(srcfactory);
+                return new X11Renderer(parent);
+            }
         }
     }
 #endif

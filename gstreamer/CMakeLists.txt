@@ -88,11 +88,14 @@ if (OPENGL_FOUND)
     list(APPEND phonon_gstreamer_SRCS glrenderer.cpp)
 endif ()
 
-if(NOT WIN32)
+if(Qt5X11Extras_FOUND)
   set(phonon_gstreamer_SRCS
       ${phonon_gstreamer_SRCS}
       x11renderer.cpp)
-endif(NOT WIN32)
+  add_definitions(-DHAVE_X11)
+  qt5_use_modules(phonon_gstreamer X11Extras)
+  target_link_libraries(phonon_gstreamer Qt5::X11Extras)
+endif(Qt5X11Extras_FOUND)
 
 automoc4_add_library(phonon_gstreamer MODULE ${phonon_gstreamer_SRCS})
 set_target_properties(phonon_gstreamer PROPERTIES
