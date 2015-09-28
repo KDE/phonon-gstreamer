@@ -93,8 +93,6 @@ if(Qt5X11Extras_FOUND)
       ${phonon_gstreamer_SRCS}
       x11renderer.cpp)
   add_definitions(-DHAVE_X11)
-  qt5_use_modules(phonon_gstreamer X11Extras)
-  target_link_libraries(phonon_gstreamer Qt5::X11Extras)
 endif(Qt5X11Extras_FOUND)
 
 automoc4_add_library(phonon_gstreamer MODULE ${phonon_gstreamer_SRCS})
@@ -102,7 +100,14 @@ set_target_properties(phonon_gstreamer PROPERTIES
  PREFIX ""
  AUTOMOC_MOC_OPTIONS ${AUTOMOC_MOC_OPTIONS}
 )
+
 qt5_use_modules(phonon_gstreamer Core Widgets)
+
+if(Qt5X11Extras_FOUND)
+  qt5_use_modules(phonon_gstreamer X11Extras)
+  target_link_libraries(phonon_gstreamer Qt5::X11Extras)
+endif(Qt5X11Extras_FOUND)
+
 target_link_libraries(phonon_gstreamer
   ${PHONON_LIBRARY}
   ${GSTREAMER_LIBRARIES} ${GSTREAMER_BASE_LIBRARY} ${GSTREAMER_INTERFACE_LIBRARY}
