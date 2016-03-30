@@ -32,7 +32,7 @@
 #include <gst/gst.h>
 
 #include <QtCore/QSettings>
-#ifdef HAVE_X11
+#if QT_VERSION > QT_VERSION_CHECK(5, 0, 0) && defined(BUILD_X11RENDERER)
 #include <QtX11Extras/QX11Info>
 #endif
 
@@ -358,8 +358,12 @@ AbstractRenderer *DeviceManager::createVideoRenderer(VideoWidget *parent)
     if (m_videoSinkWidget == "software") {
         return new WidgetRenderer(parent);
     }
-#if defined(HAVE_X11)
+#if defined(BUILD_X11RENDERER)
+#if QT_VERSION > QT_VERSION_CHECK(5, 0, 0)
     else if (QX11Info::isPlatformX11()) {
+#else
+    else {
+#endif
         if (m_videoSinkWidget == "xwindow") {
             return new X11Renderer(parent);
         } else {
@@ -370,7 +374,7 @@ AbstractRenderer *DeviceManager::createVideoRenderer(VideoWidget *parent)
             }
         }
     }
-#endif
+#endif // BUILD_X11RENDERER
     return new WidgetRenderer(parent);
 }
 #endif //QT_NO_PHONON_VIDEO

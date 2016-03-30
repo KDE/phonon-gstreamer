@@ -88,12 +88,21 @@ if (OPENGL_FOUND)
     list(APPEND phonon_gstreamer_SRCS glrenderer.cpp)
 endif ()
 
-if(Qt5X11Extras_FOUND)
+set(BUILD_X11RENDERER TRUE)
+if (PHONON_BUILD_PHONON4QT5)
+    if (Qt5X11Extras_FOUND)
+        set(BUILD_X11RENDERER TRUE)
+    endif()
+elseif (NOT WIN32)
+    set(BUILD_X11RENDERER TRUE)
+endif()
+
+if (BUILD_X11RENDERER)
   set(phonon_gstreamer_SRCS
       ${phonon_gstreamer_SRCS}
       x11renderer.cpp)
-  add_definitions(-DHAVE_X11)
-endif(Qt5X11Extras_FOUND)
+  add_definitions(-DBUILD_X11RENDERER)
+endif()
 
 automoc4_add_library(phonon_gstreamer MODULE ${phonon_gstreamer_SRCS})
 set_target_properties(phonon_gstreamer PROPERTIES
