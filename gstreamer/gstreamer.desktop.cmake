@@ -10,5 +10,13 @@ Icon=phonon-gstreamer
 InitialPreference=15
 
 Name=GStreamer
+Name[cs]=GStreamer
+Name[fr]=GStreamer
+Name[nl]=GStreamer
+Name[x-test]=xxGStreamerxx
 
 Comment=Phonon GStreamer backend
+Comment[cs]=Podpůrná vrstva GStreamer pro Phonon
+Comment[fr]=Moteur GStreamer pour Phonon 
+Comment[nl]=GStreamer-backend (Phonon)
+Comment[x-test]=xxPhonon GStreamer backendxx
