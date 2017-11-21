@@ -10,5 +10,13 @@ Icon=phonon-gstreamer
 InitialPreference=15
 
 Name=GStreamer
+Name[ca]=GStreamer
+Name[ca@valencia]=GStreamer
+Name[nl]=GStreamer
+Name[x-test]=xxGStreamerxx
 
 Comment=Phonon GStreamer backend
+Comment[ca]=Dorsal GStreamer del Phonon
+Comment[ca@valencia]=Dorsal GStreamer del Phonon
+Comment[nl]=GStreamer-backend (Phonon)
+Comment[x-test]=xxPhonon GStreamer backendxx
