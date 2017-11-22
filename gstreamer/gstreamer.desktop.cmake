@@ -12,11 +12,17 @@ InitialPreference=15
 Name=GStreamer
 Name[ca]=GStreamer
 Name[ca@valencia]=GStreamer
+Name[es]=GStreamer
+Name[fr]=GStreamer
 Name[nl]=GStreamer
+Name[sk]=GStreamer
 Name[x-test]=xxGStreamerxx
 
 Comment=Phonon GStreamer backend
 Comment[ca]=Dorsal GStreamer del Phonon
 Comment[ca@valencia]=Dorsal GStreamer del Phonon
+Comment[es]=Motor GStreamer para Phonon
+Comment[fr]=Moteur GStreamer pour Phonon 
 Comment[nl]=GStreamer-backend (Phonon)
+Comment[sk]=Podsystém Phonon GStreamer
 Comment[x-test]=xxPhonon GStreamer backendxx
