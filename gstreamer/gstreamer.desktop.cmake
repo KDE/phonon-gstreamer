@@ -16,6 +16,7 @@ Name[es]=GStreamer
 Name[fr]=GStreamer
 Name[nl]=GStreamer
 Name[sk]=GStreamer
+Name[uk]=GStreamer
 Name[x-test]=xxGStreamerxx
 
 Comment=Phonon GStreamer backend
@@ -25,4 +26,5 @@ Comment[es]=Motor GStreamer para Phonon
 Comment[fr]=Moteur GStreamer pour Phonon 
 Comment[nl]=GStreamer-backend (Phonon)
 Comment[sk]=Podsystém Phonon GStreamer
+Comment[uk]=Модуль використання GStreamer у Phonon
 Comment[x-test]=xxPhonon GStreamer backendxx
