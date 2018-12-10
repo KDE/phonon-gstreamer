@@ -325,6 +325,11 @@ gboolean Pipeline::cb_buffering(GstBus *bus, GstMessage *gstMessage, gpointer da
     gint percent = 0;
     gst_message_parse_buffering(gstMessage, &percent);
 
+    // we should not trigger paused state or gstreamer will starts buffering again
+    if (percent == 0) {
+        return true;
+    }
+
     debug() << Q_FUNC_INFO << "Buffering :" << percent;
 
     // Instead of playing when the pipeline is still streaming, we pause
