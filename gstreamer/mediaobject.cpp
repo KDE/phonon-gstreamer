@@ -301,24 +301,32 @@ MediaSource MediaObject::source() const
 
 void MediaObject::changeSubUri(const Mrl &mrl)
 {
-    QString fontDesc;
-    QByteArray customFont = qgetenv("PHONON_SUBTITLE_FONT");
-    QByteArray customEncoding = qgetenv("PHONON_SUBTITLE_ENCODING");
+    if (mrl.isEmpty()) {
+        g_object_set_property(G_OBJECT(m_pipeline->element()),
+            "suburi", NULL);
+    } else {
+        QString fontDesc;
+        QByteArray customFont = qgetenv("PHONON_SUBTITLE_FONT");
+        QByteArray customEncoding = qgetenv("PHONON_SUBTITLE_ENCODING");
 
-    if (customFont.isNull()) {
-        QFont videoWidgetFont = QApplication::font("VideoWidget");
-        fontDesc = videoWidgetFont.family() + ' ' + QString::number(videoWidgetFont.pointSize());
+        if (customFont.isNull()) {
+            QFont videoWidgetFont = QApplication::font("VideoWidget");
+            fontDesc = videoWidgetFont.family() + ' ' + QString::number(videoWidgetFont.pointSize());
+        }
+        //FIXME: Try to detect common encodings, like libvlc does
+        g_object_set(G_OBJECT(m_pipeline->element()),
+            "suburi", mrl.toEncoded().constData(),
+            "subtitle-font-desc", customFont.isNull() ? fontDesc.toStdString().c_str() : customFont.constData(),
+            "subtitle-encoding", customEncoding.isNull() ? "UTF-8" : customEncoding.constData(),
+            NULL);
     }
-    //FIXME: Try to detect common encodings, like libvlc does
-    g_object_set(G_OBJECT(m_pipeline->element()),
-        "suburi", mrl.toEncoded().constData(),
-        "subtitle-font-desc", customFont.isNull() ? fontDesc.toStdString().c_str() : customFont.constData(),
-        "subtitle-encoding", customEncoding.isNull() ? "UTF-8" : customEncoding.constData(),
-        NULL);
 }
 
 void MediaObject::autoDetectSubtitle()
 {
+    // clean previously associated subtitle
+    changeSubUri(Mrl());
+
     if (m_source.type() == MediaSource::LocalFile ||
        (m_source.type() == MediaSource::Url && m_source.mrl().scheme() == "file") ) {
 
