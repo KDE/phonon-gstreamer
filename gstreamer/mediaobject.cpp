@@ -302,8 +302,8 @@ MediaSource MediaObject::source() const
 void MediaObject::changeSubUri(const Mrl &mrl)
 {
     if (mrl.isEmpty()) {
-        g_object_set_property(G_OBJECT(m_pipeline->element()),
-            "suburi", NULL);
+        g_object_set(G_OBJECT(m_pipeline->element()),
+          "suburi", NULL, NULL);
     } else {
         QString fontDesc;
         QByteArray customFont = qgetenv("PHONON_SUBTITLE_FONT");
