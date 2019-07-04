@@ -104,6 +104,10 @@ if (BUILD_X11RENDERER)
   add_definitions(-DBUILD_X11RENDERER)
 endif()
 
+if(ECM_FOUND)
+    ecm_create_qm_loader(phonon_gstreamer_SRCS phonon_gstreamer_qt)
+endif()
+
 automoc4_add_library(phonon_gstreamer MODULE ${phonon_gstreamer_SRCS})
 set_target_properties(phonon_gstreamer PROPERTIES
  PREFIX ""
