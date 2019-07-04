@@ -46,7 +46,7 @@ public:
     {
     }
 
-    void paintEvent(QPaintEvent *) {
+    void paintEvent(QPaintEvent *) override {
         Phonon::State state = m_videoWidget->root() ? m_videoWidget->root()->state() : Phonon::LoadingState;
         if (state == Phonon::PlayingState || state == Phonon::PausedState) {
             m_renderer->windowExposed();
@@ -54,6 +54,11 @@ public:
             QPainter painter(this);
             painter.fillRect(m_videoWidget->rect(), m_videoWidget->palette().background());
         }
+    }
+
+    QPaintEngine *paintEngine() const override
+    {
+        return nullptr;
     }
 
 private:
@@ -146,10 +151,7 @@ bool X11Renderer::eventFilter(QEvent *e)
         // Setting these values ensures smooth resizing since it
         // will prevent the system from clearing the background
         m_renderWidget->setAttribute(Qt::WA_NoSystemBackground, true);
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-        // Leads to tons of warnings from QWidget::paintEngine on Qt 5
         m_renderWidget->setAttribute(Qt::WA_PaintOnScreen, true);
-#endif
         setOverlay();
     } else if (e->type() == QEvent::Resize) {
         // This is a workaround for missing background repaints
