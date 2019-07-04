@@ -54,7 +54,7 @@ private:
     GstElement *createVideoSink();
 
     OverlayWidget *m_renderWidget;
-    bool m_overlaySet;
+    bool m_overlaySet = false;
 };
 
 }
