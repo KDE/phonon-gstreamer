@@ -46,7 +46,7 @@ public:
     {
     }
 
-    void paintEvent(QPaintEvent *) override {
+    void paintEvent(QPaintEvent *) {
         Phonon::State state = m_videoWidget->root() ? m_videoWidget->root()->state() : Phonon::LoadingState;
         if (state == Phonon::PlayingState || state == Phonon::PausedState) {
             m_renderer->windowExposed();
@@ -56,9 +56,9 @@ public:
         }
     }
 
-    QPaintEngine *paintEngine() const override
+    QPaintEngine *paintEngine() const
     {
-        return nullptr;
+        return 0;
     }
 
 private:
