@@ -39,6 +39,7 @@ Name[sr@latin]=GStreamer
 Name[sv]=Gstreamer
 Name[uk]=GStreamer
 Name[x-test]=xxGStreamerxx
+Name[zh_CN]=GStreamer
 
 Comment=Phonon GStreamer backend
 Comment[ca]=Dorsal GStreamer del Phonon
@@ -70,3 +71,4 @@ Comment[sr@latin]=GStreamer kao pozadina Phonona
 Comment[sv]=Phonon Gstreamer-gränssnitt
 Comment[uk]=Модуль використання GStreamer у Phonon
 Comment[x-test]=xxPhonon GStreamer backendxx
+Comment[zh_CN]=Phonon GStreamer 后端
