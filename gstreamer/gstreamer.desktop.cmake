@@ -68,6 +68,7 @@ Name[zh_CN]=GStreamer
 Name[zh_TW]=GStreamer
 
 Comment=Phonon GStreamer backend
+Comment[ast]=Backend de GStreamer pa Phonon
 Comment[bg]=Phonon GStreamer
 Comment[bs]=Gstreamer kao pozadina Phonona
 Comment[ca]=Dorsal GStreamer del Phonon
