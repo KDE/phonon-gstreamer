@@ -104,51 +104,46 @@ if (BUILD_X11RENDERER)
   add_definitions(-DBUILD_X11RENDERER)
 endif()
 
-if(ECM_FOUND)
-    ecm_create_qm_loader(phonon_gstreamer_SRCS phonon_gstreamer_qt)
-endif()
+ecm_create_qm_loader(phonon_gstreamer_SRCS phonon_gstreamer_qt)
 
-automoc4_add_library(phonon_gstreamer MODULE ${phonon_gstreamer_SRCS})
+add_library(phonon_gstreamer MODULE ${phonon_gstreamer_SRCS})
 set_target_properties(phonon_gstreamer PROPERTIES
  PREFIX ""
  AUTOMOC_MOC_OPTIONS ${AUTOMOC_MOC_OPTIONS}
 )
 
-qt5_use_modules(phonon_gstreamer Core Widgets)
+target_link_libraries(phonon_gstreamer
+    Qt5::Core
+    Qt5::Widgets
+    Phonon::phonon4qt5
+    ${PHONON_LIBRARY}
+    ${GSTREAMER_LIBRARIES} ${GSTREAMER_BASE_LIBRARY} ${GSTREAMER_INTERFACE_LIBRARY}
+    ${GSTREAMER_PLUGIN_VIDEO_LIBRARY} ${GSTREAMER_PLUGIN_AUDIO_LIBRARY} ${GSTREAMER_PLUGIN_PBUTILS_LIBRARY}
+    ${GLIB2_LIBRARIES} ${GOBJECT_LIBRARIES} ${GSTREAMER_APP_LIBRARY}
+)
+
+if(PHONON_FOUND_EXPERIMENTAL)
+    target_link_libraries(phonon_gstreamer Phonon::phonon4qt5experimental)
+endif()
 
 if(Qt5X11Extras_FOUND)
-  qt5_use_modules(phonon_gstreamer X11Extras)
   target_link_libraries(phonon_gstreamer Qt5::X11Extras)
 endif(Qt5X11Extras_FOUND)
 
-target_link_libraries(phonon_gstreamer
-  ${PHONON_LIBRARY}
-  ${GSTREAMER_LIBRARIES} ${GSTREAMER_BASE_LIBRARY} ${GSTREAMER_INTERFACE_LIBRARY}
-  ${GSTREAMER_PLUGIN_VIDEO_LIBRARY} ${GSTREAMER_PLUGIN_AUDIO_LIBRARY} ${GSTREAMER_PLUGIN_PBUTILS_LIBRARY}
-  ${GLIB2_LIBRARIES} ${GOBJECT_LIBRARIES} ${GSTREAMER_APP_LIBRARY}
-)
 if(USE_INSTALL_PLUGIN)
    target_link_libraries(phonon_gstreamer ${GSTREAMER_PLUGIN_PBUTILS_LIBRARIES})
 endif(USE_INSTALL_PLUGIN)
 if(OPENGL_FOUND)
-  qt5_use_modules(phonon_gstreamer OpenGL)
-  target_link_libraries(phonon_gstreamer ${OPENGL_gl_LIBRARY})
+  target_link_libraries(phonon_gstreamer ${OPENGL_gl_LIBRARY} Qt5::OpenGL)
 endif(OPENGL_FOUND)
 
-install(TARGETS phonon_gstreamer DESTINATION ${BACKEND_INSTALL_DIR})
+install(TARGETS phonon_gstreamer DESTINATION ${PHONON_BACKEND_DIR})
 
-if(PHONON_BUILD_PHONON4QT5)
-    # Instead of desktop files we are embedding the information into the plugin itself.
-    # We have no KDE technology to help with finding the actual libraries anyway, so
-    # we need to have the library path anyway.
-    # Also see qtplugin/Q_PLUGIN_METADATA documentation.
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/phonon-gstreamer.json.in
-                   ${CMAKE_CURRENT_BINARY_DIR}/phonon-gstreamer.json @ONLY)
-else()
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/gstreamer.desktop.cmake
-                   ${CMAKE_CURRENT_BINARY_DIR}/gstreamer.desktop)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gstreamer.desktop
-            DESTINATION ${SERVICES_INSTALL_DIR}/phononbackends)
-endif()
+# Instead of desktop files we are embedding the information into the plugin itself.
+# We have no KDE technology to help with finding the actual libraries anyway, so
+# we need to have the library path anyway.
+# Also see qtplugin/Q_PLUGIN_METADATA documentation.
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/phonon-gstreamer.json.in
+                ${CMAKE_CURRENT_BINARY_DIR}/phonon-gstreamer.json @ONLY)
 
 add_subdirectory(icons)
