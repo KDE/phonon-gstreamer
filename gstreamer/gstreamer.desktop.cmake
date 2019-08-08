@@ -42,7 +42,7 @@ Name[x-test]=xxGStreamerxx
 Name[zh_CN]=GStreamer
 
 Comment=Phonon GStreamer backend
-Comment[ca]=Dorsal GStreamer del Phonon
+Comment[ca]=Dorsal del GStreamer per al Phonon
 Comment[ca@valencia]=Dorsal GStreamer del Phonon
 Comment[cs]=Podpůrná vrstva GStreamer pro Phonon
 Comment[de]=Phonon-Treiber für GStreamer
