@@ -24,9 +24,6 @@
 #include "audioeffect.h"
 #include "debug.h"
 #include "mediaobject.h"
-#ifndef PHONON_NO_GRAPHICSVIEW
-#include "videographicsobject.h"
-#endif //PHONON_NO_GRAPHICSVIEW
 #include "videowidget.h"
 #include "devicemanager.h"
 #include "effectmanager.h"
@@ -176,10 +173,8 @@ QObject *Backend::createObject(BackendInterface::Class c, QObject *parent, const
             return new VideoWidget(this, widget);
         }
 
-#ifndef PHONON_NO_GRAPHICSVIEW
     case VideoGraphicsObjectClass:
-        return new VideoGraphicsObject(this, parent);
-#endif //PHONON_NO_GRAPHICSVIEW
+        return nullptr; // no longer supported
 #endif //QT_NO_PHONON_VIDEO
 #ifndef QT_NO_PHONON_VOLUMEFADEREFFECT
     case VolumeFaderEffectClass:
