@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
-project(PhononGStreamer VERSION 4.9.90)
+project(PhononGStreamer VERSION 4.10.0)
 
 option(USE_INSTALL_PLUGIN "Use GStreamer codec installation API" TRUE)
 
