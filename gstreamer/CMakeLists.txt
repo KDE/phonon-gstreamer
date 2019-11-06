@@ -78,12 +78,7 @@ if (OPENGL_FOUND)
     list(APPEND phonon_gstreamer_SRCS glrenderer.cpp)
 endif ()
 
-set(BUILD_X11RENDERER TRUE)
-if (PHONON_BUILD_PHONON4QT5)
-    if (Qt5X11Extras_FOUND)
-        set(BUILD_X11RENDERER TRUE)
-    endif()
-elseif (NOT WIN32)
+if (Qt5X11Extras_FOUND)
     set(BUILD_X11RENDERER TRUE)
 endif()
 
