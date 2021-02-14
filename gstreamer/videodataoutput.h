@@ -50,15 +50,15 @@ class Backend;
 
         static void processBuffer(GstElement*, GstBuffer*, GstPad*, gpointer);
 
-        Phonon::Experimental::AbstractVideoDataOutput *frontendObject() const {
+        Phonon::Experimental::AbstractVideoDataOutput *frontendObject() const Q_DECL_OVERRIDE {
             return m_frontend;
         }
 
-        void setFrontendObject(Phonon::Experimental::AbstractVideoDataOutput *object) {
+        void setFrontendObject(Phonon::Experimental::AbstractVideoDataOutput *object) Q_DECL_OVERRIDE {
             m_frontend = object;
         }
 
-        GstElement *videoElement() const {
+        GstElement *videoElement() const Q_DECL_OVERRIDE {
             return m_queue;
         }
 

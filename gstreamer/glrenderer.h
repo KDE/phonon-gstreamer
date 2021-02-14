@@ -40,8 +40,8 @@ class GLRenderer : public AbstractRenderer
 public:
     GLRenderer(VideoWidget *control);
     ~GLRenderer();
-    bool eventFilter(QEvent * event);
-    bool paintsOnWidget() const {
+    bool eventFilter(QEvent * event) Q_DECL_OVERRIDE;
+    bool paintsOnWidget() const Q_DECL_OVERRIDE {
         return false;
     }
 
@@ -61,7 +61,7 @@ class GLRenderWidgetImplementation : public QGLWidget
     typedef void (*_glActiveTexture) (GLenum);
 public:
     GLRenderWidgetImplementation(VideoWidget *control, const QGLFormat &format);
-    void paintEvent(QPaintEvent *event);
+    void paintEvent(QPaintEvent *event) Q_DECL_OVERRIDE;
     GstElement *createVideoSink();
     void updateTexture(const QByteArray &array, int width, int height);
     bool hasYUVSupport() const;

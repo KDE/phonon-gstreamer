@@ -36,8 +36,8 @@ public:
     WidgetRenderer(VideoWidget *videoWidget);
     virtual ~WidgetRenderer();
 
-    bool eventFilter(QEvent * event);
-    void handlePaint(QPaintEvent *paintEvent);
+    bool eventFilter(QEvent * event) Q_DECL_OVERRIDE;
+    void handlePaint(QPaintEvent *paintEvent) Q_DECL_OVERRIDE;
     const QImage& currentFrame() const;
     QRect drawFrameRect() const {
         return m_drawFrameRect;

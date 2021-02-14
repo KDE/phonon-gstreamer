@@ -48,22 +48,22 @@ public:
      * Overloads for StreamInterface
      */
     int currentBufferSize() const;
-    void writeData(const QByteArray &data);
+    void writeData(const QByteArray &data) Q_DECL_OVERRIDE;
     GstFlowReturn read(quint64 offset, int length, char * buffer);
 
     bool atEnd() const;
 
-    void endOfData();
+    void endOfData() Q_DECL_OVERRIDE;
     void start();
     void stop();
 
     void setCurrentPos(qint64 pos);
     quint64 currentPos() const;
 
-    void setStreamSize(qint64 newSize);
+    void setStreamSize(qint64 newSize) Q_DECL_OVERRIDE;
     qint64 streamSize() const;
 
-    void setStreamSeekable(bool seekable);
+    void setStreamSeekable(bool seekable) Q_DECL_OVERRIDE;
     bool streamSeekable() const;
 
 private:

@@ -43,44 +43,44 @@ public:
     ~VideoWidget();
 
     void setupVideoBin();
-    void paintEvent(QPaintEvent *event);
-    void setVisible(bool);
+    void paintEvent(QPaintEvent *event) Q_DECL_OVERRIDE;
+    void setVisible(bool) Q_DECL_OVERRIDE;
 
-    Phonon::VideoWidget::AspectRatio aspectRatio() const;
-    void setAspectRatio(Phonon::VideoWidget::AspectRatio aspectRatio);
-    Phonon::VideoWidget::ScaleMode scaleMode() const;
-    void setScaleMode(Phonon::VideoWidget::ScaleMode);
-    qreal brightness() const;
-    void setBrightness(qreal);
-    qreal contrast() const;
-    void setContrast(qreal);
-    qreal hue() const;
-    void setHue(qreal);
-    qreal saturation() const;
-    void setSaturation(qreal);
-    QSize sizeHint() const;
+    Phonon::VideoWidget::AspectRatio aspectRatio() const Q_DECL_OVERRIDE;
+    void setAspectRatio(Phonon::VideoWidget::AspectRatio aspectRatio) Q_DECL_OVERRIDE;
+    Phonon::VideoWidget::ScaleMode scaleMode() const Q_DECL_OVERRIDE;
+    void setScaleMode(Phonon::VideoWidget::ScaleMode) Q_DECL_OVERRIDE;
+    qreal brightness() const Q_DECL_OVERRIDE;
+    void setBrightness(qreal) Q_DECL_OVERRIDE;
+    qreal contrast() const Q_DECL_OVERRIDE;
+    void setContrast(qreal) Q_DECL_OVERRIDE;
+    qreal hue() const Q_DECL_OVERRIDE;
+    void setHue(qreal) Q_DECL_OVERRIDE;
+    qreal saturation() const Q_DECL_OVERRIDE;
+    void setSaturation(qreal) Q_DECL_OVERRIDE;
+    QSize sizeHint() const Q_DECL_OVERRIDE;
     QRect scaleToAspect(QRect srcRect, int w, int h) const;
     QRect calculateDrawFrameRect() const;
-    QImage snapshot() const;
+    QImage snapshot() const Q_DECL_OVERRIDE;
 
     QSize movieSize() const {
         return m_movieSize;
     }
 
-    GstElement* videoElement() const {
+    GstElement* videoElement() const Q_DECL_OVERRIDE {
         return m_videoBin;
     }
 
-    bool event(QEvent *);
+    bool event(QEvent *) Q_DECL_OVERRIDE;
 
-    QWidget *widget() {
+    QWidget *widget() Q_DECL_OVERRIDE {
         return this;
     }
 
     static void cb_capsChanged(GstPad *pad, GParamSpec *spec, gpointer data);
 
-    void finalizeLink();
-    void prepareToUnlink();
+    void finalizeLink() Q_DECL_OVERRIDE;
+    void prepareToUnlink() Q_DECL_OVERRIDE;
 
 public slots:
     void setMovieSize(const QSize &size);
@@ -88,11 +88,11 @@ public slots:
     void syncX();
 
 protected:
-    virtual void keyPressEvent(QKeyEvent *event);
-    virtual void keyReleaseEvent(QKeyEvent *event);
-    virtual void mouseMoveEvent(QMouseEvent *event);
-    virtual void mousePressEvent(QMouseEvent *event);
-    virtual void mouseReleaseEvent(QMouseEvent *event);
+    virtual void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
+    virtual void keyReleaseEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
+    virtual void mouseMoveEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
+    virtual void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
+    virtual void mouseReleaseEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
 
     GstElement *m_videoBin;
     QSize m_movieSize;

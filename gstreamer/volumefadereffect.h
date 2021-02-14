@@ -38,17 +38,17 @@ public:
     explicit VolumeFaderEffect(Backend *backend, QObject *parent = 0);
     ~VolumeFaderEffect();
 
-    GstElement* createEffectBin();
-    GstElement *audioElement() const {
+    GstElement* createEffectBin() Q_DECL_OVERRIDE;
+    GstElement *audioElement() const Q_DECL_OVERRIDE {
         return effectBin();
     }
 
     // VolumeFaderInterface:
-    float volume() const;
-    Phonon::VolumeFaderEffect::FadeCurve fadeCurve() const;
-    void setFadeCurve(Phonon::VolumeFaderEffect::FadeCurve fadeCurve);
-    void fadeTo(float volume, int fadeTime);
-    void setVolume(float v);
+    float volume() const Q_DECL_OVERRIDE;
+    Phonon::VolumeFaderEffect::FadeCurve fadeCurve() const Q_DECL_OVERRIDE;
+    void setFadeCurve(Phonon::VolumeFaderEffect::FadeCurve fadeCurve) Q_DECL_OVERRIDE;
+    void fadeTo(float volume, int fadeTime) Q_DECL_OVERRIDE;
+    void setVolume(float v) Q_DECL_OVERRIDE;
 
 private slots:
     void slotSetVolume(qreal v);

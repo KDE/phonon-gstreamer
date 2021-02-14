@@ -37,9 +37,7 @@ class MediaObject;
 class Backend : public QObject, public BackendInterface
 {
     Q_OBJECT
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
     Q_PLUGIN_METADATA(IID "org.kde.phonon.gstreamer" FILE "phonon-gstreamer.json")
-#endif
     Q_INTERFACES(Phonon::BackendInterface)
 
 public:
@@ -49,17 +47,17 @@ public:
     DeviceManager* deviceManager() const;
     EffectManager* effectManager() const;
 
-    QObject *createObject(BackendInterface::Class, QObject *parent, const QList<QVariant> &args);
+    QObject *createObject(BackendInterface::Class, QObject *parent, const QList<QVariant> &args) Q_DECL_OVERRIDE;
 
-    QStringList availableMimeTypes() const;
+    QStringList availableMimeTypes() const Q_DECL_OVERRIDE;
 
-    QList<int> objectDescriptionIndexes(ObjectDescriptionType type) const;
-    QHash<QByteArray, QVariant> objectDescriptionProperties(ObjectDescriptionType type, int index) const;
+    QList<int> objectDescriptionIndexes(ObjectDescriptionType type) const Q_DECL_OVERRIDE;
+    QHash<QByteArray, QVariant> objectDescriptionProperties(ObjectDescriptionType type, int index) const Q_DECL_OVERRIDE;
 
-    bool startConnectionChange(QSet<QObject *>);
-    bool connectNodes(QObject *, QObject *);
-    bool disconnectNodes(QObject *, QObject *);
-    bool endConnectionChange(QSet<QObject *>);
+    bool startConnectionChange(QSet<QObject *>) Q_DECL_OVERRIDE;
+    bool connectNodes(QObject *, QObject *) Q_DECL_OVERRIDE;
+    bool disconnectNodes(QObject *, QObject *) Q_DECL_OVERRIDE;
+    bool endConnectionChange(QSet<QObject *>) Q_DECL_OVERRIDE;
 
     // 'retry' indicates that we'd like to check the deps after a registry rebuild
     bool checkDependencies(bool retry = false) const;

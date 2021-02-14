@@ -35,21 +35,21 @@ public:
     AudioOutput(Backend *backend, QObject *parent);
     ~AudioOutput();
 
-    qreal volume() const;
-    int outputDevice() const;
-    void setVolume(qreal newVolume);
-    bool setOutputDevice(int newDevice);
+    qreal volume() const Q_DECL_OVERRIDE;
+    int outputDevice() const Q_DECL_OVERRIDE;
+    void setVolume(qreal newVolume) Q_DECL_OVERRIDE;
+    bool setOutputDevice(int newDevice) Q_DECL_OVERRIDE;
 
 #if (PHONON_VERSION >= PHONON_VERSION_CHECK(4, 2, 0))
-    bool setOutputDevice(const AudioOutputDevice &newDevice);
+    bool setOutputDevice(const AudioOutputDevice &newDevice) Q_DECL_OVERRIDE;
 #endif
 
 #if (PHONON_VERSION >= PHONON_VERSION_CHECK(4, 6, 50))
-    void setStreamUuid(QString uuid);
+    void setStreamUuid(QString uuid) Q_DECL_OVERRIDE;
 #endif
 
 public:
-    GstElement *audioElement() const
+    GstElement *audioElement() const Q_DECL_OVERRIDE
     {
         Q_ASSERT(m_audioBin);
         return m_audioBin;

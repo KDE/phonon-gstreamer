@@ -41,9 +41,9 @@ public:
     AudioEffect (Backend *backend, int effectId, QObject *parent);
 
 protected:
-    GstElement* createEffectBin();
+    GstElement* createEffectBin() Q_DECL_OVERRIDE;
 
-    GstElement* audioElement() const {
+    GstElement* audioElement() const Q_DECL_OVERRIDE {
         return effectBin();
     }
 

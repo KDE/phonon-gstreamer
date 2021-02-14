@@ -56,15 +56,15 @@ public:
     /// callback function for handling new audio data
     static void processBuffer(GstElement*, GstBuffer*, GstPad*, gpointer);
 
-    Phonon::AudioDataOutput* frontendObject() const {
+    Phonon::AudioDataOutput* frontendObject() const Q_DECL_OVERRIDE {
         return m_frontend;
     }
 
-    void setFrontendObject(Phonon::AudioDataOutput *frontend) {
+    void setFrontendObject(Phonon::AudioDataOutput *frontend) Q_DECL_OVERRIDE {
         m_frontend = frontend;
     }
 
-    GstElement *audioElement() const {
+    GstElement *audioElement() const Q_DECL_OVERRIDE {
         return m_queue;
     }
 

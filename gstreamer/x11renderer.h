@@ -37,12 +37,12 @@ class X11Renderer : public AbstractRenderer
 public:
     X11Renderer(VideoWidget *videoWidget);
     ~X11Renderer();
-    void handlePaint(QPaintEvent *event);
-    void aspectRatioChanged(Phonon::VideoWidget::AspectRatio aspectRatio);
-    void scaleModeChanged(Phonon::VideoWidget::ScaleMode scaleMode);
-    void movieSizeChanged(const QSize &movieSize);
-    bool eventFilter(QEvent *);
-    bool paintsOnWidget() const {
+    void handlePaint(QPaintEvent *event) Q_DECL_OVERRIDE;
+    void aspectRatioChanged(Phonon::VideoWidget::AspectRatio aspectRatio) Q_DECL_OVERRIDE;
+    void scaleModeChanged(Phonon::VideoWidget::ScaleMode scaleMode) Q_DECL_OVERRIDE;
+    void movieSizeChanged(const QSize &movieSize) Q_DECL_OVERRIDE;
+    bool eventFilter(QEvent *) Q_DECL_OVERRIDE;
+    bool paintsOnWidget() const Q_DECL_OVERRIDE {
         return false;
     }
     bool overlaySet() const {
