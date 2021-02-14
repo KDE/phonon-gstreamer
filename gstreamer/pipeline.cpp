@@ -168,6 +168,8 @@ void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
             gstUri = "appsrc://";
             m_isStream = true;
             break;
+        case MediaSource::AudioVideoCapture:
+            // Fallthrough
         case MediaSource::CaptureDevice:
             gstUri = captureDeviceURI(source);
             if (gstUri.isEmpty()) {
@@ -184,6 +186,9 @@ void Pipeline::setSource(const Phonon::MediaSource &source, bool reset)
                     break;
                 case Phonon::Dvd:
                     gstUri = "dvd://";
+                    break;
+                case Phonon::BluRay:
+                    gstUri = "bluray://";
                     break;
                 case Phonon::NoDisc:
                     emit errorMessage("Invalid disk source specified", Phonon::FatalError);
