@@ -84,6 +84,7 @@ class PluginInstaller : public QObject {
         /**
          * Builds a string suitable for passing to gst_install_plugins_*
          */
+        static QString buildInstallationString(const QString &name, PluginType type);
         static QString buildInstallationString(const gchar *name, PluginType type);
         static QString buildInstallationString(const GstCaps *caps, PluginType type);
 

@@ -18,6 +18,7 @@
 #include "plugininstaller.h"
 #include <gst/gst.h>
 #include <QtCore/QCoreApplication>
+#include <QVector>
 #include <QApplication>
 #include <QWidget>
 #include <QtCore/QLibrary>
@@ -124,21 +125,22 @@ QString PluginInstaller::buildInstallationString(const GstCaps *caps, PluginType
         .arg(getCapType(caps));
 }
 
-QString PluginInstaller::buildInstallationString(const gchar *name, PluginType type)
+QString PluginInstaller::buildInstallationString(const QString &name, PluginType type)
 {
-    QString descType;
-    switch(type) {
-        case Element:
-            descType = "element";
-            break;
-        default:
-            return QString();
+    if(type != Element) {
+        return QString();
     }
+
     return QString("gstreamer|0.10|%0|%1|%2-%3")
         .arg(qApp->applicationName())
-        .arg(description(name, type))
-        .arg(descType)
+        .arg(description(name.toUtf8().constData(), type))
+        .arg("element")
         .arg(name);
+}
+
+QString PluginInstaller::buildInstallationString(const gchar *name, PluginType type)
+{
+    return PluginInstaller::buildInstallationString(QString::fromUtf8(name), type);
 }
 
 PluginInstaller::PluginInstaller(QObject *parent)
@@ -167,20 +169,19 @@ void PluginInstaller::run()
     if (activeWindow) {
         gst_install_plugins_context_set_xid(ctx, static_cast<int>(activeWindow->winId()));
     }
-    gchar *details[m_pluginList.size()+m_descList.size()+1];
-    int i = 0;
-    foreach (const QString &plugin, m_pluginList.keys()) {
-        details[i] = strdup(buildInstallationString(plugin.toUtf8().constData(), m_pluginList[plugin]).toUtf8().constData());
-        i++;
+    QVector<gchar *> details;
+    for (const QString &plugin : m_pluginList.keys()) {
+        details << strdup(
+                buildInstallationString(plugin, m_pluginList[plugin])
+                    .toUtf8().constData());
     }
-    foreach (const QString &desc, m_descList) {
-        details[i] = strdup(desc.toUtf8().constData());
-        i++;
+    for (const QString &desc : qAsConst(m_descList)) {
+        details << strdup(desc.toUtf8().constData());
     }
-    details[i] = 0;
+    details << nullptr;
 
     GstInstallPluginsReturn status;
-    status = gst_install_plugins_async(details, ctx, pluginInstallationDone, new QPointer<PluginInstaller>(this));
+    status = gst_install_plugins_async(details.data(), ctx, pluginInstallationDone, new QPointer<PluginInstaller>(this));
     gst_install_plugins_context_free(ctx);
     if (status != GST_INSTALL_PLUGINS_STARTED_OK) {
         if (status == GST_INSTALL_PLUGINS_HELPER_MISSING)
@@ -190,8 +191,9 @@ void PluginInstaller::run()
     } else {
         emit started();
     }
-    while (i) {
-        free(details[i--]);
+    details.removeLast(); // Can't free a nullptr
+    for (const auto &plugin_name : qAsConst(details)) {
+        free(plugin_name);
     }
     reset();
 }
