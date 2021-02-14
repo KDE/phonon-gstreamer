@@ -92,7 +92,7 @@ void Effect::setupEffectParams()
                 switch(param->value_type) {
                     case G_TYPE_UINT:
                         m_parameterList.append(Phonon::EffectParameter(i, propertyName,
-                            0,   //hints
+                            { },   //hints
                             G_PARAM_SPEC_UINT(param)->default_value,
                             G_PARAM_SPEC_UINT(param)->minimum,
                             G_PARAM_SPEC_UINT(param)->maximum));
@@ -100,7 +100,7 @@ void Effect::setupEffectParams()
 
                     case G_TYPE_STRING:
                         m_parameterList.append(Phonon::EffectParameter(i, propertyName,
-                            0,   //hints
+                            { },   //hints
                             G_PARAM_SPEC_STRING(param)->default_value,
                             0,
                             0));
@@ -116,7 +116,7 @@ void Effect::setupEffectParams()
 
                     case G_TYPE_FLOAT:
                         m_parameterList.append(Phonon::EffectParameter(i, propertyName,
-                            0,   //hints
+                            { },   //hints
                             QVariant((double)G_PARAM_SPEC_FLOAT(param)->default_value),
                             QVariant((double)G_PARAM_SPEC_FLOAT(param)->minimum),
                             QVariant((double)G_PARAM_SPEC_FLOAT(param)->maximum)));
@@ -124,7 +124,7 @@ void Effect::setupEffectParams()
 
                     case G_TYPE_DOUBLE:
                         m_parameterList.append(Phonon::EffectParameter(i, propertyName,
-                            0,   //hints
+                            { },   //hints
                             QVariant(G_PARAM_SPEC_DOUBLE(param)->default_value),
                             QVariant(G_PARAM_SPEC_DOUBLE(param)->minimum),
                             QVariant(G_PARAM_SPEC_DOUBLE(param)->maximum)));

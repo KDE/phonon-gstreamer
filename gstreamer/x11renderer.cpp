@@ -52,7 +52,7 @@ public:
             m_renderer->windowExposed();
         } else {
             QPainter painter(this);
-            painter.fillRect(m_videoWidget->rect(), m_videoWidget->palette().background());
+            painter.fillRect(m_videoWidget->rect(), m_videoWidget->palette().window());
         }
     }
 
@@ -165,7 +165,7 @@ bool X11Renderer::eventFilter(QEvent *e)
 void X11Renderer::handlePaint(QPaintEvent *)
 {
     QPainter painter(videoWidget());
-    painter.fillRect(videoWidget()->rect(), videoWidget()->palette().background());
+    painter.fillRect(videoWidget()->rect(), videoWidget()->palette().window());
 }
 
 void X11Renderer::setOverlay()

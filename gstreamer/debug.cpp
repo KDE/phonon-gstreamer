@@ -230,5 +230,5 @@ Block::~Block()
 void Debug::stamp()
 {
     static int n = 0;
-    debug() << "| Stamp: " << ++n << endl;
+    debug() << "| Stamp: " << ++n << Qt::endl;
 }

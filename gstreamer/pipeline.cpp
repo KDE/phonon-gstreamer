@@ -286,8 +286,8 @@ gboolean Pipeline::cb_warning(GstBus *bus, GstMessage *gstMessage, gpointer data
     GError *err;
     Pipeline *that = static_cast<Pipeline*>(data);
     gst_message_parse_warning(gstMessage, &err, &debug);
-    QString msgString;
-    msgString.sprintf("Warning: %s\nMessage:%s", debug, err->message);
+    QString msgString =
+        QString("Warning: %1\nMessage:%2").arg(debug).arg(err->message);
     emit that->warning(msgString);
     g_free (debug);
     g_error_free (err);
