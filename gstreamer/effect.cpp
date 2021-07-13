@@ -216,7 +216,7 @@ void Effect::setParameterValue(const EffectParameter &p, const QVariant &v)
     if (v.isValid()) {
 
         switch (p.type()) {
-            // ### range values should really be checked by the front end, why isnt it working?
+            // ### range values should really be checked by the front end, why isn't it working?
             case QVariant::Int:
                 if (v.toInt() >= p.minimumValue().toInt() && v.toInt() <= p.maximumValue().toInt())
                     g_object_set(G_OBJECT(m_effectElement), qPrintable(p.name()), (gint)v.toInt(), NULL);

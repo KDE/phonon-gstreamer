@@ -56,7 +56,7 @@ AudioDataOutput::AudioDataOutput(Backend *backend, QObject *parent)
     g_signal_connect(sink, "handoff", G_CALLBACK(processBuffer), this);
     g_object_set(G_OBJECT(sink), "signal-handoffs", true, NULL);
 
-    //G_BYTE_ORDER is the host machine's endianess
+    //G_BYTE_ORDER is the host machine's endianness
     GstCaps *caps = gst_caps_new_simple("audio/x-raw",
                                         "format", G_TYPE_STRING, GST_AUDIO_NE (S16),
                                         NULL);

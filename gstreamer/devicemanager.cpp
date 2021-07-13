@@ -518,7 +518,7 @@ void DeviceManager::updateDeviceList()
 
     /*
      * Compares the list with the devices available at the moment with the last list. If
-     * a new device is seen, a signal is emitted. If a device dissapeared, another signal
+     * a new device is seen, a signal is emitted. If a device disappeared, another signal
      * is emitted.
      */
 

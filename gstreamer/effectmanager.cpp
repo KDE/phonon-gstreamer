@@ -91,7 +91,7 @@ EffectManager::EffectManager(Backend *backend)
 #warning TODO - get rid of equalizer name mapping (also see audioeffect.cpp)
 #endif
                     // Map the GStreamer name to the name used by Xine, to allow
-                    // API consumers that think KEqualizer is a persistant name
+                    // API consumers that think KEqualizer is a persistent name
                     // to have a working equalizer with GStreamer too (e.g. Amarok).
                     if (name == QLatin1String("equalizer-10bands")) {
                         m_audioEffectList.append(new EffectInfo(

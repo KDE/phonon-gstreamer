@@ -287,7 +287,7 @@ private:
     qint64 m_lastTime;
     bool m_skipGapless;
 
-    /*** Tracks whereever the MO is actively handling an aboutToFinish CB right now. */
+    /*** Tracks wherever the MO is actively handling an aboutToFinish CB right now. */
     bool m_handlingAboutToFinish;
 };
 }
