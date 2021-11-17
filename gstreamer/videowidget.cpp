@@ -158,7 +158,7 @@ void VideoWidget::setupVideoBin()
                 gst_object_unref(videopad);
                 QWidget *parentWidget = qobject_cast<QWidget*>(parent());
                 if (parentWidget) {
-                    parentWidget->winId();  // Due to some existing issues with alien in 4.4,
+                    parentWidget->window()->winId();  // Due to some existing issues with alien in 4.4,
                                             // we must currently force the creation of a parent widget.
                 }
                 m_isValid = true; //initialization ok, accept input
@@ -171,8 +171,8 @@ void VideoWidget::setupVideoBin()
         gst_object_unref(videopad);
         QWidget *parentWidget = qobject_cast<QWidget*>(parent());
         if (parentWidget) {
-            parentWidget->winId();  // Due to some existing issues with alien in 4.4,
-                                    // we must currently force the creation of a parent widget.
+            parentWidget->window()->winId();  // Due to some existing issues with alien in 4.4,
+                                    // we must currently force the creation of a parent widget's window
         }
         m_isValid = true; //initialization ok, accept input
     }
