@@ -521,7 +521,7 @@ void VideoWidget::keyPressEvent(QKeyEvent *event)
     GstElement *videosink = m_renderer->videoSink();
     if (GST_IS_NAVIGATION(videosink)) {
         GstNavigation *navigation = GST_NAVIGATION(videosink);
-        if (navigation) {
+        if (navigation && !m_movieSize.isNull()) {
             // TODO key code via xlib?
             gst_navigation_send_key_event(navigation, "key-pressed",
                                           event->text().toLatin1());
@@ -535,7 +535,7 @@ void VideoWidget::keyReleaseEvent(QKeyEvent *event)
     GstElement *videosink = m_renderer->videoSink();
     if (GST_IS_NAVIGATION(videosink)) {
         GstNavigation *navigation = GST_NAVIGATION(videosink);
-        if (navigation) {
+        if (navigation && !m_movieSize.isNull()) {
             // TODO key code via xlib?
             gst_navigation_send_key_event(navigation, "key-released",
                                           event->text().toLatin1());
@@ -552,7 +552,7 @@ void VideoWidget::mouseMoveEvent(QMouseEvent *event)
     GstElement *videosink = m_renderer->videoSink();
     if (GST_IS_NAVIGATION(videosink)) {
         GstNavigation *navigation = GST_NAVIGATION(videosink);
-        if (navigation) {
+        if (navigation && !m_movieSize.isNull()) {
             gst_navigation_send_mouse_event(navigation, "mouse-move",
                                             0, x, y);
         }
@@ -568,7 +568,7 @@ void VideoWidget::mousePressEvent(QMouseEvent *event)
     GstElement *videosink = m_renderer->videoSink();
     if (GST_IS_NAVIGATION(videosink)) {
         GstNavigation *navigation = GST_NAVIGATION(videosink);
-        if (navigation) {
+        if (navigation && !m_movieSize.isNull()) {
             gst_navigation_send_mouse_event(navigation, "mouse-button-press",
                                             1, x, y);
         }
@@ -584,7 +584,7 @@ void VideoWidget::mouseReleaseEvent(QMouseEvent *event)
     GstElement *videosink = m_renderer->videoSink();
     if (GST_IS_NAVIGATION(videosink)) {
         GstNavigation *navigation = GST_NAVIGATION(videosink);
-        if (navigation) {
+        if (navigation && !m_movieSize.isNull()) {
             gst_navigation_send_mouse_event(navigation, "mouse-button-release",
                                             1, x, y);
         }
