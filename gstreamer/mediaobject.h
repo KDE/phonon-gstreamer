@@ -70,43 +70,43 @@ class MediaObject : public QObject, public MediaObjectInterface
 public:
     MediaObject(Backend *backend, QObject *parent);
     ~MediaObject();
-    Phonon::State state() const Q_DECL_OVERRIDE;
+    Phonon::State state() const override;
 
-    bool hasVideo() const Q_DECL_OVERRIDE;
-    bool isSeekable() const Q_DECL_OVERRIDE;
+    bool hasVideo() const override;
+    bool isSeekable() const override;
 
-    qint64 currentTime() const Q_DECL_OVERRIDE;
-    qint32 tickInterval() const Q_DECL_OVERRIDE;
+    qint64 currentTime() const override;
+    qint32 tickInterval() const override;
 
-    void setTickInterval(qint32 newTickInterval) Q_DECL_OVERRIDE;
+    void setTickInterval(qint32 newTickInterval) override;
 
-    void play() Q_DECL_OVERRIDE;
-    void pause() Q_DECL_OVERRIDE;
-    void stop() Q_DECL_OVERRIDE;
-    void seek(qint64 time) Q_DECL_OVERRIDE;
+    void play() override;
+    void pause() override;
+    void stop() override;
+    void seek(qint64 time) override;
 
     Phonon::State translateState(GstState state) const;
 
-    QString errorString() const Q_DECL_OVERRIDE;
-    Phonon::ErrorType errorType() const Q_DECL_OVERRIDE;
+    QString errorString() const override;
+    Phonon::ErrorType errorType() const override;
 
-    qint64 totalTime() const Q_DECL_OVERRIDE;
+    qint64 totalTime() const override;
 
-    qint32 prefinishMark() const Q_DECL_OVERRIDE;
-    void setPrefinishMark(qint32 newPrefinishMark) Q_DECL_OVERRIDE;
+    qint32 prefinishMark() const override;
+    void setPrefinishMark(qint32 newPrefinishMark) override;
 
-    qint32 transitionTime() const Q_DECL_OVERRIDE;
-    void setTransitionTime(qint32) Q_DECL_OVERRIDE;
-    qint64 remainingTime() const Q_DECL_OVERRIDE;
+    qint32 transitionTime() const override;
+    void setTransitionTime(qint32) override;
+    qint64 remainingTime() const override;
 
-    void setSource(const MediaSource &source) Q_DECL_OVERRIDE;
-    void setNextSource(const MediaSource &source) Q_DECL_OVERRIDE;
-    MediaSource source() const Q_DECL_OVERRIDE;
+    void setSource(const MediaSource &source) override;
+    void setNextSource(const MediaSource &source) override;
+    MediaSource source() const override;
 
     // No additional interfaces currently supported
 #ifndef QT_NO_PHONON_MEDIACONTROLLER
-    bool hasInterface(Interface) const Q_DECL_OVERRIDE;
-    QVariant interfaceCall(Interface, int, const QList<QVariant> &) Q_DECL_OVERRIDE;
+    bool hasInterface(Interface) const override;
+    QVariant interfaceCall(Interface, int, const QList<QVariant> &) override;
 #endif
     bool isLoading() const
     {
@@ -179,12 +179,12 @@ protected:
     void loadingComplete();
     Q_INVOKABLE void setError(const QString &errorString, Phonon::ErrorType error = NormalError);
 
-    GstElement *audioElement() const Q_DECL_OVERRIDE
+    GstElement *audioElement() const override
     {
         return m_pipeline->audioPipe();
     }
 
-    GstElement *videoElement() const Q_DECL_OVERRIDE
+    GstElement *videoElement() const override
     {
         return m_pipeline->videoPipe();
     }
