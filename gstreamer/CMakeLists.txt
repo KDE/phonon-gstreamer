@@ -98,9 +98,9 @@ set_target_properties(phonon_gstreamer PROPERTIES
 )
 
 target_link_libraries(phonon_gstreamer
-    Qt5::Core
-    Qt5::Widgets
-    Phonon::phonon4qt5
+    Qt::Core
+    Qt::Widgets
+    Phonon::phonon4qt${QT_MAJOR_VERSION}
     ${PHONON_LIBRARY}
     ${GSTREAMER_LIBRARIES} ${GSTREAMER_BASE_LIBRARY} ${GSTREAMER_INTERFACE_LIBRARY}
     ${GSTREAMER_PLUGIN_VIDEO_LIBRARY} ${GSTREAMER_PLUGIN_AUDIO_LIBRARY} ${GSTREAMER_PLUGIN_PBUTILS_LIBRARY}
@@ -108,18 +108,22 @@ target_link_libraries(phonon_gstreamer
 )
 
 if(PHONON_FOUND_EXPERIMENTAL)
-    target_link_libraries(phonon_gstreamer Phonon::phonon4qt5experimental)
+    target_link_libraries(phonon_gstreamer Phonon::phonon4qt${QT_MAJOR_VERSION}experimental)
 endif()
 
-if(Qt5X11Extras_FOUND)
-  target_link_libraries(phonon_gstreamer Qt5::X11Extras)
-endif(Qt5X11Extras_FOUND)
+if (QT_MAJOR_VERSION STREQUAL "5")
+    if(Qt5X11Extras_FOUND)
+        target_link_libraries(phonon_gstreamer Qt::X11Extras)
+    endif()
+else()
+    target_link_libraries(phonon_gstreamer Qt6::GuiPrivate)
+endif()
 
 if(USE_INSTALL_PLUGIN)
    target_link_libraries(phonon_gstreamer ${GSTREAMER_PLUGIN_PBUTILS_LIBRARIES})
 endif(USE_INSTALL_PLUGIN)
 if(OPENGL_FOUND)
-  target_link_libraries(phonon_gstreamer ${OPENGL_gl_LIBRARY} Qt5::OpenGL)
+  target_link_libraries(phonon_gstreamer ${OPENGL_gl_LIBRARY} Qt${QT_MAJOR_VERSION}::OpenGL)
 endif(OPENGL_FOUND)
 
 install(TARGETS phonon_gstreamer DESTINATION ${PHONON_BACKEND_DIR})

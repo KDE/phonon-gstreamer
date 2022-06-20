@@ -7,7 +7,8 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(FeatureSummary)
 
 # ECM
-find_package(ECM 5.60 NO_MODULE)
+find_package(ECM 5.90 NO_MODULE)
+set(KDE_COMPILERSETTINGS_LEVEL "5.82")
 set_package_properties(ECM PROPERTIES
     TYPE REQUIRED
     DESCRIPTION "Extra CMake Modules"
@@ -26,18 +27,18 @@ ecm_setup_version(PROJECT VARIABLE_PREFIX PHONON_GST)
 add_definitions(-DPHONON_GST_VERSION="${PHONON_GST_VERSION}")
 
 # Phonon
-find_package(Phonon4Qt5 4.10.60 NO_MODULE)
-set_package_properties(Phonon4Qt5 PROPERTIES
+find_package(Phonon4Qt${QT_MAJOR_VERSION} 4.10.60 NO_MODULE)
+set_package_properties(Phonon4Qt${QT_MAJOR_VERSION} PROPERTIES
     TYPE REQUIRED
     DESCRIPTION "Phonon core library"
     URL "https://api.kde.org/phonon/html/index.html")
 
-find_package(Phonon4Qt5Experimental 4.10.60 NO_MODULE)
-set_package_properties(Phonon4Qt5Experimental PROPERTIES
+find_package(Phonon4Qt${QT_MAJOR_VERSION}Experimental 4.10.60 NO_MODULE)
+set_package_properties(Phonon4Qt${QT_MAJOR_VERSION}Experimental PROPERTIES
     TYPE OPTIONAL
     DESCRIPTION "Phonon experimental library"
     URL "https://api.kde.org/phonon/html/index.html")
-if(Phonon4Qt5Experimental_FOUND)
+if(Phonon4Qt${QT_MAJOR_VERSION}Experimental_FOUND)
     set(PHONON_EXPERIMENTAL TRUE)
 endif()
 
@@ -46,18 +47,23 @@ set_package_properties(OpenGL PROPERTIES
     TYPE OPTIONAL
     PURPOSE "OpenGL support is required to compile the gstreamer backend for Phonon")
 
-find_package(Qt5OpenGL)
-set_package_properties(Qt5OpenGL PROPERTIES
+find_package(Qt${QT_MAJOR_VERSION}OpenGL)
+set_package_properties(Qt${QT_MAJOR_VERSION}OpenGL PROPERTIES
     TYPE OPTIONAL
-    PURPOSE "Qt5 OpenGL support is required to compile the gstreamer backend for Phonon")
-set(QT_QTOPENGL_FOUND Qt5OpenGL_FOUND)
+    PURPOSE "Qt${QT_MAJOR_VERSION} OpenGL support is required to compile the gstreamer backend for Phonon")
+set(QT_QTOPENGL_FOUND Qt${QT_MAJOR_VERSION}OpenGL_FOUND)
 
 set(REQUIRED_QT_VERSION 5.2.0)
-find_package(Qt5X11Extras ${REQUIRED_QT_VERSION})
-set_package_properties(Qt5OpenGL PROPERTIES
-    TYPE OPTIONAL
-    PURPOSE "Qt5X11Extras is needed for the x11renderer"
-    URL "http://doc.qt.io/qt-5/qtx11extras-index.html")
+
+if (QT_MAJOR_VERSION STREQUAL "5")
+    find_package(Qt5X11Extras ${REQUIRED_QT_VERSION})
+    set_package_properties(Qt5X11Extras PROPERTIES
+        TYPE OPTIONAL
+        PURPOSE "Qt5X11Extras is needed for the x11renderer"
+        URL "http://doc.qt.io/qt-5/qtx11extras-index.html")
+elseif (QT_MAJOR_VERSION STREQUAL "6")
+    find_package(Qt${QT_MAJOR_VERSION} ${REQUIRED_QT_VERSION} CONFIG REQUIRED Gui) # qtx11extras_p.h
+endif()
 
 include(ECMPoQmTools)
 
