@@ -1,0 +1,144 @@
+# Translation of phonon_gstreamer.po into Serbian.
+# Chusslove Illich <caslav.ilic@gmx.net>, 2008, 2009, 2010, 2011, 2012, 2014, 2015.
+# Dalibor Djuric <dalibor.djuric@mozilla-srbija.org>, 2009.
+# Dalibor Djuric <daliborddjuric@gmail.com>, 2011.
+msgid ""
+msgstr ""
+"Project-Id-Version: phonon_gstreamer\n"
+"Report-Msgid-Bugs-To: http://bugs.kde.org\n"
+"POT-Creation-Date: 2019-04-13 01:47+0200\n"
+"PO-Revision-Date: 2015-11-14 16:12+0100\n"
+"Last-Translator: Chusslove Illich <caslav.ilic@gmx.net>\n"
+"Language-Team: Serbian <kde-i18n-sr@kde.org>\n"
+"Language: sr@ijekavian\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"X-Accelerator-Marker: &\n"
+"X-Text-Markup: qtrich\n"
+"X-Environment: kde\n"
+"X-Qt-Contexts: true\n"
+
+#: gstreamer/backend.cpp:220
+#, fuzzy
+#| msgid ""
+#| "Warning: You do not seem to have the package gstreamer1.0-plugins-good "
+#| "installed.\n"
+#| "          Some video features have been disabled."
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the package gstreamer1.0-plugins-good "
+"installed.\n"
+"          Some video features have been disabled."
+msgstr ""
+"Упозорење: изгледа да пакет gstreamer1.0-plugins-good није инсталиран.\n"
+"Неке видео могућности су зато искључене."
+
+#: gstreamer/backend.cpp:228
+#, fuzzy
+#| msgid ""
+#| "Warning: You do not seem to have the base GStreamer plugins installed.\n"
+#| "          All audio and video support has been disabled"
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the base GStreamer plugins installed.\n"
+"          All audio and video support has been disabled"
+msgstr ""
+"Упозорење: изгледа да основни прикључци Гстримера нису инсталирани.\n"
+"Сва аудио и видео подршка је искључена."
+
+# >> @item default audio channel
+#: gstreamer/mediaobject.cpp:426
+#, fuzzy
+#| msgid "Default"
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Default"
+msgstr "подразумевани"
+
+# >! Contexts.
+# >> @item unknown language code
+#: gstreamer/mediaobject.cpp:440 gstreamer/mediaobject.cpp:473
+#, fuzzy
+#| msgid "Unknown"
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Unknown"
+msgstr "непознат"
+
+#: gstreamer/mediaobject.cpp:460
+#, fuzzy
+#| msgid "Disable"
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Disable"
+msgstr "Искључи"
+
+#: gstreamer/pipeline.cpp:510
+#, fuzzy
+#| msgid "One or more plugins are missing in your GStreamer installation."
+msgctxt "Phonon::Gstreamer::Pipeline|"
+msgid "One or more plugins are missing in your GStreamer installation."
+msgstr "Један или више прикључака недостаје у овој инсталацији Гстримера."
+
+#: gstreamer/plugininstaller.cpp:187
+#, fuzzy
+#| msgid "Missing codec helper script assistant."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Missing codec helper script assistant."
+msgstr "Недостаје асистент за помоћне скрипте кодека̂."
+
+#: gstreamer/plugininstaller.cpp:189
+#, fuzzy
+#| msgid "Plugin codec installation failed."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Plugin codec installation failed."
+msgstr "Инсталирање кодека као прикључка није успјело."
+
+#: gstreamer/plugininstaller.cpp:212
+#, fuzzy
+#| msgid "Phonon attempted to install an invalid codec name."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Phonon attempted to install an invalid codec name."
+msgstr "Фонон је покушао да инсталира лоше име кодека."
+
+#: gstreamer/plugininstaller.cpp:215
+#, fuzzy
+#| msgid "The codec installer crashed."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The codec installer crashed."
+msgstr "Инсталатер кодека се срушио."
+
+#: gstreamer/plugininstaller.cpp:218
+#, fuzzy
+#| msgid "The required codec could not be found for installation."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The required codec could not be found for installation."
+msgstr "Тражени кодек за инсталирање није нађен."
+
+#: gstreamer/plugininstaller.cpp:221
+#, fuzzy
+#| msgid "An unspecified error occurred during codec installation."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "An unspecified error occurred during codec installation."
+msgstr "Неодређена грешка при инсталирању кодека."
+
+#: gstreamer/plugininstaller.cpp:224
+#, fuzzy
+#| msgid "Not all codecs could be installed."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Not all codecs could be installed."
+msgstr "Неки кодеци нису могли бити инсталирани."
+
+#: gstreamer/plugininstaller.cpp:227
+#, fuzzy
+#| msgid "User aborted codec installation"
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "User aborted codec installation"
+msgstr "Корисник је прекинуо инсталирање кодека."
+
+#: gstreamer/plugininstaller.cpp:238
+#, fuzzy
+#| msgid "Could not update plugin registry after update."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Could not update plugin registry after update."
+msgstr "Не могу да ажурирам регистар прикључака послије ажурирања."

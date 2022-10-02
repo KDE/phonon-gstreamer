@@ -1,0 +1,148 @@
+# Finnish messages for phonon_qstreamer.
+# Copyright © 2009, 2010, 2011 This_file_is_part_of_KDE
+# This file is distributed under the same license as the qt package.
+# Jorma Karvonen <karvonen.jorma@gmail.com>, 2009, 2011.
+# Tommi Nieminen <translator@legisign.org>, 2010, 2019.
+# Lasse Liehu <lasse.liehu@gmail.com>, 2011, 2012, 2014.
+#
+# KDE Finnish translation sprint participants:
+msgid ""
+msgstr ""
+"Project-Id-Version: phonon_gstreamer\n"
+"Report-Msgid-Bugs-To: https://bugs.kde.org\n"
+"POT-Creation-Date: 2019-07-01 01:43+0200\n"
+"PO-Revision-Date: 2019-07-30 23:05+0200\n"
+"Last-Translator: Tommi Nieminen <translator@legisign.org>\n"
+"Language-Team: Finnish <kde-i18n-doc@kde.org>\n"
+"Language: fi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-POT-Import-Date: 2013-01-13 20:43:23+0000\n"
+"X-Generator: Lokalize 2.0\n"
+"X-Qt-Contexts: true\n"
+
+#: gstreamer/backend.cpp:220
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the package gstreamer1.0-plugins-good "
+"installed.\n"
+"          Some video features have been disabled."
+msgstr ""
+"Varoitus: Paketti gstreamer1.0-plugins-good ei tunnu olevan asennettu.\n"
+"          Jotkin video-ominaisuudet eivät ole käytössä."
+
+#: gstreamer/backend.cpp:228
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the base GStreamer plugins installed.\n"
+"          All audio and video support has been disabled"
+msgstr ""
+"Varoitus: GStreamer-perusliitännäisiä ei tunnu olevan asennettu.\n"
+"          Ääni- ja videotuki eivät ole käytössä."
+
+#: gstreamer/mediaobject.cpp:426
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Default"
+msgstr "Oletus"
+
+#: gstreamer/mediaobject.cpp:440 gstreamer/mediaobject.cpp:473
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Unknown"
+msgstr "Tuntematon"
+
+#: gstreamer/mediaobject.cpp:460
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Disable"
+msgstr "Poista käytöstä"
+
+#: gstreamer/pipeline.cpp:515
+msgctxt "Phonon::Gstreamer::Pipeline|"
+msgid "One or more plugins are missing in your GStreamer installation."
+msgstr "GStreamer-asennuksesta puuttuu yksi tai useampia liitännäisiä."
+
+#: gstreamer/plugininstaller.cpp:188
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Missing codec helper script assistant."
+msgstr "Koodekin opasteskriptiavustaja puuttuu."
+
+#: gstreamer/plugininstaller.cpp:190
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Plugin codec installation failed."
+msgstr "Liitännäiskoodekin asennus epäonnistui."
+
+# Vaikuttaisi olevan Phononin väärinymmärrys GST_INSTALL_PLUGINS_INVALID:in merkityksestä. Koodekin nimi ei ole virheellinen (invalid codec name), vaan jokin osatoiminto kertoi (epä)onnistumisestaan ei-sovitulla tavalla (invalid return code).
+#: gstreamer/plugininstaller.cpp:214
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Phonon attempted to install an invalid codec name."
+msgstr "Phonon yritti asentaa virheellisen koodekin nimen."
+
+#: gstreamer/plugininstaller.cpp:217
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The codec installer crashed."
+msgstr "Koodekkiasennin kaatui."
+
+#: gstreamer/plugininstaller.cpp:220
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The required codec could not be found for installation."
+msgstr "Vaadittua koodekkia ei löytynyt asennettavaksi."
+
+#: gstreamer/plugininstaller.cpp:223
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "An unspecified error occurred during codec installation."
+msgstr "Koodekin asennuksessa tapahtui määrittämätön virhe."
+
+#: gstreamer/plugininstaller.cpp:226
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Not all codecs could be installed."
+msgstr "Kaikkia koodekkeja ei voitu asentaa."
+
+#: gstreamer/plugininstaller.cpp:229
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "User aborted codec installation"
+msgstr "Käyttäjä keskeytti koodekin asentamisen"
+
+#: gstreamer/plugininstaller.cpp:240
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Could not update plugin registry after update."
+msgstr "Rekisteriä ei voitu päivittää päivityksen jälkeen."
+
+#~ msgid ""
+#~ "Cannot start playback. \n"
+#~ "\n"
+#~ "Check your GStreamer installation and make sure you \n"
+#~ "have libgstreamer-plugins-base installed."
+#~ msgstr ""
+#~ "Toistoa ei voi käynnistää. \n"
+#~ "\n"
+#~ "Tarkista Gstreamer-asennus ja varmista, että \n"
+#~ "libgstreamer-plugins-base on asennettu."
+
+#~ msgid "Could not open media source."
+#~ msgstr "Ei voitu avata medialähdettä."
+
+#~ msgid "Invalid source type."
+#~ msgstr "Virheellinen lähdetyyppi."
+
+#~ msgid "Could not open DVD."
+#~ msgstr "Ei voitu avata DVD:tä."
+
+#~ msgid "Could not open capture device."
+#~ msgstr "Ei voitu avata kaappauslaitetta."
+
+#~ msgid "Could not open audio device. The device is already in use."
+#~ msgstr "Ei voitu avata äänilaitetta, koska se on jo käytössä."
+
+#~ msgid ""
+#~ "A required codec is missing. You need to install the following codec(s) "
+#~ "to play this content: %0"
+#~ msgstr ""
+#~ "Pyydetty koodekki puuttuu. Sinun on asennettava seuraava(t) koodekki "
+#~ "tämän sisällön toistamiseksi: %0"
+
+#~ msgid "Could not locate media source."
+#~ msgstr "Ei voitu paikallistaa medialähdettä."
+
+#~ msgid "Could not decode media source."
+#~ msgstr "Ei voitu dekoodata medialähdettä."

@@ -1,0 +1,163 @@
+# Irish translation of phonon_gstreamer
+# Copyright (C) 2009 This_file_is_part_of_KDE
+# This file is distributed under the same license as the phonon_gstreamer package.
+# Kevin Scannell <kscanne@gmail.com>, 2009.
+msgid ""
+msgstr ""
+"Project-Id-Version: phonon_gstreamer.po\n"
+"Report-Msgid-Bugs-To: https://bugs.kde.org\n"
+"POT-Creation-Date: 2019-07-01 01:43+0200\n"
+"PO-Revision-Date: 2008-07-08 09:26-0500\n"
+"Last-Translator: Kevin Scannell <kscanne@gmail.com>\n"
+"Language-Team: Irish <gaeilge-gnulinux@lists.sourceforge.net>\n"
+"Language: ga\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=5; plural=n==1 ? 0 : n==2 ? 1 : n<7 ? 2 : n < 11 ? "
+"3 : 4\n"
+"X-Qt-Contexts: true\n"
+
+#: gstreamer/backend.cpp:220
+#, fuzzy
+#| msgid ""
+#| "Warning: You do not seem to have the package gstreamer0.10-plugins-good "
+#| "installed.\n"
+#| "          Some video features have been disabled."
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the package gstreamer1.0-plugins-good "
+"installed.\n"
+"          Some video features have been disabled."
+msgstr ""
+"Rabhadh: Dealraíonn sé nach bhfuil an pacáiste gstreamer0.10-plugins-good "
+"suiteáilte agat.\n"
+"          Díchumasaíodh roinnt gnéithe físe."
+
+#: gstreamer/backend.cpp:228
+#, fuzzy
+#| msgid ""
+#| "Warning: You do not seem to have the base GStreamer plugins installed.\n"
+#| "          All audio and video support has been disabled"
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the base GStreamer plugins installed.\n"
+"          All audio and video support has been disabled"
+msgstr ""
+"Rabhadh: Dealraíonn sé nach bhfuil na bunbhreiseáin GStreamer suiteáilte "
+"agat.\n"
+"          Díchumasaíodh tacaíocht fuaime/físe go léir"
+
+#: gstreamer/mediaobject.cpp:426
+#, fuzzy
+#| msgid "Default"
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Default"
+msgstr "Réamhshocrú"
+
+#: gstreamer/mediaobject.cpp:440 gstreamer/mediaobject.cpp:473
+#, fuzzy
+#| msgid "Unknown"
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Unknown"
+msgstr "Anaithnid"
+
+#: gstreamer/mediaobject.cpp:460
+#, fuzzy
+#| msgid "Disable"
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Disable"
+msgstr "Díchumasaigh"
+
+#: gstreamer/pipeline.cpp:515
+#, fuzzy
+#| msgid "One or more plugins are missing in your GStreamer installation."
+msgctxt "Phonon::Gstreamer::Pipeline|"
+msgid "One or more plugins are missing in your GStreamer installation."
+msgstr "Tá breiseán nó breiseáin ar iarraidh ó do shuiteáil GStreamer."
+
+#: gstreamer/plugininstaller.cpp:188
+#, fuzzy
+#| msgid "Missing codec helper script assistant."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Missing codec helper script assistant."
+msgstr "Cúntóir do script chabhrach codec ar iarraidh."
+
+#: gstreamer/plugininstaller.cpp:190
+#, fuzzy
+#| msgid "Plugin codec installation failed."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Plugin codec installation failed."
+msgstr "Theip ar shuiteáil an bhreiseáin codec."
+
+#: gstreamer/plugininstaller.cpp:214
+#, fuzzy
+#| msgid "Phonon attempted to install an invalid codec name."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Phonon attempted to install an invalid codec name."
+msgstr "Rinne Phonon iarracht ar ainm neamhbhailí codec a shuiteáil."
+
+#: gstreamer/plugininstaller.cpp:217
+#, fuzzy
+#| msgid "The codec installer crashed."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The codec installer crashed."
+msgstr "Thuairteáil suiteálaí an codec."
+
+#: gstreamer/plugininstaller.cpp:220
+#, fuzzy
+#| msgid "The required codec could not be found for installation."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The required codec could not be found for installation."
+msgstr "Níorbh fhéidir an codec riachtanach a aimsiú."
+
+#: gstreamer/plugininstaller.cpp:223
+#, fuzzy
+#| msgid "An unspecified error occurred during codec installation."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "An unspecified error occurred during codec installation."
+msgstr "Tharla earráid gan sonrú le linn shuiteáil an codec."
+
+#: gstreamer/plugininstaller.cpp:226
+#, fuzzy
+#| msgid "Not all codecs could be installed."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Not all codecs could be installed."
+msgstr "Níorbh fhéidir gach codec a shuiteáil."
+
+#: gstreamer/plugininstaller.cpp:229
+#, fuzzy
+#| msgid "User aborted codec installation"
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "User aborted codec installation"
+msgstr "Thobscoir an t-úsáideoir suiteáil an codec"
+
+#: gstreamer/plugininstaller.cpp:240
+#, fuzzy
+#| msgid "Could not update plugin registry after update."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Could not update plugin registry after update."
+msgstr "Níorbh fhéidir clárlann na mbreiseán a nuashonrú."
+
+#~ msgid ""
+#~ "Cannot start playback. \n"
+#~ "\n"
+#~ "Check your GStreamer installation and make sure you \n"
+#~ "have libgstreamer-plugins-base installed."
+#~ msgstr ""
+#~ "Ní féidir athsheinm. \n"
+#~ "\n"
+#~ "Déan seiceáil ar an gcóras Gstreamer agus bí cinnte go \n"
+#~ "bhfuil libgstreamer-plugins-base suiteáilte agat."
+
+#~ msgid "Could not open media source."
+#~ msgstr "Níorbh fhéidir an fhoinse meán a oscailt."
+
+#~ msgid "Invalid source type."
+#~ msgstr "Cineál neamhbhailí foinse."
+
+#~ msgid "Could not open audio device. The device is already in use."
+#~ msgstr "Níorbh fhéidir an gléas fuaime a oscailt. Tá sé in úsáid cheana."
+
+#~ msgid "Could not locate media source."
+#~ msgstr "Níorbh fhéidir an fhoinse meán a aimsiú."

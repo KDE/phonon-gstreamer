@@ -1,0 +1,116 @@
+# translation of phonon_gstreamer.po to Slovak
+# Jan Kamensky <jkam.mail@gmail.com>, 2008.
+# Richard Fric <Richard.Fric@kdemail.net>, 2010.
+# Roman Paholík <wizzardsk@gmail.com>, 2012, 2014.
+# Matej Mrenica <matejm98mthw@gmail.com>, 2019.
+msgid ""
+msgstr ""
+"Project-Id-Version: phonon_gstreamer\n"
+"Report-Msgid-Bugs-To: https://bugs.kde.org\n"
+"POT-Creation-Date: 2019-07-01 01:43+0200\n"
+"PO-Revision-Date: 2019-08-08 12:12+0200\n"
+"Last-Translator: Matej Mrenica <matejm98mthw@gmail.com>\n"
+"Language-Team: Slovak <kde-i18n-doc@kde.org>\n"
+"Language: sk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Lokalize 19.07.90\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"X-Qt-Contexts: true\n"
+
+#: gstreamer/backend.cpp:220
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the package gstreamer1.0-plugins-good "
+"installed.\n"
+"          Some video features have been disabled."
+msgstr ""
+"Upozornenie: Pravdepodobne nemáte nainštalovaný balík gstreamer0.10-plugins-"
+"good.\n"
+"          Niektoré video funkcie boli zakázané."
+
+#: gstreamer/backend.cpp:228
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the base GStreamer plugins installed.\n"
+"          All audio and video support has been disabled"
+msgstr ""
+"Varovanie: Pravdepodobne nemáte nainštalovaný balík GStreamer plugins.\n"
+"          Všetka podpora pre Audio a video bola zakázaná"
+
+#: gstreamer/mediaobject.cpp:426
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Default"
+msgstr "Predvolené"
+
+#: gstreamer/mediaobject.cpp:440 gstreamer/mediaobject.cpp:473
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Unknown"
+msgstr "Neznáme"
+
+#: gstreamer/mediaobject.cpp:460
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Disable"
+msgstr "Zakázať"
+
+#: gstreamer/pipeline.cpp:515
+msgctxt "Phonon::Gstreamer::Pipeline|"
+msgid "One or more plugins are missing in your GStreamer installation."
+msgstr "Jeden alebo viac pluginov chýba vo vašej inštalácii GStreamer."
+
+#: gstreamer/plugininstaller.cpp:188
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Missing codec helper script assistant."
+msgstr "Chýba pomocník skriptu nápovedy kodeku."
+
+#: gstreamer/plugininstaller.cpp:190
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Plugin codec installation failed."
+msgstr "Inštalácia pluginu kodeku zlyhala."
+
+#: gstreamer/plugininstaller.cpp:214
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Phonon attempted to install an invalid codec name."
+msgstr "Phonon sa pokúsil nainštalovať neplatný názov kodeku."
+
+#: gstreamer/plugininstaller.cpp:217
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The codec installer crashed."
+msgstr "Inštalátor kodeku spadol."
+
+#: gstreamer/plugininstaller.cpp:220
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The required codec could not be found for installation."
+msgstr "Nenašiel sa potrebný kodek na inštaláciu."
+
+#: gstreamer/plugininstaller.cpp:223
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "An unspecified error occurred during codec installation."
+msgstr "Počas inštalácie kodeku nastala nešpecifikovaná chyba."
+
+#: gstreamer/plugininstaller.cpp:226
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Not all codecs could be installed."
+msgstr "Nepodarilo sa nainštalovať všetky kodeky."
+
+#: gstreamer/plugininstaller.cpp:229
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "User aborted codec installation"
+msgstr "Používateľ zrušil inštaláciu kodeku"
+
+#: gstreamer/plugininstaller.cpp:240
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Could not update plugin registry after update."
+msgstr "Nemôžem aktualizovať register pluginu po aktualizácii."
+
+#~ msgid ""
+#~ "Cannot start playback. \n"
+#~ "\n"
+#~ "Check your GStreamer installation and make sure you \n"
+#~ "have libgstreamer-plugins-base installed."
+#~ msgstr ""
+#~ "Nie je možné spustíť prehrávanie \n"
+#~ "\n"
+#~ "Skontrolujte inštaláciu GStreamera a či máte nainštalovaný \n"
+#~ "libgstreamer-plugins-base balík."

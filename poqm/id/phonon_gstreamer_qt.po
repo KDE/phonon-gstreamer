@@ -1,0 +1,174 @@
+# Copyright (C) YEAR This_file_is_part_of_KDE
+# This file is distributed under the same license as the PACKAGE package.
+# A. Akbar Hidayat <keripix@gmail.com>, 2010.
+# Wantoyo <wantoyek@gmail.com>, 2017, 2018, 2019, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: https://bugs.kde.org\n"
+"POT-Creation-Date: 2019-07-01 01:43+0200\n"
+"PO-Revision-Date: 2019-07-04 21:08+0700\n"
+"Last-Translator: Wantoyo <wantoyek@gmail.com>\n"
+"Language-Team: Indonesian <kde-i18n-doc@kde.org>\n"
+"Language: id\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Qt-Contexts: true\n"
+
+#: gstreamer/backend.cpp:220
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the package gstreamer1.0-plugins-good "
+"installed.\n"
+"          Some video features have been disabled."
+msgstr ""
+"Peringatan: Sepertinya kamu belum memiliki paket gstreamer1.0-plugins-good "
+"yang terinstal.\n"
+"          Beberapa fitur video akan dinonfungsikan."
+
+#: gstreamer/backend.cpp:228
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the base GStreamer plugins installed.\n"
+"          All audio and video support has been disabled"
+msgstr ""
+"Peringatan: Sepertinya kamu belum memiliki dasar plugin GStreamer yang "
+"terinstal.\n"
+"          Semua dukungan audio dan video akan dinonfungsikan"
+
+#: gstreamer/mediaobject.cpp:426
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Default"
+msgstr "Baku"
+
+#: gstreamer/mediaobject.cpp:440 gstreamer/mediaobject.cpp:473
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Unknown"
+msgstr "Tak diketahui"
+
+#: gstreamer/mediaobject.cpp:460
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Disable"
+msgstr "Nonfungsikan"
+
+#: gstreamer/pipeline.cpp:515
+msgctxt "Phonon::Gstreamer::Pipeline|"
+msgid "One or more plugins are missing in your GStreamer installation."
+msgstr "Satu atau lebih plugin telah hilang dalam penginstalan GStreamer-mu."
+
+#: gstreamer/plugininstaller.cpp:188
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Missing codec helper script assistant."
+msgstr "Asisten penunjang skrip kodek hilang."
+
+#: gstreamer/plugininstaller.cpp:190
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Plugin codec installation failed."
+msgstr "Penginstalan kodek plugin, gagal."
+
+#: gstreamer/plugininstaller.cpp:214
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Phonon attempted to install an invalid codec name."
+msgstr "Phonon berupaya untuk menginstal sebuah nama kodek yang tak absah."
+
+#: gstreamer/plugininstaller.cpp:217
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The codec installer crashed."
+msgstr "Penginstal kodek, mogok."
+
+#: gstreamer/plugininstaller.cpp:220
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The required codec could not be found for installation."
+msgstr "Kodek yang dibutuhkan tidak ditemukan untuk penginstalan."
+
+#: gstreamer/plugininstaller.cpp:223
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "An unspecified error occurred during codec installation."
+msgstr "Sebuah error tak tertentu terjadi selagi penginstalan kodek."
+
+#: gstreamer/plugininstaller.cpp:226
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Not all codecs could be installed."
+msgstr "Tidak semua kodek bisa diinstal."
+
+#: gstreamer/plugininstaller.cpp:229
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "User aborted codec installation"
+msgstr "Pengguna menggugurkan penginstalan kodek"
+
+#: gstreamer/plugininstaller.cpp:240
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Could not update plugin registry after update."
+msgstr "Tidak bisa memperbarui registri plugin sesudah pembaruan."
+
+#~ msgid ""
+#~ "Cannot start playback. \n"
+#~ "\n"
+#~ "Check your GStreamer installation and make sure you \n"
+#~ "have libgstreamer-plugins-base installed."
+#~ msgstr ""
+#~ "Tidak dapat memainkan audio. \n"
+#~ "\n"
+#~ "Periksa instalasi Gstreamer anda dan pastikan \n"
+#~ "bahwa libgstreamer-plugins-base sudah terinstal."
+
+#~ msgid "Could not open media source."
+#~ msgstr "Tidak dapat membuka sumber media"
+
+#~ msgid "Invalid source type."
+#~ msgstr "Tipe sumber yang tidak sah."
+
+#, fuzzy
+#~| msgid "Could not open media source."
+#~ msgid "Could not open DVD."
+#~ msgstr "Tidak dapat membuka sumber media"
+
+#, fuzzy
+#~| msgid "Could not open media source."
+#~ msgid "Could not open capture device."
+#~ msgstr "Tidak dapat membuka sumber media"
+
+#~ msgid "Could not open audio device. The device is already in use."
+#~ msgstr "Tidak dapat membuka perangkat audio. Perangkat sedang digunakan."
+
+#, fuzzy
+#~| msgid ""
+#~| "A required codec is missing. You need to install the following codec(s) "
+#~| "to play this content: %0"
+#~ msgid ""
+#~ "A required GStreamer plugin is missing. You need to install the following "
+#~ "plugin(s) to play this content: %0"
+#~ msgstr ""
+#~ "Codec yang dibutuhkan tidak ditemukan. Anda harus menginstal codec-codec "
+#~ "berikut untuk memainkan konten ini: %0"
+
+#~ msgid "Could not locate media source."
+#~ msgstr "Tidak dapat menemukan sumber media."
+
+#, fuzzy
+#~| msgid "Could not open media source."
+#~ msgid "Could not find media type."
+#~ msgstr "Tidak dapat membuka sumber media"
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not decode media."
+#~ msgstr "Tidak dapat mendekodekan sumber media."
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not encode media."
+#~ msgstr "Tidak dapat mendekodekan sumber media."
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not demux media."
+#~ msgstr "Tidak dapat mendekodekan sumber media."
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not decrypt media."
+#~ msgstr "Tidak dapat mendekodekan sumber media."

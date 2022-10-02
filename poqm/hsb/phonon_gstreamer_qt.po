@@ -1,0 +1,176 @@
+# translation of desktop_kdebase.po to Upper Sorbian
+# Prof. Dr. Eduard Werner <e.werner@rz.uni-leipzig.de>, 2003.
+# Eduard Werner <edi.werner@gmx.de>, 2005, 2008.
+# Bianka Šwejdźic <hertn@gmx.de>, 2005, 2007.
+msgid ""
+msgstr ""
+"Project-Id-Version: desktop_kdebase\n"
+"Report-Msgid-Bugs-To: https://bugs.kde.org\n"
+"POT-Creation-Date: 2019-07-01 01:43+0200\n"
+"PO-Revision-Date: 2008-11-11 22:59+0100\n"
+"Last-Translator: Eduard Werner <edi.werner@gmx.de>\n"
+"Language-Team: en_US <kde-i18n-doc@lists.kde.org>\n"
+"Language: hsb\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=4; plural=n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n"
+"%100==4 ? 2 : 3;\n"
+"X-Qt-Contexts: true\n"
+
+#: gstreamer/backend.cpp:220
+#, fuzzy
+#| msgid ""
+#| "Warning: You do not seem to have the package gstreamer0.10-plugins-good "
+#| "installed.\n"
+#| "          Some video features have been disabled."
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the package gstreamer1.0-plugins-good "
+"installed.\n"
+"          Some video features have been disabled."
+msgstr ""
+"Kedźbu: Pakćik gstreamer0.10-plugins-goodnjeje instalowany.\n"
+" Někotre widejo-opcije njesteja k dispoziciji."
+
+#: gstreamer/backend.cpp:228
+#, fuzzy
+#| msgid ""
+#| "Warning: You do not seem to have the base GStreamer plugins installed.\n"
+#| "          All audio and video support has been disabled"
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the base GStreamer plugins installed.\n"
+"          All audio and video support has been disabled"
+msgstr ""
+"Kedźbu: Bazowy pakćik pluginow za GStreamer nejeje instalowany.\n"
+"  Podpěra za zwuk a widejo njesteji k dispoziciji."
+
+#: gstreamer/mediaobject.cpp:426
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Default"
+msgstr ""
+
+#: gstreamer/mediaobject.cpp:440 gstreamer/mediaobject.cpp:473
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Unknown"
+msgstr ""
+
+#: gstreamer/mediaobject.cpp:460
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Disable"
+msgstr ""
+
+#: gstreamer/pipeline.cpp:515
+msgctxt "Phonon::Gstreamer::Pipeline|"
+msgid "One or more plugins are missing in your GStreamer installation."
+msgstr ""
+
+#: gstreamer/plugininstaller.cpp:188
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Missing codec helper script assistant."
+msgstr ""
+
+#: gstreamer/plugininstaller.cpp:190
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Plugin codec installation failed."
+msgstr ""
+
+#: gstreamer/plugininstaller.cpp:214
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Phonon attempted to install an invalid codec name."
+msgstr ""
+
+#: gstreamer/plugininstaller.cpp:217
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The codec installer crashed."
+msgstr ""
+
+#: gstreamer/plugininstaller.cpp:220
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The required codec could not be found for installation."
+msgstr ""
+
+#: gstreamer/plugininstaller.cpp:223
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "An unspecified error occurred during codec installation."
+msgstr ""
+
+#: gstreamer/plugininstaller.cpp:226
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Not all codecs could be installed."
+msgstr ""
+
+#: gstreamer/plugininstaller.cpp:229
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "User aborted codec installation"
+msgstr ""
+
+#: gstreamer/plugininstaller.cpp:240
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Could not update plugin registry after update."
+msgstr ""
+
+#, fuzzy
+#~| msgid ""
+#~| "Cannot start playback. \n"
+#~| "\n"
+#~| "Check your Gstreamer installation and make sure you \n"
+#~| "have libgstreamer-plugins-base installed."
+#~ msgid ""
+#~ "Cannot start playback. \n"
+#~ "\n"
+#~ "Check your GStreamer installation and make sure you \n"
+#~ "have libgstreamer-plugins-base installed."
+#~ msgstr ""
+#~ "Njemóžu wohrawać.\n"
+#~ "\n"
+#~ "Přepruwujće, hač je Gstreamer a\n"
+#~ " libgstreamer-plugins-base instalowane."
+
+#~ msgid "Could not open media source."
+#~ msgstr "Njemóžu žórło za medium wočinić."
+
+#~ msgid "Invalid source type."
+#~ msgstr "Njewalidny typ žórła."
+
+#, fuzzy
+#~| msgid "Could not open media source."
+#~ msgid "Could not open DVD."
+#~ msgstr "Njemóžu žórło za medium wočinić."
+
+#, fuzzy
+#~| msgid "Could not open media source."
+#~ msgid "Could not open capture device."
+#~ msgstr "Njemóžu žórło za medium wočinić."
+
+#~ msgid "Could not open audio device. The device is already in use."
+#~ msgstr "Njemóžach zwukowy grat wočinić. Grat so hižo wužiwa."
+
+#~ msgid "Could not locate media source."
+#~ msgstr "Njemóžu žórło za medium namakać."
+
+#, fuzzy
+#~| msgid "Could not open media source."
+#~ msgid "Could not find media type."
+#~ msgstr "Njemóžu žórło za medium wočinić."
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not decode media."
+#~ msgstr "Njemóžach žórło mediuma dekodować."
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not encode media."
+#~ msgstr "Njemóžach žórło mediuma dekodować."
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not demux media."
+#~ msgstr "Njemóžach žórło mediuma dekodować."
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not decrypt media."
+#~ msgstr "Njemóžach žórło mediuma dekodować."

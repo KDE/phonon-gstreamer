@@ -1,0 +1,103 @@
+# Copyright (C) YEAR This_file_is_part_of_KDE
+# This file is distributed under the same license as the PACKAGE package.
+# Shinjo Park <kde@peremen.name>, 2008, 2009, 2010, 2011, 2013, 2014, 2015, 2019, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: phonon_gstreamer\n"
+"Report-Msgid-Bugs-To: https://bugs.kde.org\n"
+"POT-Creation-Date: 2019-07-01 01:43+0200\n"
+"PO-Revision-Date: 2020-04-04 14:50+0200\n"
+"Last-Translator: Shinjo Park <kde@peremen.name>\n"
+"Language-Team: Korean <kde-kr@kde.org>\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Lokalize 19.04.3\n"
+"X-Qt-Contexts: true\n"
+
+#: gstreamer/backend.cpp:220
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the package gstreamer1.0-plugins-good "
+"installed.\n"
+"          Some video features have been disabled."
+msgstr ""
+"경고: gstreamer1.0-plugins-good 패키지가 설치되어 있지 않습니다.\n"
+"          일부 비디오 기능이 비활성화되었습니다."
+
+#: gstreamer/backend.cpp:228
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the base GStreamer plugins installed.\n"
+"          All audio and video support has been disabled"
+msgstr ""
+"경고: GStreamer 기본 플러그인이 설치된 것 같지 않습니다.\n"
+"          모든 오디오와 비디오 지원이 비활성화되었습니다"
+
+#: gstreamer/mediaobject.cpp:426
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Default"
+msgstr "기본값"
+
+#: gstreamer/mediaobject.cpp:440 gstreamer/mediaobject.cpp:473
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Unknown"
+msgstr "알 수 없음"
+
+#: gstreamer/mediaobject.cpp:460
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Disable"
+msgstr "비활성화"
+
+#: gstreamer/pipeline.cpp:515
+msgctxt "Phonon::Gstreamer::Pipeline|"
+msgid "One or more plugins are missing in your GStreamer installation."
+msgstr "GStreamer 설치본에 하나 이상의 플러그인이 없습니다."
+
+#: gstreamer/plugininstaller.cpp:188
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Missing codec helper script assistant."
+msgstr "코덱 도우미 스크립트가 없습니다."
+
+#: gstreamer/plugininstaller.cpp:190
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Plugin codec installation failed."
+msgstr "플러그인 코덱을 설치할 수 없습니다."
+
+#: gstreamer/plugininstaller.cpp:214
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Phonon attempted to install an invalid codec name."
+msgstr "Phonon에서 잘못된 코덱을 설치하려고 했습니다."
+
+#: gstreamer/plugininstaller.cpp:217
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The codec installer crashed."
+msgstr "코덱 설치기가 충돌했습니다."
+
+#: gstreamer/plugininstaller.cpp:220
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The required codec could not be found for installation."
+msgstr "필요한 코덱을 찾을 수 없습니다."
+
+#: gstreamer/plugininstaller.cpp:223
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "An unspecified error occurred during codec installation."
+msgstr "코덱 설치 중 지정하지 않은 오류가 발생했습니다."
+
+#: gstreamer/plugininstaller.cpp:226
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Not all codecs could be installed."
+msgstr "모든 코덱을 설치할 수 없습니다."
+
+#: gstreamer/plugininstaller.cpp:229
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "User aborted codec installation"
+msgstr "사용자가 코덱 설치를 중단함"
+
+#: gstreamer/plugininstaller.cpp:240
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Could not update plugin registry after update."
+msgstr "업데이트 후 플러그인 레지스트리를 갱신할 수 없습니다."

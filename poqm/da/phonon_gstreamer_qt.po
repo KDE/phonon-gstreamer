@@ -1,0 +1,201 @@
+# Copyright (C) YEAR This_file_is_part_of_KDE
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Martin Schlander <mschlander@opensuse.org>, 2008, 2009, 2010, 2011, 2012, 2014.
+msgid ""
+msgstr ""
+"Project-Id-Version: phonon_gstreamer\n"
+"Report-Msgid-Bugs-To: https://bugs.kde.org\n"
+"POT-Creation-Date: 2019-07-01 01:43+0200\n"
+"PO-Revision-Date: 2014-08-24 22:03+0200\n"
+"Last-Translator: Martin Schlander <mschlander@opensuse.org>\n"
+"Language-Team: Danish <kde-i18n-doc@kde.org>\n"
+"Language: da\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Lokalize 1.5\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Qt-Contexts: true\n"
+
+#: gstreamer/backend.cpp:220
+#, fuzzy
+#| msgid ""
+#| "Warning: You do not seem to have the package gstreamer1.0-plugins-good "
+#| "installed.\n"
+#| "          Some video features have been disabled."
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the package gstreamer1.0-plugins-good "
+"installed.\n"
+"          Some video features have been disabled."
+msgstr ""
+"Advarsel: Du lader ikke til at have pakken gstreamer1.0-plugins-good "
+"installeret.\n"
+"          Visse video-funktioner er blevet deaktiveret."
+
+#: gstreamer/backend.cpp:228
+#, fuzzy
+#| msgid ""
+#| "Warning: You do not seem to have the base GStreamer plugins installed.\n"
+#| "          All audio and video support has been disabled"
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the base GStreamer plugins installed.\n"
+"          All audio and video support has been disabled"
+msgstr ""
+"Advarsel: Du lader ikke til at have de basale GStreamer-plugins "
+"installeret.\n"
+"          Al lyd- og video-understøttelse er blevet deaktiveret"
+
+#: gstreamer/mediaobject.cpp:426
+#, fuzzy
+#| msgid "Default"
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Default"
+msgstr "Standard"
+
+#: gstreamer/mediaobject.cpp:440 gstreamer/mediaobject.cpp:473
+#, fuzzy
+#| msgid "Unknown"
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Unknown"
+msgstr "Ukendt"
+
+#: gstreamer/mediaobject.cpp:460
+#, fuzzy
+#| msgid "Disable"
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Disable"
+msgstr "Deaktivér"
+
+#: gstreamer/pipeline.cpp:515
+#, fuzzy
+#| msgid "One or more plugins are missing in your GStreamer installation."
+msgctxt "Phonon::Gstreamer::Pipeline|"
+msgid "One or more plugins are missing in your GStreamer installation."
+msgstr "Et eller flere plugins mangler i din GStreamer-installation."
+
+#: gstreamer/plugininstaller.cpp:188
+#, fuzzy
+#| msgid "Missing codec helper script assistant."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Missing codec helper script assistant."
+msgstr "Manglende assistent til codec-hjælpescript."
+
+#: gstreamer/plugininstaller.cpp:190
+#, fuzzy
+#| msgid "Plugin codec installation failed."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Plugin codec installation failed."
+msgstr "Installation af plugin-codec mislykkedes."
+
+#: gstreamer/plugininstaller.cpp:214
+#, fuzzy
+#| msgid "Phonon attempted to install an invalid codec name."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Phonon attempted to install an invalid codec name."
+msgstr "Phonon forsøgte at installere et ugyldigt codec-navn."
+
+#: gstreamer/plugininstaller.cpp:217
+#, fuzzy
+#| msgid "The codec installer crashed."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The codec installer crashed."
+msgstr "Codec-installationsprogrammet brød sammen."
+
+#: gstreamer/plugininstaller.cpp:220
+#, fuzzy
+#| msgid "The required codec could not be found for installation."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The required codec could not be found for installation."
+msgstr "Det påkrævede codec kunne ikke findes til installation."
+
+#: gstreamer/plugininstaller.cpp:223
+#, fuzzy
+#| msgid "An unspecified error occurred during codec installation."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "An unspecified error occurred during codec installation."
+msgstr "En ikke-specificeret fejl opstod under codec-installationen."
+
+#: gstreamer/plugininstaller.cpp:226
+#, fuzzy
+#| msgid "Not all codecs could be installed."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Not all codecs could be installed."
+msgstr "Ikke alle codecs kunne installeres."
+
+#: gstreamer/plugininstaller.cpp:229
+#, fuzzy
+#| msgid "User aborted codec installation"
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "User aborted codec installation"
+msgstr "Brugeren afbrød codec-installationen"
+
+#: gstreamer/plugininstaller.cpp:240
+#, fuzzy
+#| msgid "Could not update plugin registry after update."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Could not update plugin registry after update."
+msgstr "Kunne ikke opdatere plugin-registrering efter opdatering."
+
+#~ msgid ""
+#~ "Cannot start playback. \n"
+#~ "\n"
+#~ "Check your GStreamer installation and make sure you \n"
+#~ "have libgstreamer-plugins-base installed."
+#~ msgstr ""
+#~ "Kan ikke starte afspilning. \n"
+#~ "\n"
+#~ "Tjek din GStreamer-installation og sørg for at du \n"
+#~ "har libgstreamer-plugins-base installeret."
+
+#~ msgid "Could not open media source."
+#~ msgstr "Kunne ikke åbne mediekilde."
+
+#~ msgid "Invalid source type."
+#~ msgstr "Ugyldig kildetype."
+
+#~ msgid "Could not open DVD."
+#~ msgstr "Kunne ikke åbne dvd."
+
+#~ msgid "Could not open capture device."
+#~ msgstr "Kunne ikke åbne optageenheden."
+
+#~ msgid "Could not open audio device. The device is already in use."
+#~ msgstr "Kunne ikke åbne lydenhed. Enheden er allerede i brug."
+
+#, fuzzy
+#~| msgid ""
+#~| "A required codec is missing. You need to install the following codec(s) "
+#~| "to play this content: %0"
+#~ msgid ""
+#~ "A required GStreamer plugin is missing. You need to install the following "
+#~ "plugin(s) to play this content: %0"
+#~ msgstr ""
+#~ "Et påkrævet codec mangler. Du skal installere følgende codecs for at "
+#~ "kunne afspille dette indhold: %0"
+
+#~ msgid "Could not locate media source."
+#~ msgstr "Kunne ikke finde mediekilde."
+
+#~ msgid "Could not find media type."
+#~ msgstr "Kunne ikke finde medietype."
+
+#~ msgid "Wrong media type encountered in GStreamer pipeline."
+#~ msgstr "Forkert medietype fundet i GStreamer-pipeline."
+
+#~ msgid "Could not decode media."
+#~ msgstr "Kunne ikke dekode medie."
+
+#~ msgid "Could not encode media."
+#~ msgstr "Kunne ikke indkode medie."
+
+#~ msgid "Could not demux media."
+#~ msgstr "Kunne ikke demuxe medie."
+
+#~ msgid "Could not decrypt media."
+#~ msgstr "Kunne ikke dekryptere medie."
+
+#~ msgid "No suitable decryption key found."
+#~ msgstr "Ingen egnet dekrypteringsnøgle fundet."

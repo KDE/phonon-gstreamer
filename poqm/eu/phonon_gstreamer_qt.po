@@ -1,0 +1,175 @@
+# Translation of phonon_gstreamer_qt.po to Euskara/Basque (eu).
+# KDE euskaratzeko proiektuaren arduraduna <xalba@euskalnet.net>.
+#
+# Translators:
+# Iñigo Salvador Azurmendi <xalba@euskalnet.net>, 2009, 2010, 2013, 2019.
+msgid ""
+msgstr ""
+"Project-Id-Version: phonon\n"
+"Report-Msgid-Bugs-To: https://bugs.kde.org\n"
+"POT-Creation-Date: 2019-07-01 01:43+0200\n"
+"PO-Revision-Date: 2019-07-07 22:44+0200\n"
+"Last-Translator: Iñigo Salvador Azurmendi <xalba@euskalnet.net>\n"
+"Language-Team: Basque <kde-i18n-eu@kde.org>\n"
+"Language: eu\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Lokalize 19.04.2\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Qt-Contexts: true\n"
+
+#: gstreamer/backend.cpp:220
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the package gstreamer1.0-plugins-good "
+"installed.\n"
+"          Some video features have been disabled."
+msgstr ""
+"Abisua: Dirudienez ez daukazu gstreamer1.0-plugins-good paketea "
+"instalatuta.\n"
+"          Bideo eginbide batzuk ezgaitu egin dira."
+
+#: gstreamer/backend.cpp:228
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the base GStreamer plugins installed.\n"
+"          All audio and video support has been disabled"
+msgstr ""
+"Abisua: Dirudienez ez dauzkazu GStreamer-ren oinarrizko pluginak "
+"instalatuta.\n"
+"          Audio- eta bideo-euskarri dena ezgaitu da."
+
+#: gstreamer/mediaobject.cpp:426
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Default"
+msgstr "Lehenetsia"
+
+#: gstreamer/mediaobject.cpp:440 gstreamer/mediaobject.cpp:473
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Unknown"
+msgstr "Ezezaguna"
+
+#: gstreamer/mediaobject.cpp:460
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Disable"
+msgstr "Ezgaitu"
+
+#: gstreamer/pipeline.cpp:515
+msgctxt "Phonon::Gstreamer::Pipeline|"
+msgid "One or more plugins are missing in your GStreamer installation."
+msgstr "Plugin bat edo gehiago falta dira zure GStreamer instalazioan."
+
+#: gstreamer/plugininstaller.cpp:188
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Missing codec helper script assistant."
+msgstr "Kodek morroi script laguntzailea falta da."
+
+#: gstreamer/plugininstaller.cpp:190
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Plugin codec installation failed."
+msgstr "Plugin kodek instalatzea huts egin du."
+
+#: gstreamer/plugininstaller.cpp:214
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Phonon attempted to install an invalid codec name."
+msgstr "Phonon kodek-izen baliogabe bat instalatzen saiatu da."
+
+#: gstreamer/plugininstaller.cpp:217
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The codec installer crashed."
+msgstr "Kodek instalatzailea kraskatu egin da."
+
+#: gstreamer/plugininstaller.cpp:220
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The required codec could not be found for installation."
+msgstr "Behar den kodeka ezin izan da instalatzeko aurkitu."
+
+#: gstreamer/plugininstaller.cpp:223
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "An unspecified error occurred during codec installation."
+msgstr "Zehaztu gabeko errore bat gertatu da kodek-instalatzean."
+
+#: gstreamer/plugininstaller.cpp:226
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Not all codecs could be installed."
+msgstr "Kodek guztiak ezin izan dira instalatu."
+
+#: gstreamer/plugininstaller.cpp:229
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "User aborted codec installation"
+msgstr "Erabiltzaileak kodek-instalatzea galarazi du"
+
+#: gstreamer/plugininstaller.cpp:240
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Could not update plugin registry after update."
+msgstr "Eguneratu ondoren ezin izan da pluginen erregistroa eguneratu."
+
+#~ msgid ""
+#~ "Cannot start playback. \n"
+#~ "\n"
+#~ "Check your GStreamer installation and make sure you \n"
+#~ "have libgstreamer-plugins-base installed."
+#~ msgstr ""
+#~ "Ezin jotzen hasi. \n"
+#~ "\n"
+#~ "Egiaztatu zure GStreamer instalaketa eta ziurtatu\n"
+#~ "libgstreamer-plugins-base instalatuta daukazula."
+
+#~ msgid "Could not open media source."
+#~ msgstr "Ezin da euskarri iturburua ireki."
+
+#~ msgid "Invalid source type."
+#~ msgstr "Iturburu mota baliogabea."
+
+#, fuzzy
+#~| msgid "Could not open media source."
+#~ msgid "Could not open DVD."
+#~ msgstr "Ezin da euskarri iturburua ireki."
+
+#, fuzzy
+#~| msgid "Could not open media source."
+#~ msgid "Could not open capture device."
+#~ msgstr "Ezin da euskarri iturburua ireki."
+
+#~ msgid "Could not open audio device. The device is already in use."
+#~ msgstr "Ezin da audio gailua ireki. Gailua dagoeneko erabileran dago."
+
+#, fuzzy
+#~| msgid ""
+#~| "A required codec is missing. You need to install the following codec(s) "
+#~| "to play this content: %0"
+#~ msgid ""
+#~ "A required GStreamer plugin is missing. You need to install the following "
+#~ "plugin(s) to play this content: %0"
+#~ msgstr ""
+#~ "Behar den codeca falta da. Ondorengo codeca(k) instalatu behar d(it)uzu "
+#~ "edukin hau jotzeko: %0"
+
+#~ msgid "Could not locate media source."
+#~ msgstr "Ezin da euskarri iturburua aurkitu."
+
+#, fuzzy
+#~| msgid "Could not open media source."
+#~ msgid "Could not find media type."
+#~ msgstr "Ezin da euskarri iturburua ireki."
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not decode media."
+#~ msgstr "Ezin da euskarri iturburua deskodetu."
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not encode media."
+#~ msgstr "Ezin da euskarri iturburua deskodetu."
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not demux media."
+#~ msgstr "Ezin da euskarri iturburua deskodetu."
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not decrypt media."
+#~ msgstr "Ezin da euskarri iturburua deskodetu."

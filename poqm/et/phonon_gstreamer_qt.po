@@ -1,0 +1,167 @@
+# translation of phonon_gstreamer.po to Estonian
+# Copyright (C) 2008 This_file_is_part_of_KDE
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Marek Laane <bald@smail.ee>, 2008-2009, 2010, 2011, 2012, 2015, 2019.
+msgid ""
+msgstr ""
+"Project-Id-Version: phonon_gstreamer\n"
+"Report-Msgid-Bugs-To: https://bugs.kde.org\n"
+"POT-Creation-Date: 2019-07-01 01:43+0200\n"
+"PO-Revision-Date: 2019-11-08 00:17+0200\n"
+"Last-Translator: Marek Laane <qiilaq69@gmail.com>\n"
+"Language-Team: Estonian <kde-et@lists.linux.ee>\n"
+"Language: et\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Lokalize 19.08.1\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Qt-Contexts: true\n"
+
+#: gstreamer/backend.cpp:220
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the package gstreamer1.0-plugins-good "
+"installed.\n"
+"          Some video features have been disabled."
+msgstr ""
+"Hoiatus: tundub, et sul pole paigaldatud pakett gstreamer1.0-plugins-good.\n"
+"          Mõned videovõimalused on välja lülitatud."
+
+#: gstreamer/backend.cpp:228
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the base GStreamer plugins installed.\n"
+"          All audio and video support has been disabled"
+msgstr ""
+"Hoiatus: tundub, et sul pole paigaldatud GStreameri baaspluginaid.\n"
+"          Kogu heli ja video toetus on välja lülitatud."
+
+#: gstreamer/mediaobject.cpp:426
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Default"
+msgstr "Vaikimisi"
+
+#: gstreamer/mediaobject.cpp:440 gstreamer/mediaobject.cpp:473
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Unknown"
+msgstr "Teadmata"
+
+#: gstreamer/mediaobject.cpp:460
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Disable"
+msgstr "Keela"
+
+#: gstreamer/pipeline.cpp:515
+msgctxt "Phonon::Gstreamer::Pipeline|"
+msgid "One or more plugins are missing in your GStreamer installation."
+msgstr "Sinu GStreameri paigalduses on puudu vähemalt üks plugin."
+
+#: gstreamer/plugininstaller.cpp:188
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Missing codec helper script assistant."
+msgstr "Koodeki abiskripti nõustaja puudub."
+
+#: gstreamer/plugininstaller.cpp:190
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Plugin codec installation failed."
+msgstr "Plugina koodeki paigaldamine nurjus."
+
+#: gstreamer/plugininstaller.cpp:214
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Phonon attempted to install an invalid codec name."
+msgstr "Phonon püüdis paigaldada vigase koodeki nime."
+
+#: gstreamer/plugininstaller.cpp:217
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The codec installer crashed."
+msgstr "Koodeki paigaldajat tabas krahh."
+
+#: gstreamer/plugininstaller.cpp:220
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The required codec could not be found for installation."
+msgstr "Vajalikku koodekit ei leitud paigaldamiseks."
+
+#: gstreamer/plugininstaller.cpp:223
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "An unspecified error occurred during codec installation."
+msgstr "Koodeki paigaldamisel tekkis tuvastamata tõrge."
+
+#: gstreamer/plugininstaller.cpp:226
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Not all codecs could be installed."
+msgstr "Kõiki koodekeid ei saa paigaldada."
+
+#: gstreamer/plugininstaller.cpp:229
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "User aborted codec installation"
+msgstr "Kasutaja katkestas koodeki paigaldamise"
+
+#: gstreamer/plugininstaller.cpp:240
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Could not update plugin registry after update."
+msgstr "Pluginaregistri uuendamine pärast uuendamist nurjus."
+
+#~ msgid ""
+#~ "Cannot start playback. \n"
+#~ "\n"
+#~ "Check your GStreamer installation and make sure you \n"
+#~ "have libgstreamer-plugins-base installed."
+#~ msgstr ""
+#~ "Taasesituse alustamine nurjus. \n"
+#~ "\n"
+#~ "Palun kontrolli GStreameri paigaldust ja seda, et oleks paigaldatud "
+#~ "pakett libgstreamer-plugins-base."
+
+#~ msgid "Could not open media source."
+#~ msgstr "Meediaallika avamine nurjus."
+
+#~ msgid "Invalid source type."
+#~ msgstr "Vigane allika tüüp."
+
+#~ msgid "Could not open DVD."
+#~ msgstr "DVD avamine nurjus."
+
+#~ msgid "Could not open capture device."
+#~ msgstr "Hõiveseadme avamine nurjus."
+
+#~ msgid "Could not open audio device. The device is already in use."
+#~ msgstr "Heliseadme avamine nurjus. Seade on juba kasutusel."
+
+#~ msgid ""
+#~ "A required GStreamer plugin is missing. You need to install the following "
+#~ "plugin(s) to play this content: %0"
+#~ msgstr ""
+#~ "Nõutav GStreameri plugin puudub. Sisu esitamiseks tuleb paigaldada "
+#~ "järgmised pluginad: %0"
+
+#~ msgid "Resin DVD Reader"
+#~ msgstr "Resin DVD lugeja"
+
+#~ msgid "DVD Stream Decoder"
+#~ msgstr "DVD voo dekooder"
+
+#~ msgid "Could not locate media source."
+#~ msgstr "Meediaallika tuvastamine nurjus."
+
+#~ msgid "Could not find media type."
+#~ msgstr "Meediatüüpi ei leitud."
+
+#~ msgid "Wrong media type encountered in GStreamer pipeline."
+#~ msgstr "GStreameri torus esines vale meediatüüp."
+
+#~ msgid "Could not decode media."
+#~ msgstr "Meedia dekodeerimine nurjus."
+
+#~ msgid "Could not encode media."
+#~ msgstr "Meedia kodeerimine nurjus."
+
+#~ msgid "Could not demux media."
+#~ msgstr "Meedia demultipleksimine nurjus."
+
+#~ msgid "Could not decrypt media."
+#~ msgstr "Meedia lahtikrüptimine nurjus."
+
+#~ msgid "No suitable decryption key found."
+#~ msgstr "Sobivat lahtikrüptimisvõtit ei leitud."

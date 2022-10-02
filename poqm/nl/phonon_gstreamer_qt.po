@@ -1,0 +1,172 @@
+# translation of phonon_gstreamer.po to Dutch
+# Copyright (C) YEAR This_file_is_part_of_KDE
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Kristof Bal <kristof.bal@gmail.com>, 2008.
+# Freek de Kruijf <f.de.kruijf@hetnet.nl>, 2009.
+# Freek de Kruijf <freekdekruijf@kde.nl>, 2009, 2010, 2011, 2012, 2014, 2019.
+msgid ""
+msgstr ""
+"Project-Id-Version: phonon_gstreamer\n"
+"Report-Msgid-Bugs-To: https://bugs.kde.org\n"
+"POT-Creation-Date: 2019-07-01 01:43+0200\n"
+"PO-Revision-Date: 2019-07-04 21:34+0200\n"
+"Last-Translator: Freek de Kruijf <freekdekruijf@kde.nl>\n"
+"Language-Team: Dutch <kde-i18n-nl@kde.org>\n"
+"Language: nl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Lokalize 19.04.2\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Qt-Contexts: true\n"
+
+#: gstreamer/backend.cpp:220
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the package gstreamer1.0-plugins-good "
+"installed.\n"
+"          Some video features have been disabled."
+msgstr ""
+"Waarschuwing: Het pakket gstreamer1.0-plug-ins-good lijkt niet te zijn "
+"geïnstalleerd.\n"
+"          Sommige videofuncties zijn uitgeschakeld."
+
+#: gstreamer/backend.cpp:228
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the base GStreamer plugins installed.\n"
+"          All audio and video support has been disabled"
+msgstr ""
+"Waarschuwing: De basis GStreamerplug-ins lijken niet te zijn geïnstalleerd.\n"
+"          Alle audio- en video-ondersteuning is uitgeschakeld."
+
+#: gstreamer/mediaobject.cpp:426
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Default"
+msgstr "Standaard"
+
+#: gstreamer/mediaobject.cpp:440 gstreamer/mediaobject.cpp:473
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Unknown"
+msgstr "Onbekend"
+
+#: gstreamer/mediaobject.cpp:460
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Disable"
+msgstr "Uitschakelen"
+
+#: gstreamer/pipeline.cpp:515
+msgctxt "Phonon::Gstreamer::Pipeline|"
+msgid "One or more plugins are missing in your GStreamer installation."
+msgstr "Eén of meer plug-ins ontbreken in uw installatie van GStreamer."
+
+#: gstreamer/plugininstaller.cpp:188
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Missing codec helper script assistant."
+msgstr "Hulpscriptassistent voor ontbrekende codec."
+
+#: gstreamer/plugininstaller.cpp:190
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Plugin codec installation failed."
+msgstr "Installatie van plug-in-codec is mislukt."
+
+#: gstreamer/plugininstaller.cpp:214
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Phonon attempted to install an invalid codec name."
+msgstr "Phonon probeerde om een ongeldige codec-naam te installeren."
+
+#: gstreamer/plugininstaller.cpp:217
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The codec installer crashed."
+msgstr "Het installatieprogramma voor een codec is gecrasht."
+
+#: gstreamer/plugininstaller.cpp:220
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The required codec could not be found for installation."
+msgstr "De vereiste codec voor installatie is niet gevonden."
+
+#: gstreamer/plugininstaller.cpp:223
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "An unspecified error occurred during codec installation."
+msgstr ""
+"Er is een niet gespecificeerde fout opgetreden tijdens de installatie van de "
+"codec."
+
+#: gstreamer/plugininstaller.cpp:226
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Not all codecs could be installed."
+msgstr "Niet alle codecs konden worden geïnstalleerd."
+
+#: gstreamer/plugininstaller.cpp:229
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "User aborted codec installation"
+msgstr "Installatie van codec is afgebroken door de gebruiker"
+
+#: gstreamer/plugininstaller.cpp:240
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Could not update plugin registry after update."
+msgstr "Kon plug-in-registry niet bijwerken na bijwerken."
+
+#~ msgid ""
+#~ "Cannot start playback. \n"
+#~ "\n"
+#~ "Check your GStreamer installation and make sure you \n"
+#~ "have libgstreamer-plugins-base installed."
+#~ msgstr ""
+#~ "Kan afspelen niet starten. \n"
+#~ "\n"
+#~ "Controleer uw GStreamer-installatie en zorg ervoor dat u \n"
+#~ "libgstreamer-plug-ins-base hebt geïnstalleerd."
+
+#~ msgid "Could not open media source."
+#~ msgstr "Kan de mediabron niet openen."
+
+#~ msgid "Invalid source type."
+#~ msgstr "Ongeldig brontype."
+
+#~ msgid "Could not open DVD."
+#~ msgstr "Kan de dvd niet openen."
+
+#~ msgid "Could not open capture device."
+#~ msgstr "Kan het opnameapparaat niet openen."
+
+#~ msgid "Could not open audio device. The device is already in use."
+#~ msgstr "Kan het audioapparaat niet openen. Het apparaat wordt al gebruikt."
+
+#~ msgid ""
+#~ "A required GStreamer plugin is missing. You need to install the following "
+#~ "plugin(s) to play this content: %0"
+#~ msgstr ""
+#~ "Een vereiste GStreamer-plugin mist. U dient de volgende plugin(s) te "
+#~ "installeren om deze inhoud af te kunnen spelen: %0"
+
+#~ msgid "Resin DVD Reader"
+#~ msgstr "Resin dvd-lezer"
+
+#~ msgid "DVD Stream Decoder"
+#~ msgstr "Decodeertoepassing voor dvd-stream"
+
+#~ msgid "Could not locate media source."
+#~ msgstr "Kan de mediabron niet lokaliseren."
+
+#~ msgid "Could not find media type."
+#~ msgstr "Kan het mediatype niet vinden."
+
+#~ msgid "Wrong media type encountered in GStreamer pipeline."
+#~ msgstr "Verkeerd mediatype tegen gekomen in GStreamer pipeline."
+
+#~ msgid "Could not decode media."
+#~ msgstr "Kon het medium niet decoderen."
+
+#~ msgid "Could not encode media."
+#~ msgstr "Kon medium niet coderen."
+
+#~ msgid "Could not demux media."
+#~ msgstr "Kon medium niet demuxen."
+
+#~ msgid "Could not decrypt media."
+#~ msgstr "Kon medium niet ontcijferen."
+
+#~ msgid "No suitable decryption key found."
+#~ msgstr "Geen geschikte sleutel voor ontcijferen gevonden."

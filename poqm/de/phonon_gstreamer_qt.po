@@ -1,0 +1,174 @@
+# Thomas Reitelbach <tr@erdfunkstelle.de>, 2008, 2010.
+# Burkhard Lück <lueck@hube-lueck.de>, 2009, 2011, 2012, 2014, 2019.
+# Frederik Schwarzer <schwarzer@kde.org>, 2010, 2011.
+# Panagiotis Papadopoulos <pano_90@gmx.net>, 2010.
+# Frank Steinmetzger <Warp_7@gmx.de>, 2011.
+msgid ""
+msgstr ""
+"Project-Id-Version: phonon_gstreamer\n"
+"Report-Msgid-Bugs-To: https://bugs.kde.org\n"
+"POT-Creation-Date: 2019-07-01 01:43+0200\n"
+"PO-Revision-Date: 2019-07-04 05:16+0200\n"
+"Last-Translator: Burkhard Lück <lueck@hube-lueck.de>\n"
+"Language-Team: German <kde-i18n-de@kde.org>\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Qt-Contexts: true\n"
+
+#: gstreamer/backend.cpp:220
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the package gstreamer1.0-plugins-good "
+"installed.\n"
+"          Some video features have been disabled."
+msgstr ""
+"Hinweis: Das Paket gstreamer1.0-plugins-good scheint nicht installiert zu "
+"sein.\n"
+"Einige Video-Funktionen wurden daher deaktiviert."
+
+#: gstreamer/backend.cpp:228
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the base GStreamer plugins installed.\n"
+"          All audio and video support has been disabled"
+msgstr ""
+"Hinweis: Die grundlegenden GStreamer-Module scheinen nicht installiert zu "
+"sein.\n"
+"Alle Audio- und Video-Funktionen wurden daher deaktiviert."
+
+#: gstreamer/mediaobject.cpp:426
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Default"
+msgstr "Standard"
+
+#: gstreamer/mediaobject.cpp:440 gstreamer/mediaobject.cpp:473
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Unknown"
+msgstr "Unbekannt"
+
+#: gstreamer/mediaobject.cpp:460
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Disable"
+msgstr "Deaktivieren"
+
+#: gstreamer/pipeline.cpp:515
+msgctxt "Phonon::Gstreamer::Pipeline|"
+msgid "One or more plugins are missing in your GStreamer installation."
+msgstr "Eins oder mehrere Module fehlen in Ihrer GStreamer-Installation."
+
+#: gstreamer/plugininstaller.cpp:188
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Missing codec helper script assistant."
+msgstr "Assistent-Skript für fehlende Codecs"
+
+#: gstreamer/plugininstaller.cpp:190
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Plugin codec installation failed."
+msgstr "Die Installation des Codec-Moduls ist fehlgeschlagen."
+
+#: gstreamer/plugininstaller.cpp:214
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Phonon attempted to install an invalid codec name."
+msgstr "Phonon hat versucht, einen ungültigen Codec-Namen zu installieren."
+
+#: gstreamer/plugininstaller.cpp:217
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The codec installer crashed."
+msgstr "Das Codec-Installationsprogramm ist abgestürzt."
+
+#: gstreamer/plugininstaller.cpp:220
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The required codec could not be found for installation."
+msgstr "Der zur Installation benötigte Codec kann nicht gefunden werden."
+
+#: gstreamer/plugininstaller.cpp:223
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "An unspecified error occurred during codec installation."
+msgstr ""
+"Bei der Codec-Installation ist ein nicht genauer angegebener Fehler "
+"aufgetreten."
+
+#: gstreamer/plugininstaller.cpp:226
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Not all codecs could be installed."
+msgstr "Nicht alle Codecs können installiert werden."
+
+#: gstreamer/plugininstaller.cpp:229
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "User aborted codec installation"
+msgstr "Der Benutzer hat die Codec-Installation abgebrochen"
+
+#: gstreamer/plugininstaller.cpp:240
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Could not update plugin registry after update."
+msgstr "Das Modulregister kann nicht aktualisiert werden."
+
+#~ msgid ""
+#~ "Cannot start playback. \n"
+#~ "\n"
+#~ "Check your GStreamer installation and make sure you \n"
+#~ "have libgstreamer-plugins-base installed."
+#~ msgstr ""
+#~ "Die Wiedergabe kann nicht gestartet werden.\n"
+#~ "\n"
+#~ "Prüfen Sie bitte die Installation von GStreamer und stellen Sie sicher,\n"
+#~ "dass das Modul libgstreamer-plugins-base installiert ist."
+
+#~ msgid "Could not open media source."
+#~ msgstr "Medienquelle kann nicht geöffnet werden."
+
+#~ msgid "Invalid source type."
+#~ msgstr "Ungültiger Quellentyp."
+
+#~ msgid "Could not open DVD."
+#~ msgstr "DVD kann nicht geöffnet werden."
+
+#~ msgid "Could not open capture device."
+#~ msgstr "Das Aufnahmegerät kann nicht geöffnet werden."
+
+#~ msgid "Could not open audio device. The device is already in use."
+#~ msgstr ""
+#~ "Das Audio-Gerät kann nicht geöffnet werden. Das Gerät wird bereits "
+#~ "anderweitig verwendet."
+
+#, fuzzy
+#~| msgid ""
+#~| "A required codec is missing. You need to install the following codec(s) "
+#~| "to play this content: %0"
+#~ msgid ""
+#~ "A required GStreamer plugin is missing. You need to install the following "
+#~ "plugin(s) to play this content: %0"
+#~ msgstr ""
+#~ "Ein notwendiger Codec fehlt. Bitte installieren Sie folgende Codecs, "
+#~ "damit die Wiedergabe funktioniert: %0"
+
+#~ msgid "Could not locate media source."
+#~ msgstr "Medienquelle kann nicht gefunden werden."
+
+#, fuzzy
+#~| msgid "Could not open media source."
+#~ msgid "Could not find media type."
+#~ msgstr "Medienquelle kann nicht geöffnet werden."
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not decode media."
+#~ msgstr "Medienquelle kann nicht dekodiert werden."
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not encode media."
+#~ msgstr "Medienquelle kann nicht dekodiert werden."
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not demux media."
+#~ msgstr "Medienquelle kann nicht dekodiert werden."
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not decrypt media."
+#~ msgstr "Medienquelle kann nicht dekodiert werden."

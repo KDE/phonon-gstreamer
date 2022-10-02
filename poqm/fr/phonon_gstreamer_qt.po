@@ -1,0 +1,194 @@
+# translation of phonon_gstreamer.po to Français
+# translation of phonon_gstreamer.po to
+# French translations for l package
+# Traductions fran�aises du paquet l.
+# Copyright (C) 2008 This_file_is_part_of_KDE
+# This file is distributed under the same license as the l package.
+# Julien Richard-Foy <julien.rf@no-log.org>, 2008, 2009, 2010.
+# Sébastien Renard <Sebastien.Renard@digitalfox.org>, 2008.
+# Sebastien Renard <Sebastien.Renard@digitalfox.org>, 2010.
+# Geoffray Levasseur <geoffray.levasseurbrandin@numericable.fr>, 2010, 2012, 2013.
+# xavier <ktranslator31@yahoo.fr>, 2013.
+# Vincent Pinon <vpinon@kde.org>, 2017.
+# Simon Depiets <sdepiets@gmail.com>, 2019.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: phonon_gstreamer\n"
+"Report-Msgid-Bugs-To: https://bugs.kde.org\n"
+"POT-Creation-Date: 2019-07-01 01:43+0200\n"
+"PO-Revision-Date: 2019-07-21 18:46+0800\n"
+"Last-Translator: Simon Depiets <sdepiets@gmail.com>\n"
+"Language-Team: French <kde-francophone@kde.org>\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Lokalize 19.07.70\n"
+"X-Environment: kde\n"
+"X-Accelerator-Marker: &\n"
+"X-Text-Markup: qtrich\n"
+"X-Qt-Contexts: true\n"
+
+#: gstreamer/backend.cpp:220
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the package gstreamer1.0-plugins-good "
+"installed.\n"
+"          Some video features have been disabled."
+msgstr ""
+"Attention : le paquet « gstreamer1.0-plugins-good » ne semble pas être "
+"installé.\n"
+"          Certaines fonctionnalités vidéo ont été désactivées."
+
+#: gstreamer/backend.cpp:228
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the base GStreamer plugins installed.\n"
+"          All audio and video support has been disabled"
+msgstr ""
+"Attention : les modules externes basiques de GStreamer ne semblent pas être "
+"installés.\n"
+"          Toute la prise en charge de la vidéo et de l'audio a été désactivée"
+
+#: gstreamer/mediaobject.cpp:426
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Default"
+msgstr "Par défaut"
+
+#: gstreamer/mediaobject.cpp:440 gstreamer/mediaobject.cpp:473
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Unknown"
+msgstr "Inconnu"
+
+#: gstreamer/mediaobject.cpp:460
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Disable"
+msgstr "Désactiver"
+
+#: gstreamer/pipeline.cpp:515
+msgctxt "Phonon::Gstreamer::Pipeline|"
+msgid "One or more plugins are missing in your GStreamer installation."
+msgstr ""
+"Un ou plusieurs modules externes sont manquants dans votre installation de "
+"GStreamer."
+
+#: gstreamer/plugininstaller.cpp:188
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Missing codec helper script assistant."
+msgstr "Script d'aide pour les codecs manquants."
+
+#: gstreamer/plugininstaller.cpp:190
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Plugin codec installation failed."
+msgstr "L'installation du codec du module externe a échoué."
+
+#: gstreamer/plugininstaller.cpp:214
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Phonon attempted to install an invalid codec name."
+msgstr "Phonon a tenté d'installer un nom de codec non valable."
+
+#: gstreamer/plugininstaller.cpp:217
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The codec installer crashed."
+msgstr "L'installateur de codec s'est arrêté brutalement."
+
+#: gstreamer/plugininstaller.cpp:220
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The required codec could not be found for installation."
+msgstr "Le codec nécessaire ne peut être trouvé pour son installation."
+
+#: gstreamer/plugininstaller.cpp:223
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "An unspecified error occurred during codec installation."
+msgstr "Une erreur indéfinie est survenue pendant l'installation du codec."
+
+#: gstreamer/plugininstaller.cpp:226
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Not all codecs could be installed."
+msgstr "Tous les codecs ne peuvent être installés."
+
+#: gstreamer/plugininstaller.cpp:229
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "User aborted codec installation"
+msgstr "Installation du codec annulée par l'utilisateur"
+
+#: gstreamer/plugininstaller.cpp:240
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Could not update plugin registry after update."
+msgstr ""
+"Impossible de mettre à jour le registre de modules externes après la mise à "
+"jour."
+
+#, fuzzy
+#~ msgid ""
+#~ "Cannot start playback. \n"
+#~ "\n"
+#~ "Check your GStreamer installation and make sure you \n"
+#~ "have libgstreamer-plugins-base installed."
+#~ msgstr ""
+#~ "Impossible de démarrer la lecture.\n"
+#~ "\n"
+#~ "Vérifiez votre installation de GStreamer et assurez vous que libgstreamer-"
+#~ "plugins-base est installé."
+
+#~ msgid "Could not open media source."
+#~ msgstr "Impossible d'ouvrir la source du média."
+
+#~ msgid "Invalid source type."
+#~ msgstr "Type de source non valable."
+
+#, fuzzy
+#~| msgid "Could not open media source."
+#~ msgid "Could not open DVD."
+#~ msgstr "Impossible d'ouvrir la source du média."
+
+#, fuzzy
+#~| msgid "Could not open media source."
+#~ msgid "Could not open capture device."
+#~ msgstr "Impossible d'ouvrir la source du média."
+
+#~ msgid "Could not open audio device. The device is already in use."
+#~ msgstr ""
+#~ "Impossible d'ouvrir le périphérique audio. Le périphérique est déjà "
+#~ "utilisé."
+
+#, fuzzy
+#~| msgid ""
+#~| "A required codec is missing. You need to install the following codec(s) "
+#~| "to play this content: %0"
+#~ msgid ""
+#~ "A required GStreamer plugin is missing. You need to install the following "
+#~ "plugin(s) to play this content: %0"
+#~ msgstr ""
+#~ "Impossible de trouver un codec nécessaire. Vous devez installer le(s) "
+#~ "codec(s) suivant pour lire ce contenu : %0"
+
+#~ msgid "Could not locate media source."
+#~ msgstr "Impossible de localiser la source du média."
+
+#, fuzzy
+#~| msgid "Could not open media source."
+#~ msgid "Could not find media type."
+#~ msgstr "Impossible d'ouvrir la source du média."
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not decode media."
+#~ msgstr "Impossible de décoder la source du média."
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not encode media."
+#~ msgstr "Impossible de décoder la source du média."
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not demux media."
+#~ msgstr "Impossible de décoder la source du média."
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not decrypt media."
+#~ msgstr "Impossible de décoder la source du média."

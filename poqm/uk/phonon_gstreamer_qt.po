@@ -1,0 +1,173 @@
+# Translation of phonon_gstreamer_qt.po to Ukrainian
+# Copyright (C) 2008-2019 This_file_is_part_of_KDE
+# This file is distributed under the license LGPL version 2.1 or
+# version 3 or later versions approved by the membership of KDE e.V.
+#
+# Yuri Chornoivan <yurchor@ukr.net>, 2008, 2009, 2010, 2011, 2012, 2014, 2015, 2019.
+msgid ""
+msgstr ""
+"Project-Id-Version: phonon_gstreamer_qt\n"
+"Report-Msgid-Bugs-To: https://bugs.kde.org\n"
+"POT-Creation-Date: 2019-07-01 01:43+0200\n"
+"PO-Revision-Date: 2019-07-04 07:35+0300\n"
+"Last-Translator: Yuri Chornoivan <yurchor@ukr.net>\n"
+"Language-Team: Ukrainian <kde-i18n-uk@kde.org>\n"
+"Language: uk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Qt-Contexts: true\n"
+"X-Generator: Lokalize 19.07.70\n"
+"Plural-Forms: nplurals=4; plural=n==1 ? 3 : n%10==1 && n%100!=11 ? 0 : n"
+"%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"X-Qt-Contexts: true\n"
+
+#: gstreamer/backend.cpp:220
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the package gstreamer1.0-plugins-good "
+"installed.\n"
+"          Some video features have been disabled."
+msgstr ""
+"Попередження: здається, пакунок gstreamer1.0-plugins-good не встановлено.\n"
+"          Деякі можливості відео вимкнено."
+
+#: gstreamer/backend.cpp:228
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the base GStreamer plugins installed.\n"
+"          All audio and video support has been disabled"
+msgstr ""
+"Попередження: Здається, ви не встановили базові додатки GStreamer.\n"
+"          Підтримку звуку і відео повністю вимкнено"
+
+#: gstreamer/mediaobject.cpp:426
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Default"
+msgstr "Типовий"
+
+#: gstreamer/mediaobject.cpp:440 gstreamer/mediaobject.cpp:473
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Unknown"
+msgstr "Невідомий"
+
+#: gstreamer/mediaobject.cpp:460
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Disable"
+msgstr "Вимкнути"
+
+#: gstreamer/pipeline.cpp:515
+msgctxt "Phonon::Gstreamer::Pipeline|"
+msgid "One or more plugins are missing in your GStreamer installation."
+msgstr ""
+"У встановленій вами версії GStreamer не вистачає одного або декількох "
+"додатків."
+
+#: gstreamer/plugininstaller.cpp:188
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Missing codec helper script assistant."
+msgstr "Не знайдено допоміжного скриптового рушія кодека"
+
+#: gstreamer/plugininstaller.cpp:190
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Plugin codec installation failed."
+msgstr "Невдала спроба встановлення додатка кодека."
+
+#: gstreamer/plugininstaller.cpp:214
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Phonon attempted to install an invalid codec name."
+msgstr "Phonon зроблено спробу встановити кодек з некоректною назвою."
+
+#: gstreamer/plugininstaller.cpp:217
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The codec installer crashed."
+msgstr "Програма для встановлення кодеків аварійно завершила роботу."
+
+#: gstreamer/plugininstaller.cpp:220
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The required codec could not be found for installation."
+msgstr "Не вдалося виявити потрібний для встановлення кодек."
+
+#: gstreamer/plugininstaller.cpp:223
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "An unspecified error occurred during codec installation."
+msgstr "Під час встановлення кодеків сталася невідома помилка."
+
+#: gstreamer/plugininstaller.cpp:226
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Not all codecs could be installed."
+msgstr "Можна встановити не всі кодеки."
+
+#: gstreamer/plugininstaller.cpp:229
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "User aborted codec installation"
+msgstr "Встановлення кодеків перервано користувачем"
+
+#: gstreamer/plugininstaller.cpp:240
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Could not update plugin registry after update."
+msgstr "Не вдалося оновити список додатків після оновлення."
+
+#~ msgid ""
+#~ "Cannot start playback. \n"
+#~ "\n"
+#~ "Check your GStreamer installation and make sure you \n"
+#~ "have libgstreamer-plugins-base installed."
+#~ msgstr ""
+#~ "Неможливо розпочати відтворення. \n"
+#~ "\n"
+#~ "Перевірте встановлені компоненти GStreamer і переконайтеся, \n"
+#~ "що встановлено libgstreamer-plugins-base."
+
+#~ msgid "Could not open media source."
+#~ msgstr "Неможливо відкрити джерело."
+
+#~ msgid "Invalid source type."
+#~ msgstr "Некоректний тип джерела."
+
+#~ msgid "Could not open DVD."
+#~ msgstr "Не вдалося відкрити DVD."
+
+#~ msgid "Could not open capture device."
+#~ msgstr "Не вдалося відкрити пристрій захоплення даних."
+
+#~ msgid "Could not open audio device. The device is already in use."
+#~ msgstr ""
+#~ "Не вдалося відкрити звуковий пристрій. Пристрій вже використовується."
+
+#~ msgid ""
+#~ "A required GStreamer plugin is missing. You need to install the following "
+#~ "plugin(s) to play this content: %0"
+#~ msgstr ""
+#~ "Немає потрібного додатка GStreamer. Вам слід встановити такі додатки, щоб "
+#~ "мати змогу відтворювати ці дані: %0"
+
+#~ msgid "Resin DVD Reader"
+#~ msgstr "Програвач Resin DVD"
+
+#~ msgid "DVD Stream Decoder"
+#~ msgstr "Декодувальник потоку DVD"
+
+#~ msgid "Could not locate media source."
+#~ msgstr "Не вдалося виявити джерело даних."
+
+#~ msgid "Could not find media type."
+#~ msgstr "Не вдалося визначити тип даних."
+
+#~ msgid "Wrong media type encountered in GStreamer pipeline."
+#~ msgstr "У каналі даних GStreamer виявлено дані помилкового типу."
+
+#~ msgid "Could not decode media."
+#~ msgstr "Не вдалося декодувати дані."
+
+#~ msgid "Could not encode media."
+#~ msgstr "Не вдалося закодувати дані."
+
+#~ msgid "Could not demux media."
+#~ msgstr "Не вдалося розподілити дані за типами."
+
+#~ msgid "Could not decrypt media."
+#~ msgstr "Не вдалося розшифрувати дані."
+
+#~ msgid "No suitable decryption key found."
+#~ msgstr "Не знайдено відповідного ключа дешифрування."

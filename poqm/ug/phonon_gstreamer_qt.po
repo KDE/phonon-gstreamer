@@ -1,0 +1,149 @@
+# Uyghur translation for phonon_gstreamer.
+# Copyright (C) YEAR This_file_is_part_of_KDE
+# This file is distributed under the same license as the PACKAGE package.
+# Sahran <sahran.ug@gmail.com>, 2011.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: phonon_gstreamer\n"
+"Report-Msgid-Bugs-To: https://bugs.kde.org\n"
+"POT-Creation-Date: 2019-07-01 01:43+0200\n"
+"PO-Revision-Date: 2013-09-08 07:05+0900\n"
+"Last-Translator: Gheyret Kenji <gheyret@gmail.com>\n"
+"Language-Team: Uyghur Computer Science Association <UKIJ@yahoogroups.com>\n"
+"Language: ug\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Qt-Contexts: true\n"
+
+#: gstreamer/backend.cpp:220
+#, fuzzy
+#| msgid ""
+#| "Warning: You do not seem to have the package gstreamer0.10-plugins-good "
+#| "installed.\n"
+#| "          Some video features have been disabled."
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the package gstreamer1.0-plugins-good "
+"installed.\n"
+"          Some video features have been disabled."
+msgstr ""
+"ئاگاھلاندۇرۇش: سىز gstreamer0.10-plugins-good بوغچىسىنى ئورناتمىغاندەك "
+"تۇرىسىز.\n"
+"بەزى سىن ئىقتىدارلىرى چەكلەندى."
+
+#: gstreamer/backend.cpp:228
+#, fuzzy
+#| msgid ""
+#| "Warning: You do not seem to have the base GStreamer plugins installed.\n"
+#| "          All audio and video support has been disabled"
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the base GStreamer plugins installed.\n"
+"          All audio and video support has been disabled"
+msgstr ""
+"ئاگاھلاندۇرۇش: ئاگاھلاندۇرۇش: سىز GStreamer قىستۇرمىسىنى  ئورناتمىغاندەك "
+"تۇرىسىز.\n"
+"ھەممە ئۈن ۋە سىن ئىقتىدارلىرى چەكلەندى."
+
+#: gstreamer/mediaobject.cpp:426
+#, fuzzy
+#| msgid "Default"
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Default"
+msgstr "كۆڭۈلدىكى"
+
+#: gstreamer/mediaobject.cpp:440 gstreamer/mediaobject.cpp:473
+#, fuzzy
+#| msgid "Unknown"
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Unknown"
+msgstr "نامەلۇم"
+
+#: gstreamer/mediaobject.cpp:460
+#, fuzzy
+#| msgid "Disable"
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Disable"
+msgstr "چەكلە"
+
+#: gstreamer/pipeline.cpp:515
+#, fuzzy
+#| msgid "One or more plugins are missing in your GStreamer installation."
+msgctxt "Phonon::Gstreamer::Pipeline|"
+msgid "One or more plugins are missing in your GStreamer installation."
+msgstr "سىز ئورناتقان GStreamer دا بىر ياكى بىر قانچە قىستۇرمىلار يوق تۇرىدۇ."
+
+#: gstreamer/plugininstaller.cpp:188
+#, fuzzy
+#| msgid "Missing codec helper script assistant."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Missing codec helper script assistant."
+msgstr "كود يەشكۈچ قوشۇمچە قوليازما ياردەمچىسى كەم."
+
+#: gstreamer/plugininstaller.cpp:190
+#, fuzzy
+#| msgid "Plugin codec installation failed."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Plugin codec installation failed."
+msgstr "قىستۇرما كودلىغۇچ-كودسىزلىغۇچنى ئورنىتىش مەغلۇپ بولدى."
+
+#: gstreamer/plugininstaller.cpp:214
+#, fuzzy
+#| msgid "Phonon attempted to install an invalid codec name."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Phonon attempted to install an invalid codec name."
+msgstr "بىر ئىناۋەتسىز بولغان كودلىغۇچ-كودسىزلىغۇچنى ئورناتماقچى بولۇۋاتىدۇ."
+
+#: gstreamer/plugininstaller.cpp:217
+#, fuzzy
+#| msgid "The codec installer crashed."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The codec installer crashed."
+msgstr "كودلىغۇچ-كودسىزلىغۇچ ئورنىتىش پروگراممىسىدا خاتالىق كۆرۈلدى."
+
+#: gstreamer/plugininstaller.cpp:220
+#, fuzzy
+#| msgid "The required codec could not be found for installation."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The required codec could not be found for installation."
+msgstr "زۆرۈر بولغان كودلىغۇچ-كودسىزلىغۇچنى تاپقىلى بولمىدى."
+
+#: gstreamer/plugininstaller.cpp:223
+#, fuzzy
+#| msgid "An unspecified error occurred during codec installation."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "An unspecified error occurred during codec installation."
+msgstr "كودلىغۇچ-كودسىزلىغۇچنى ئورنىتىۋاتقاندا ئېنىق بولمىغان خاتالىق كۆرۈلدى."
+
+#: gstreamer/plugininstaller.cpp:226
+#, fuzzy
+#| msgid "Not all codecs could be installed."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Not all codecs could be installed."
+msgstr "بارلىق كودلىغۇچ-كودسىزلىغۇچنى ئورناتقىلى بولمايدۇ."
+
+#: gstreamer/plugininstaller.cpp:229
+#, fuzzy
+#| msgid "User aborted codec installation"
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "User aborted codec installation"
+msgstr "كودلىغۇچ-كودسىزلىغۇچنى ئورنىتىۋاتقاندا ئىشلەتكۈچى توختىتىۋەتتى"
+
+#: gstreamer/plugininstaller.cpp:240
+#, fuzzy
+#| msgid "Could not update plugin registry after update."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Could not update plugin registry after update."
+msgstr "يېڭىلانغاندىن كېيىن كودلىغۇچ-كودسىزلىغۇچ رويخېتىنى يېڭىلىغىلى بولمىدى."
+
+#~ msgid "Could not open media source."
+#~ msgstr "ۋاسىتە مەنبەسىنى ئاچقىلى بولمىدى."
+
+#~ msgid "Invalid source type."
+#~ msgstr "ئىناۋەتسىز مەنبە تىپى"
+
+#~ msgid "Could not open DVD."
+#~ msgstr "د ۋ د(DVD) نى ئاچقىلى بولمىدى."

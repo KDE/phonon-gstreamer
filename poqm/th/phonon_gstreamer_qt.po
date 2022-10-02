@@ -1,0 +1,188 @@
+# Copyright (C) YEAR This_file_is_part_of_KDE
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: phonon_gstreamer\n"
+"Report-Msgid-Bugs-To: https://bugs.kde.org\n"
+"POT-Creation-Date: 2019-07-01 01:43+0200\n"
+"PO-Revision-Date: 2010-08-18 19:38+0700\n"
+"Last-Translator: Sahachart Anukulkitch <drrider@gmail.com>\n"
+"Language-Team: Thai <thai-l10n@googlegroups.com>\n"
+"Language: th\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Poedit-Language: Thai\n"
+"X-Poedit-Country: THAILAND\n"
+"X-Poedit-SourceCharset: utf-8\n"
+"X-Qt-Contexts: true\n"
+
+#: gstreamer/backend.cpp:220
+#, fuzzy
+#| msgid ""
+#| "Warning: You do not seem to have the package gstreamer0.10-plugins-good "
+#| "installed.\n"
+#| "          Some video features have been disabled."
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the package gstreamer1.0-plugins-good "
+"installed.\n"
+"          Some video features have been disabled."
+msgstr ""
+"คำเตือน: ดูเหมือนว่าคุณยังไม่ได้ติดตั้ง gstreamer0.10-plugins-good เลย\n"
+"          คุณสมบัติทางวีดิทัศน์บางส่วนไม่สามารถทำงานได้"
+
+#: gstreamer/backend.cpp:228
+#, fuzzy
+#| msgid ""
+#| "Warning: You do not seem to have the base GStreamer plugins installed.\n"
+#| "          All audio and video support has been disabled"
+msgctxt "Phonon::Gstreamer::Backend|"
+msgid ""
+"Warning: You do not seem to have the base GStreamer plugins installed.\n"
+"          All audio and video support has been disabled"
+msgstr ""
+"คำเตือน: ดูเหมือนว่าคุณยังไม่ได้ติดตั้งโปรแกรมเสริมส่วนหลักของ GStreamer\n"
+"          ส่วนสนับสนุนด้านวีดิทัศน์และเสียงทั้งหมดไม่สามารถทำงานได้"
+
+#: gstreamer/mediaobject.cpp:426
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Default"
+msgstr ""
+
+#: gstreamer/mediaobject.cpp:440 gstreamer/mediaobject.cpp:473
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Unknown"
+msgstr ""
+
+#: gstreamer/mediaobject.cpp:460
+msgctxt "Phonon::Gstreamer::MediaObject|"
+msgid "Disable"
+msgstr ""
+
+#: gstreamer/pipeline.cpp:515
+msgctxt "Phonon::Gstreamer::Pipeline|"
+msgid "One or more plugins are missing in your GStreamer installation."
+msgstr ""
+
+#: gstreamer/plugininstaller.cpp:188
+#, fuzzy
+#| msgid "Missing codec helper script assistant."
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Missing codec helper script assistant."
+msgstr "ไม่พบสคริปต์ตัวช่วยการเข้า/ถอดรหัส"
+
+#: gstreamer/plugininstaller.cpp:190
+#, fuzzy
+#| msgid "Plugin codec installation failed for codec: %1"
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Plugin codec installation failed."
+msgstr "การติดตั้งโปรแกรมเสริมเข้า/ถอดรหัสล้มเหลวสำหรับโปรแกรม: %1"
+
+#: gstreamer/plugininstaller.cpp:214
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Phonon attempted to install an invalid codec name."
+msgstr ""
+
+#: gstreamer/plugininstaller.cpp:217
+#, fuzzy
+#| msgid "Plugin codec installation failed for codec: %1"
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The codec installer crashed."
+msgstr "การติดตั้งโปรแกรมเสริมเข้า/ถอดรหัสล้มเหลวสำหรับโปรแกรม: %1"
+
+#: gstreamer/plugininstaller.cpp:220
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "The required codec could not be found for installation."
+msgstr ""
+
+#: gstreamer/plugininstaller.cpp:223
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "An unspecified error occurred during codec installation."
+msgstr ""
+
+#: gstreamer/plugininstaller.cpp:226
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Not all codecs could be installed."
+msgstr ""
+
+#: gstreamer/plugininstaller.cpp:229
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "User aborted codec installation"
+msgstr ""
+
+#: gstreamer/plugininstaller.cpp:240
+msgctxt "Phonon::Gstreamer::PluginInstaller|"
+msgid "Could not update plugin registry after update."
+msgstr ""
+
+#~ msgid ""
+#~ "Cannot start playback. \n"
+#~ "\n"
+#~ "Check your GStreamer installation and make sure you \n"
+#~ "have libgstreamer-plugins-base installed."
+#~ msgstr ""
+#~ "ไม่สามารถเริ่มเล่นได้ \n"
+#~ "\n"
+#~ "ตรวจสอบการติดตั้ง GStreamer และให้แน่ใจว่า \n"
+#~ "ได้ติดตั้งโปรแกรมเสริม libgstreamer-plugins-base แล้ว"
+
+#~ msgid "Could not open media source."
+#~ msgstr "ไม่สามารถเปิดสื่อได้"
+
+#~ msgid "Invalid source type."
+#~ msgstr "ชนิดของแหล่งข้อมูลไม่ถูกต้อง"
+
+#, fuzzy
+#~| msgid "Could not open media source."
+#~ msgid "Could not open DVD."
+#~ msgstr "ไม่สามารถเปิดสื่อได้"
+
+#, fuzzy
+#~| msgid "Could not open media source."
+#~ msgid "Could not open capture device."
+#~ msgstr "ไม่สามารถเปิดสื่อได้"
+
+#~ msgid "Could not open audio device. The device is already in use."
+#~ msgstr "ไม่สามารถเปิดอุปกรณ์เสียงได้ เพราะอุปกรณ์เสียงถูกใช้งานอยู่"
+
+#, fuzzy
+#~| msgid ""
+#~| "A required codec is missing. You need to install the following codec(s) "
+#~| "to play this content: %0"
+#~ msgid ""
+#~ "A required GStreamer plugin is missing. You need to install the following "
+#~ "plugin(s) to play this content: %0"
+#~ msgstr ""
+#~ "ไม่พบตัวเข้า/ถอดรหัสที่จำเป็น คุณจำเป็นต้องติดตั้งตัวเข้า/ถอดรหัสต่อไปนี้นี้เพื่อเล่นเนื้อหานี้: %0"
+
+#~ msgid "Could not locate media source."
+#~ msgstr "หาตำแหน่งของสื่อไม่พบ"
+
+#, fuzzy
+#~| msgid "Could not open media source."
+#~ msgid "Could not find media type."
+#~ msgstr "ไม่สามารถเปิดสื่อได้"
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not decode media."
+#~ msgstr "ไม่สามารถถอดรหัสสื่อได้"
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not encode media."
+#~ msgstr "ไม่สามารถถอดรหัสสื่อได้"
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not demux media."
+#~ msgstr "ไม่สามารถถอดรหัสสื่อได้"
+
+#, fuzzy
+#~| msgid "Could not decode media source."
+#~ msgid "Could not decrypt media."
+#~ msgstr "ไม่สามารถถอดรหัสสื่อได้"
