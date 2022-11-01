@@ -104,6 +104,8 @@ MediaObject::MediaObject(Backend *backend, QObject *parent)
             this, SLOT(handleDurationChange(qint64)));
     connect(m_pipeline, SIGNAL(buffering(int)),
             this, SIGNAL(bufferStatus(int)));
+    connect(m_pipeline, SIGNAL(buffering(int)),
+            this, SLOT(emitBuffering(int)));
     connect(m_pipeline, SIGNAL(stateChanged(GstState,GstState)),
             this, SLOT(handleStateChange(GstState,GstState)));
     connect(m_pipeline, SIGNAL(errorMessage(QString,Phonon::ErrorType)),
@@ -615,6 +617,17 @@ void MediaObject::handleStateChange(GstState oldState, GstState newState)
     if (!m_doingEOS) {
         emit stateChanged(m_state, prevPhononState);
     }
+}
+
+void MediaObject::emitBuffering(int perc)
+{
+	Phonon::State newPhononState = (perc == 100 ? Phonon::PlayingState : Phonon::BufferingState);
+	if (m_state == newPhononState)
+		return;
+
+	Phonon::State prevPhononState = m_state;
+	m_state = newPhononState;
+	emit stateChanged(m_state, prevPhononState);
 }
 
 void MediaObject::handleEndOfStream()
