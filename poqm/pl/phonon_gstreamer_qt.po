@@ -41,17 +41,17 @@ msgstr ""
 "Uwaga: Wygląda na to, że w systemie nie ma wgranych wtyczek GStreamer.\n"
 "          Cała obsługa dźwięku i obrazu została wyłączona"
 
-#: gstreamer/mediaobject.cpp:426
+#: gstreamer/mediaobject.cpp:428
 msgctxt "Phonon::Gstreamer::MediaObject|"
 msgid "Default"
 msgstr "Domyślne"
 
-#: gstreamer/mediaobject.cpp:440 gstreamer/mediaobject.cpp:473
+#: gstreamer/mediaobject.cpp:442 gstreamer/mediaobject.cpp:475
 msgctxt "Phonon::Gstreamer::MediaObject|"
 msgid "Unknown"
 msgstr "Nieznany"
 
-#: gstreamer/mediaobject.cpp:460
+#: gstreamer/mediaobject.cpp:462
 msgctxt "Phonon::Gstreamer::MediaObject|"
 msgid "Disable"
 msgstr "Wyłącz"

@@ -33,21 +33,21 @@ msgid ""
 "          All audio and video support has been disabled"
 msgstr ""
 
-#: gstreamer/mediaobject.cpp:426
+#: gstreamer/mediaobject.cpp:428
 #, fuzzy
 #| msgid "Default"
 msgctxt "Phonon::Gstreamer::MediaObject|"
 msgid "Default"
 msgstr "मूलभूत"
 
-#: gstreamer/mediaobject.cpp:440 gstreamer/mediaobject.cpp:473
+#: gstreamer/mediaobject.cpp:442 gstreamer/mediaobject.cpp:475
 #, fuzzy
 #| msgid "Unknown"
 msgctxt "Phonon::Gstreamer::MediaObject|"
 msgid "Unknown"
 msgstr "अपरिचीत"
 
-#: gstreamer/mediaobject.cpp:460
+#: gstreamer/mediaobject.cpp:462
 #, fuzzy
 #| msgid "Disable"
 msgctxt "Phonon::Gstreamer::MediaObject|"

@@ -39,17 +39,17 @@ msgstr ""
 "Varovanie: Pravdepodobne nemáte nainštalovaný balík GStreamer plugins.\n"
 "          Všetka podpora pre Audio a video bola zakázaná"
 
-#: gstreamer/mediaobject.cpp:426
+#: gstreamer/mediaobject.cpp:428
 msgctxt "Phonon::Gstreamer::MediaObject|"
 msgid "Default"
 msgstr "Predvolené"
 
-#: gstreamer/mediaobject.cpp:440 gstreamer/mediaobject.cpp:473
+#: gstreamer/mediaobject.cpp:442 gstreamer/mediaobject.cpp:475
 msgctxt "Phonon::Gstreamer::MediaObject|"
 msgid "Unknown"
 msgstr "Neznáme"
 
-#: gstreamer/mediaobject.cpp:460
+#: gstreamer/mediaobject.cpp:462
 msgctxt "Phonon::Gstreamer::MediaObject|"
 msgid "Disable"
 msgstr "Zakázať"

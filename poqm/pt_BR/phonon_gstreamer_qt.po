@@ -41,17 +41,17 @@ msgstr ""
 "Aviso: Parece que você não tem os plugins base do GStreamer instalados.\n"
 "          Todo o suporte a áudio e vídeo foi desabilitado"
 
-#: gstreamer/mediaobject.cpp:426
+#: gstreamer/mediaobject.cpp:428
 msgctxt "Phonon::Gstreamer::MediaObject|"
 msgid "Default"
 msgstr "Padrão"
 
-#: gstreamer/mediaobject.cpp:440 gstreamer/mediaobject.cpp:473
+#: gstreamer/mediaobject.cpp:442 gstreamer/mediaobject.cpp:475
 msgctxt "Phonon::Gstreamer::MediaObject|"
 msgid "Unknown"
 msgstr "Desconhecido"
 
-#: gstreamer/mediaobject.cpp:460
+#: gstreamer/mediaobject.cpp:462
 msgctxt "Phonon::Gstreamer::MediaObject|"
 msgid "Disable"
 msgstr "Desabilitar"

@@ -33,17 +33,17 @@ msgstr ""
 "चेतावनी: आपके पास मूल जीस्ट्रीमर प्लगइनस संस्थापित नहीं है।\n"
 "          सभी ध्वनि एवं चलचित्र समर्थन को निष्क्रिय कर दिया गया है"
 
-#: gstreamer/mediaobject.cpp:426
+#: gstreamer/mediaobject.cpp:428
 msgctxt "Phonon::Gstreamer::MediaObject|"
 msgid "Default"
 msgstr "पूर्वन्यस्त"
 
-#: gstreamer/mediaobject.cpp:440 gstreamer/mediaobject.cpp:473
+#: gstreamer/mediaobject.cpp:442 gstreamer/mediaobject.cpp:475
 msgctxt "Phonon::Gstreamer::MediaObject|"
 msgid "Unknown"
 msgstr "अज्ञात"
 
-#: gstreamer/mediaobject.cpp:460
+#: gstreamer/mediaobject.cpp:462
 msgctxt "Phonon::Gstreamer::MediaObject|"
 msgid "Disable"
 msgstr "अक्षम"

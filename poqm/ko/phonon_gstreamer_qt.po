@@ -37,17 +37,17 @@ msgstr ""
 "경고: GStreamer 기본 플러그인이 설치된 것 같지 않습니다.\n"
 "          모든 오디오와 비디오 지원이 비활성화되었습니다"
 
-#: gstreamer/mediaobject.cpp:426
+#: gstreamer/mediaobject.cpp:428
 msgctxt "Phonon::Gstreamer::MediaObject|"
 msgid "Default"
 msgstr "기본값"
 
-#: gstreamer/mediaobject.cpp:440 gstreamer/mediaobject.cpp:473
+#: gstreamer/mediaobject.cpp:442 gstreamer/mediaobject.cpp:475
 msgctxt "Phonon::Gstreamer::MediaObject|"
 msgid "Unknown"
 msgstr "알 수 없음"
 
-#: gstreamer/mediaobject.cpp:460
+#: gstreamer/mediaobject.cpp:462
 msgctxt "Phonon::Gstreamer::MediaObject|"
 msgid "Disable"
 msgstr "비활성화"
